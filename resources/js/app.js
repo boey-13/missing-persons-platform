@@ -7,6 +7,8 @@ import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
+// Import Vue Google Maps
+import VueGoogleMaps from '@fawmi/vue-google-maps';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -21,7 +23,13 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
-            .use(Toast) 
+            .use(Toast)
+            .use(VueGoogleMaps, {
+                load: {
+                    key: 'AIzaSyBeC9m6RUZuBayw3noXePJbch5gjSWC06Y',  //google maps API key
+                    libraries: 'places',
+                },
+            })
             .mount(el);
     },
     progress: {

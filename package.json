@@ -21,6 +21,7 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "@fawmi/vue-google-maps": "^0.9.79",
         "vue-toastification": "^2.0.0-rc.5"
     }
 }

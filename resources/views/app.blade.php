@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBeC9m6RUZuBayw3noXePJbch5gjSWC06Y&libraries=places"></script>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">

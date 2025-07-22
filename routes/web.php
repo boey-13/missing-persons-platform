@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Password;
+use App\Http\Controllers\MissingReportController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -14,6 +15,14 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+Route::post('/missing-persons', [MissingReportController::class, 'store'])->name('missing-persons.store');
+
+
+Route::get('/missing-persons/report', function () {
+    return Inertia::render('MissingPersons/ReportMissingPerson');
+})->name('missing-persons.report');
+
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
