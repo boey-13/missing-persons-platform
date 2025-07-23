@@ -10,7 +10,9 @@ class MissingReport extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'full_name',
+        'ic_number',
         'nickname',
         'age',
         'gender',
@@ -20,12 +22,26 @@ class MissingReport extends Model
         'last_seen_date',
         'last_seen_location',
         'last_seen_clothing',
-        'photo_path',
+        'photo_paths',
         'police_report_path',
-        'reporter_name',
         'reporter_relationship',
+        'reporter_relationship_other',
+        'reporter_name',
         'reporter_phone',
         'reporter_email',
         'additional_notes',
+        'case_status',
     ];
+
+    protected $casts = [
+        'photo_paths' => 'array',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
+
 }
+
+

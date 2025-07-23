@@ -45,4 +45,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function missingReports()
+    {
+        return $this->hasMany(\App\Models\MissingReport::class);
+    }
+
 }

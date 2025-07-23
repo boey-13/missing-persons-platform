@@ -1,10 +1,14 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
 import { ref, onMounted, watch } from 'vue'
+import MainLayout from '@/Layouts/MainLayout.vue'
+defineOptions({ layout: MainLayout })
+
 
 const form = useForm({
   full_name: '',
   nickname: '',
+  ic_number: '',
   age: '',
   gender: '',
   height_cm: '',
@@ -13,7 +17,7 @@ const form = useForm({
   last_seen_date: '',
   last_seen_location: '',
   last_seen_clothing: '',
-  photo: null,
+  photos: [], // array of files
   police_report: null,
   reporter_name: '',
   reporter_relationship: '',
@@ -22,30 +26,58 @@ const form = useForm({
   additional_notes: '',
 })
 
-const uploading = ref(false)
+const errors = ref({})
+const photoPreviews = ref([])
 
-function submit() {
-  uploading.value = true
-  form.post(route('missing-persons.store'), {
-    forceFormData: true,
-    onFinish: () => uploading.value = false,
-    onSuccess: () => {
-      form.reset()
-      alert('Report submitted successfully!')
+// Photo upload & preview (multiple)
+function onPhotosChange(e) {
+  const files = Array.from(e.target.files)
+  form.photos = files
+  photoPreviews.value = []
+  files.forEach(file => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = evt => {
+        photoPreviews.value.push(evt.target.result)
+      }
+      reader.readAsDataURL(file)
     }
   })
 }
 
-// Google Maps integration
+// Police report preview
+const policeReportPreview = ref(null)
+const policeReportType = ref(null)
+const policeReportName = ref('')
+function onPoliceReportChange(e) {
+  const file = e.target.files[0]
+  form.police_report = file
+  policeReportName.value = file ? file.name : ''
+  if (!file) {
+    policeReportPreview.value = null
+    policeReportType.value = null
+    return
+  }
+  policeReportType.value = file.type
+  const reader = new FileReader()
+  reader.onload = evt => {
+    policeReportPreview.value = evt.target.result
+  }
+  if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+    reader.readAsDataURL(file)
+  } else {
+    policeReportPreview.value = null
+  }
+}
+
+// Google Maps logic
 const mapDiv = ref(null)
 const marker = ref(null)
 const map = ref(null)
-const mapLat = ref(3.139)  // default to Kuala Lumpur
+const mapLat = ref(3.139)
 const mapLng = ref(101.6869)
 const mapZoom = ref(12)
-
 onMounted(() => {
-  // wait for Google Maps to load
   const interval = setInterval(() => {
     if (window.google && window.google.maps && window.google.maps.places) {
       clearInterval(interval)
@@ -69,10 +101,8 @@ onMounted(() => {
       })
     }
   }, 300)
-  // initially show the map
   setTimeout(showMap, 1200)
 })
-
 function showMap() {
   if (!mapDiv.value || !window.google || !window.google.maps) return
   if (!map.value) {
@@ -89,11 +119,76 @@ function showMap() {
     marker.value.setPosition({ lat: mapLat.value, lng: mapLng.value })
   }
 }
+watch([mapLat, mapLng], showMap)
 
-// if the map coordinates change, update the map
-watch([mapLat, mapLng], () => {
-  showMap()
-})
+const uploading = ref(false)
+
+// Frontend validation
+function validateForm() {
+  errors.value = {}
+
+  // Name only alphabets and spaces
+  if (!/^[A-Za-z\s]+$/.test(form.full_name)) {
+    errors.value.full_name = "Full name must only contain alphabets and spaces."
+  }
+  if (form.nickname && !/^[A-Za-z\s]*$/.test(form.nickname)) {
+    errors.value.nickname = "Nickname must only contain alphabets and spaces."
+  }
+  // IC number: 12 digits
+  if (!/^\d{12}$/.test(form.ic_number)) {
+    errors.value.ic_number = "IC number must be exactly 12 digits."
+  }
+  // Age must be integer
+  if (form.age && !/^\d+$/.test(form.age)) {
+    errors.value.age = "Age must be a valid number."
+  }
+  // Height/Weight: number only
+  if (form.height_cm && !/^\d+$/.test(form.height_cm)) {
+    errors.value.height_cm = "Height must be a number."
+  }
+  if (form.weight_kg && !/^\d+$/.test(form.weight_kg)) {
+    errors.value.weight_kg = "Weight must be a number."
+  }
+  // Reporter name only alphabets
+  if (!/^[A-Za-z\s]+$/.test(form.reporter_name)) {
+    errors.value.reporter_name = "Name must only contain alphabets and spaces."
+  }
+  // Reporter phone 10-11 digits
+  if (!/^\d{10,11}$/.test(form.reporter_phone)) {
+    errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
+  }
+  // Email format if filled
+  if (form.reporter_email && !/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/.test(form.reporter_email)) {
+    errors.value.reporter_email = "Invalid email address."
+  }
+  // Required fields
+  if (!form.gender) errors.value.gender = "Please select gender."
+  if (!form.reporter_relationship) errors.value.reporter_relationship = "Please select relationship."
+  if (!form.last_seen_date) errors.value.last_seen_date = "Please select last seen date."
+  if (!form.last_seen_location) errors.value.last_seen_location = "Please select last seen location."
+  // ... add other logic if you want
+
+  return Object.keys(errors.value).length === 0
+}
+
+function submit() {
+  if (!validateForm()) return
+  uploading.value = true
+  form.post(route('missing-persons.store'), {
+    forceFormData: true,
+    onFinish: () => uploading.value = false,
+    onError: (e) => {
+      // errors from backend validation
+      errors.value = e
+    },
+    onSuccess: () => {
+      form.reset()
+      photoPreviews.value = []
+      policeReportPreview.value = null
+      alert('Report submitted successfully!')
+    }
+  })
+}
 </script>
 
 <template>
@@ -108,10 +203,17 @@ watch([mapLat, mapLng], () => {
           <div class="mb-4">
             <label class="block mb-1">Full Name</label>
             <input v-model="form.full_name" type="text" class="w-full border px-4 py-2 rounded" required />
+            <span v-if="errors.full_name" class="text-red-500 text-sm">{{ errors.full_name }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Nickname (Optional)</label>
             <input v-model="form.nickname" type="text" class="w-full border px-4 py-2 rounded" />
+            <span v-if="errors.nickname" class="text-red-500 text-sm">{{ errors.nickname }}</span>
+          </div>
+          <div class="mb-4">
+            <label class="block mb-1">IC Number</label>
+            <input v-model="form.ic_number" type="text" class="w-full border px-4 py-2 rounded" required maxlength="12" />
+            <span v-if="errors.ic_number" class="text-red-500 text-sm">{{ errors.ic_number }}</span>
           </div>
         </div>
 
@@ -121,6 +223,7 @@ watch([mapLat, mapLng], () => {
           <div class="mb-4">
             <label class="block mb-1">Age</label>
             <input v-model="form.age" type="number" min="0" class="w-full border px-4 py-2 rounded" />
+            <span v-if="errors.age" class="text-red-500 text-sm">{{ errors.age }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Gender</label>
@@ -130,20 +233,24 @@ watch([mapLat, mapLng], () => {
               <option>Female</option>
               <option>Other</option>
             </select>
+            <span v-if="errors.gender" class="text-red-500 text-sm">{{ errors.gender }}</span>
           </div>
           <div class="mb-4 flex gap-4">
             <div class="w-1/2">
               <label class="block mb-1">Height (cm)</label>
               <input v-model="form.height_cm" type="number" min="0" class="w-full border px-4 py-2 rounded" />
+              <span v-if="errors.height_cm" class="text-red-500 text-sm">{{ errors.height_cm }}</span>
             </div>
             <div class="w-1/2">
               <label class="block mb-1">Weight (kg)</label>
               <input v-model="form.weight_kg" type="number" min="0" class="w-full border px-4 py-2 rounded" />
+              <span v-if="errors.weight_kg" class="text-red-500 text-sm">{{ errors.weight_kg }}</span>
             </div>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Physical Description</label>
-            <textarea v-model="form.physical_description" class="w-full border px-4 py-2 rounded" placeholder="Hair color, body marks, etc."></textarea>
+            <textarea v-model="form.physical_description" class="w-full border px-4 py-2 rounded"
+              placeholder="Hair color, body marks, etc."></textarea>
           </div>
         </div>
 
@@ -153,40 +260,49 @@ watch([mapLat, mapLng], () => {
           <div class="mb-4">
             <label class="block mb-1">Last Seen Date</label>
             <input v-model="form.last_seen_date" type="date" class="w-full border px-4 py-2 rounded" required />
+            <span v-if="errors.last_seen_date" class="text-red-500 text-sm">{{ errors.last_seen_date }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Last Seen Location</label>
-            <input
-              id="autocomplete"
-              v-model="form.last_seen_location"
-              type="text"
-              class="w-full border px-4 py-2 rounded"
-              placeholder="Enter location and select suggestion"
-              autocomplete="off"
-              required
-            />
+            <input id="autocomplete" v-model="form.last_seen_location" type="text"
+              class="w-full border px-4 py-2 rounded" placeholder="Enter location and select suggestion"
+              autocomplete="off" required />
+            <span v-if="errors.last_seen_location" class="text-red-500 text-sm">{{ errors.last_seen_location }}</span>
           </div>
-          <!-- Map Display -->
           <div class="mb-4">
             <div ref="mapDiv" style="width:100%;height:270px;border-radius:12px;box-shadow:0 2px 8px #ddd"></div>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Last Seen Clothing Description</label>
-            <textarea v-model="form.last_seen_clothing" class="w-full border px-4 py-2 rounded" placeholder="Clothing details"></textarea>
+            <textarea v-model="form.last_seen_clothing" class="w-full border px-4 py-2 rounded"
+              placeholder="Clothing details"></textarea>
           </div>
         </div>
 
-        <!-- Photo Upload -->
+        <!-- Photos Upload with Preview -->
         <div class="mb-6">
-          <h2 class="font-bold mb-2">Upload Photo</h2>
-          <input type="file" @change="e => form.photo = e.target.files[0]" class="w-full" accept="image/*" />
+          <h2 class="font-bold mb-2">Upload Photos</h2>
+          <input type="file" multiple @change="onPhotosChange" class="w-full" accept="image/*" />
+          <div v-if="photoPreviews.length" class="flex gap-2 mt-2 flex-wrap">
+            <img v-for="(src, idx) in photoPreviews" :key="idx" :src="src" alt="Preview"
+              class="w-32 h-32 object-cover rounded shadow" />
+          </div>
         </div>
 
-        <!-- Police Report Upload (Optional) -->
+        <!-- Police Report Upload with Preview -->
         <div class="mb-6">
-          <h2 class="font-bold mb-2">Upload Polis Report (Optional)</h2>
-          <input type="file" @change="e => form.police_report = e.target.files[0]" class="w-full" accept=".pdf,image/*" />
+          <h2 class="font-bold mb-2">Upload Police Report (Optional)</h2>
+          <input type="file" @change="onPoliceReportChange" class="w-full" accept=".pdf,image/*" />
           <small class="block mt-1 text-gray-500">Supported formats: .pdf, .jpg, .png (Max: 5MB)</small>
+          <div v-if="policeReportPreview" class="mt-2">
+            <img v-if="policeReportType && policeReportType.startsWith('image/')" :src="policeReportPreview"
+              alt="Police Report Preview" class="w-40 rounded shadow" />
+            <embed v-else-if="policeReportType === 'application/pdf'" :src="policeReportPreview" type="application/pdf"
+              class="w-full h-48 rounded shadow" />
+          </div>
+          <div v-else-if="policeReportName" class="mt-2 text-gray-600">
+            {{ policeReportName }}
+          </div>
         </div>
 
         <!-- Contact Information -->
@@ -195,32 +311,42 @@ watch([mapLat, mapLng], () => {
           <div class="mb-4">
             <label class="block mb-1">Your Name</label>
             <input v-model="form.reporter_name" type="text" class="w-full border px-4 py-2 rounded" required />
+            <span v-if="errors.reporter_name" class="text-red-500 text-sm">{{ errors.reporter_name }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Relationship to Missing Person</label>
-            <input v-model="form.reporter_relationship" type="text" class="w-full border px-4 py-2 rounded" />
+            <select v-model="form.reporter_relationship" class="w-full border px-4 py-2 rounded" required>
+              <option value="">Select...</option>
+              <option>Parent</option>
+              <option>Sibling</option>
+              <option>Spouse</option>
+              <option>Friend</option>
+              <option>Relative</option>
+              <option>Other</option>
+            </select>
+            <span v-if="errors.reporter_relationship" class="text-red-500 text-sm">{{ errors.reporter_relationship }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Phone Number</label>
             <input v-model="form.reporter_phone" type="text" class="w-full border px-4 py-2 rounded" required />
+            <span v-if="errors.reporter_phone" class="text-red-500 text-sm">{{ errors.reporter_phone }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Email Address (Optional)</label>
             <input v-model="form.reporter_email" type="email" class="w-full border px-4 py-2 rounded" />
+            <span v-if="errors.reporter_email" class="text-red-500 text-sm">{{ errors.reporter_email }}</span>
           </div>
         </div>
 
         <!-- Additional Notes -->
         <div class="mb-6">
           <h2 class="font-bold mb-2">Additional Notes (Optional)</h2>
-          <textarea v-model="form.additional_notes" class="w-full border px-4 py-2 rounded" placeholder="Any other information"></textarea>
+          <textarea v-model="form.additional_notes" class="w-full border px-4 py-2 rounded"
+            placeholder="Any other information"></textarea>
         </div>
 
-        <button
-          :disabled="uploading"
-          type="submit"
-          class="bg-black text-white w-full py-2 rounded font-bold flex items-center justify-center"
-        >
+        <button :disabled="uploading" type="submit"
+          class="bg-black text-white w-full py-2 rounded font-bold flex items-center justify-center">
           <span v-if="uploading" class="animate-spin mr-2">⏳</span>
           Submit Report
         </button>
