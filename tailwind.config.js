@@ -13,7 +13,9 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                nunito: ['Nunito', 'ui-sans-serif', 'system-ui'],
+                poppins: ['Poppins', 'ui-sans-serif', 'system-ui'],
             },
         },
     },

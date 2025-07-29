@@ -1,5 +1,5 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3'
+import { usePage, router, useForm } from '@inertiajs/vue3'
 import { ref, onMounted, watch } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 defineOptions({ layout: MainLayout })
@@ -103,6 +103,8 @@ onMounted(() => {
   }, 300)
   setTimeout(showMap, 1200)
 })
+
+// Show map with marker
 function showMap() {
   if (!mapDiv.value || !window.google || !window.google.maps) return
   if (!map.value) {
@@ -172,6 +174,11 @@ function validateForm() {
 }
 
 function submit() {
+  if (!user) {
+    showLoginModal.value = true
+    alert("You must log in to submit a report.")
+    return
+  }
   if (!validateForm()) return
   uploading.value = true
   form.post(route('missing-persons.store'), {
@@ -189,10 +196,49 @@ function submit() {
     }
   })
 }
+
+const user = usePage().props.auth.user
+const showLoginModal = ref(false)
+
+// Show login modal if user is not logged in
+onMounted(() => {
+  if (!user) {
+    showLoginModal.value = true
+  }
+})
+
+// Function to navigate to login page
+function goToLogin() {
+  router.visit('/login')
+}
+
+// Function to navigate to home page
+function goToHome() {
+  router.visit('/')
+}
 </script>
 
+
+
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f8ecd8] via-[#e2c799] to-[#a78244]">
+  <teleport to="body">
+    <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 shadow-xl w-[90%] max-w-md text-center">
+        <h2 class="text-lg font-semibold mb-4">Login Required</h2>
+        <p class="mb-6 text-sm text-gray-600">You must be logged in to submit a report. Would you like to login now?</p>
+        <div class="flex justify-center gap-4">
+          <button @click="goToHome" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100 text-sm">
+            Continue Without Login
+          </button>
+          <button @click="goToLogin" class="px-4 py-2 rounded bg-[#6B4C3B] text-white hover:bg-[#5c3f31] text-sm">Go to
+            Login</button>
+        </div>
+      </div>
+    </div>
+  </teleport>
+
+  <div
+    class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f8ecd8] via-[#e2c799] to-[#a78244]">
     <div class="w-full max-w-2xl bg-white rounded-xl shadow-xl p-8">
       <h1 class="text-2xl font-bold text-center mb-6">Report a Missing Person</h1>
       <form @submit.prevent="submit" enctype="multipart/form-data">
@@ -212,7 +258,8 @@ function submit() {
           </div>
           <div class="mb-4">
             <label class="block mb-1">IC Number</label>
-            <input v-model="form.ic_number" type="text" class="w-full border px-4 py-2 rounded" required maxlength="12" />
+            <input v-model="form.ic_number" type="text" class="w-full border px-4 py-2 rounded" required
+              maxlength="12" />
             <span v-if="errors.ic_number" class="text-red-500 text-sm">{{ errors.ic_number }}</span>
           </div>
         </div>
@@ -324,7 +371,8 @@ function submit() {
               <option>Relative</option>
               <option>Other</option>
             </select>
-            <span v-if="errors.reporter_relationship" class="text-red-500 text-sm">{{ errors.reporter_relationship }}</span>
+            <span v-if="errors.reporter_relationship" class="text-red-500 text-sm">{{ errors.reporter_relationship
+            }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Phone Number</label>

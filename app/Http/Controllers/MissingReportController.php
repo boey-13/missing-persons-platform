@@ -46,11 +46,12 @@ class MissingReportController extends Controller
         $validated['user_id'] = auth()->id();
 
         $photoPaths = [];
-        if ($request->hasFile('photo')) {
-            foreach ($request->file('photo') as $file) {
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $file) {
                 $photoPaths[] = $file->store('photos', 'public');
             }
         }
+
         $validated['photo_paths'] = $photoPaths;
 
         if ($request->hasFile('police_report')) {
@@ -64,5 +65,21 @@ class MissingReportController extends Controller
 
         return redirect()->back()->with('success', 'Report submitted!');
     }
+
+    public function show($id)
+    {
+        $report = MissingReport::findOrFail($id);
+
+        // Check if the report belongs to the authenticated user or if the user is an admin
+        $report->photo_paths = is_array($report->photo_paths)
+            ? $report->photo_paths
+            : json_decode($report->photo_paths, true);
+
+        return inertia('MissingPersons/Show', [
+            'report' => $report
+        ]);
+    }
+
+
 
 }

@@ -52,5 +52,8 @@ Route::post('/forgot-password', function (Illuminate\Http\Request $request) {
         : back()->withErrors(['email' => __($status)]);
 })->name('password.email');
 
+Route::get('/missing-persons/{id}', [MissingReportController::class, 'show'])->name('missing-persons.show');
+
+
 
 require __DIR__ . '/auth.php';

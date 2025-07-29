@@ -9,6 +9,8 @@ import Toast from 'vue-toastification';
 import 'vue-toastification/dist/index.css';
 // Import Vue Google Maps
 import VueGoogleMaps from '@fawmi/vue-google-maps';
+import '@fortawesome/fontawesome-free/css/all.min.css'
+
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

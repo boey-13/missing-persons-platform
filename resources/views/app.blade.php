@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBeC9m6RUZuBayw3noXePJbch5gjSWC06Y&libraries=places"></script>
+
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
@@ -15,6 +15,8 @@
         @routes
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
         @inertiaHead
+
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBeC9m6RUZuBayw3noXePJbch5gjSWC06Y&libraries=places"></script>
     </head>
     <body class="font-sans antialiased">
         @inertia
