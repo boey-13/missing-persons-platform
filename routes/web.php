@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Password;
 use App\Http\Controllers\MissingReportController;
+use App\Http\Controllers\PosterController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -53,6 +54,18 @@ Route::post('/forgot-password', function (Illuminate\Http\Request $request) {
 })->name('password.email');
 
 Route::get('/missing-persons/{id}', [MissingReportController::class, 'show'])->name('missing-persons.show');
+
+Route::get('/missing-persons/{id}/preview-poster', function ($id) {
+    $report = \App\Models\MissingReport::findOrFail($id);
+    return Inertia::render('MissingPersons/PreviewPoster', ['report' => $report]);
+})->name('missing-person.preview-poster');
+
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->name('logout');
+
+Route::get('/missing-persons/{id}/download-poster', [PosterController::class, 'downloadPoster'])
+    ->name('missing-person.download-poster');
+
 
 
 

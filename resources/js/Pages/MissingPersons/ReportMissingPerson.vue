@@ -1,10 +1,11 @@
 <script setup>
+// --- Import Inertia.js form helpers and Vue hooks ---
 import { usePage, router, useForm } from '@inertiajs/vue3'
 import { ref, onMounted, watch } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 defineOptions({ layout: MainLayout })
 
-
+// --- Form state ---
 const form = useForm({
   full_name: '',
   nickname: '',
@@ -29,7 +30,7 @@ const form = useForm({
 const errors = ref({})
 const photoPreviews = ref([])
 
-// Photo upload & preview (multiple)
+// --- Handle photo upload & preview (multiple images) ---
 function onPhotosChange(e) {
   const files = Array.from(e.target.files)
   form.photos = files
@@ -45,7 +46,7 @@ function onPhotosChange(e) {
   })
 }
 
-// Police report preview
+// --- Police report file preview ---
 const policeReportPreview = ref(null)
 const policeReportType = ref(null)
 const policeReportName = ref('')
@@ -70,7 +71,7 @@ function onPoliceReportChange(e) {
   }
 }
 
-// Google Maps logic
+// --- Google Maps integration for last seen location ---
 const mapDiv = ref(null)
 const marker = ref(null)
 const map = ref(null)
@@ -104,7 +105,7 @@ onMounted(() => {
   setTimeout(showMap, 1200)
 })
 
-// Show map with marker
+// --- Display map with marker ---
 function showMap() {
   if (!mapDiv.value || !window.google || !window.google.maps) return
   if (!map.value) {
@@ -125,54 +126,47 @@ watch([mapLat, mapLng], showMap)
 
 const uploading = ref(false)
 
-// Frontend validation
+// --- Frontend validation (simple sample) ---
 function validateForm() {
   errors.value = {}
 
-  // Name only alphabets and spaces
   if (!/^[A-Za-z\s]+$/.test(form.full_name)) {
     errors.value.full_name = "Full name must only contain alphabets and spaces."
   }
   if (form.nickname && !/^[A-Za-z\s]*$/.test(form.nickname)) {
     errors.value.nickname = "Nickname must only contain alphabets and spaces."
   }
-  // IC number: 12 digits
   if (!/^\d{12}$/.test(form.ic_number)) {
     errors.value.ic_number = "IC number must be exactly 12 digits."
   }
-  // Age must be integer
   if (form.age && !/^\d+$/.test(form.age)) {
     errors.value.age = "Age must be a valid number."
   }
-  // Height/Weight: number only
   if (form.height_cm && !/^\d+$/.test(form.height_cm)) {
     errors.value.height_cm = "Height must be a number."
   }
   if (form.weight_kg && !/^\d+$/.test(form.weight_kg)) {
     errors.value.weight_kg = "Weight must be a number."
   }
-  // Reporter name only alphabets
   if (!/^[A-Za-z\s]+$/.test(form.reporter_name)) {
     errors.value.reporter_name = "Name must only contain alphabets and spaces."
   }
-  // Reporter phone 10-11 digits
   if (!/^\d{10,11}$/.test(form.reporter_phone)) {
     errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
   }
-  // Email format if filled
   if (form.reporter_email && !/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/.test(form.reporter_email)) {
     errors.value.reporter_email = "Invalid email address."
   }
-  // Required fields
   if (!form.gender) errors.value.gender = "Please select gender."
   if (!form.reporter_relationship) errors.value.reporter_relationship = "Please select relationship."
   if (!form.last_seen_date) errors.value.last_seen_date = "Please select last seen date."
   if (!form.last_seen_location) errors.value.last_seen_location = "Please select last seen location."
-  // ... add other logic if you want
+  // ...more validation as needed...
 
   return Object.keys(errors.value).length === 0
 }
 
+// --- Submit form logic ---
 function submit() {
   if (!user) {
     showLoginModal.value = true
@@ -185,7 +179,6 @@ function submit() {
     forceFormData: true,
     onFinish: () => uploading.value = false,
     onError: (e) => {
-      // errors from backend validation
       errors.value = e
     },
     onSuccess: () => {
@@ -197,31 +190,25 @@ function submit() {
   })
 }
 
+// --- Auth user check for login modal ---
 const user = usePage().props.auth.user
 const showLoginModal = ref(false)
-
-// Show login modal if user is not logged in
 onMounted(() => {
   if (!user) {
     showLoginModal.value = true
   }
 })
-
-// Function to navigate to login page
 function goToLogin() {
   router.visit('/login')
 }
-
-// Function to navigate to home page
 function goToHome() {
   router.visit('/')
 }
 </script>
 
-
-
 <template>
-  <teleport to="body">
+  <!-- Login required modal -->
+    <teleport to="body">
     <div v-if="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div class="bg-white rounded-lg p-6 shadow-xl w-[90%] max-w-md text-center">
         <h2 class="text-lg font-semibold mb-4">Login Required</h2>
@@ -230,22 +217,26 @@ function goToHome() {
           <button @click="goToHome" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-100 text-sm">
             Continue Without Login
           </button>
-          <button @click="goToLogin" class="px-4 py-2 rounded bg-[#6B4C3B] text-white hover:bg-[#5c3f31] text-sm">Go to
-            Login</button>
+          <button @click="goToLogin" class="px-4 py-2 rounded bg-[#6B4C3B] text-white hover:bg-[#5c3f31] text-sm">
+            Go to Login
+          </button>
         </div>
       </div>
     </div>
   </teleport>
 
-  <div
-    class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#f8ecd8] via-[#e2c799] to-[#a78244]">
-    <div class="w-full max-w-2xl bg-white rounded-xl shadow-xl p-8">
-      <h1 class="text-2xl font-bold text-center mb-6">Report a Missing Person</h1>
+  <!-- Main page layout: background and form card -->
+  <div class="min-h-screen flex flex-col items-center py-10 bg-[#f5f3f0] font-['Poppins'] text-[#333]">
+    <!-- Card: form container, unified with PreviewPoster/details page style -->
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border-2 border-[#ebebeb] p-10">
+      <h1 class="text-3xl font-extrabold text-center mb-8 tracking-tight">Report a Missing Person</h1>
       <form @submit.prevent="submit" enctype="multipart/form-data">
 
+        <!-- Each section keeps unified style -->
         <!-- Basic Information -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Basic Information</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Basic Information</h2>
+          <!-- ...表单内容如前... -->
           <div class="mb-4">
             <label class="block mb-1">Full Name</label>
             <input v-model="form.full_name" type="text" class="w-full border px-4 py-2 rounded" required />
@@ -265,8 +256,8 @@ function goToHome() {
         </div>
 
         <!-- Personal Details -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Personal Details</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Personal Details</h2>
           <div class="mb-4">
             <label class="block mb-1">Age</label>
             <input v-model="form.age" type="number" min="0" class="w-full border px-4 py-2 rounded" />
@@ -302,8 +293,8 @@ function goToHome() {
         </div>
 
         <!-- Last Seen Information -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Last Seen Information</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Last Seen Information</h2>
           <div class="mb-4">
             <label class="block mb-1">Last Seen Date</label>
             <input v-model="form.last_seen_date" type="date" class="w-full border px-4 py-2 rounded" required />
@@ -327,8 +318,8 @@ function goToHome() {
         </div>
 
         <!-- Photos Upload with Preview -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Upload Photos</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Upload Photos</h2>
           <input type="file" multiple @change="onPhotosChange" class="w-full" accept="image/*" />
           <div v-if="photoPreviews.length" class="flex gap-2 mt-2 flex-wrap">
             <img v-for="(src, idx) in photoPreviews" :key="idx" :src="src" alt="Preview"
@@ -337,8 +328,8 @@ function goToHome() {
         </div>
 
         <!-- Police Report Upload with Preview -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Upload Police Report (Optional)</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Upload Police Report</h2>
           <input type="file" @change="onPoliceReportChange" class="w-full" accept=".pdf,image/*" />
           <small class="block mt-1 text-gray-500">Supported formats: .pdf, .jpg, .png (Max: 5MB)</small>
           <div v-if="policeReportPreview" class="mt-2">
@@ -353,8 +344,8 @@ function goToHome() {
         </div>
 
         <!-- Contact Information -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Contact Information</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Contact Information</h2>
           <div class="mb-4">
             <label class="block mb-1">Your Name</label>
             <input v-model="form.reporter_name" type="text" class="w-full border px-4 py-2 rounded" required />
@@ -372,7 +363,7 @@ function goToHome() {
               <option>Other</option>
             </select>
             <span v-if="errors.reporter_relationship" class="text-red-500 text-sm">{{ errors.reporter_relationship
-            }}</span>
+              }}</span>
           </div>
           <div class="mb-4">
             <label class="block mb-1">Phone Number</label>
@@ -387,17 +378,19 @@ function goToHome() {
         </div>
 
         <!-- Additional Notes -->
-        <div class="mb-6">
-          <h2 class="font-bold mb-2">Additional Notes (Optional)</h2>
+        <div class="mb-7">
+          <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Additional Notes (Optional)</h2>
           <textarea v-model="form.additional_notes" class="w-full border px-4 py-2 rounded"
             placeholder="Any other information"></textarea>
         </div>
 
+        <!-- Submit Button -->
         <button :disabled="uploading" type="submit"
-          class="bg-black text-white w-full py-2 rounded font-bold flex items-center justify-center">
+          class="bg-black text-white w-full py-2 rounded font-bold flex items-center justify-center hover:bg-[#b12a1a] hover:shadow-md transition-colors duration-150">
           <span v-if="uploading" class="animate-spin mr-2">⏳</span>
           Submit Report
         </button>
+
       </form>
     </div>
   </div>

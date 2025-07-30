@@ -1,6 +1,6 @@
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { useForm, Link, usePage } from '@inertiajs/vue3'
+import { ref, watch } from 'vue'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
@@ -33,13 +33,31 @@ function submitForgotPassword() {
   })
 }
 
+const showStatus = ref(true)
+const page = usePage()
 
+watch(() => page.props.status, (newVal) => {
+  if (newVal) {
+    showStatus.value = true
+    setTimeout(() => {
+      showStatus.value = false
+    }, 2000)
+  }
+}, { immediate: true })
 
 </script>
 
 <template>
+
   <div
     class="relative min-h-screen bg-gradient-to-b from-[#cbb279] via-[#d6c69a] to-white flex items-center justify-center">
+    <div v-if="showStatus && $page.props.status"
+      class="fixed top-0 left-0 w-full flex justify-center z-50 pointer-events-none">
+      <div
+        class="mt-6 w-full max-w-md bg-green-100 border border-green-300 text-green-800 rounded-lg shadow px-5 py-3 text-center font-semibold transition-opacity duration-500">
+        {{ $page.props.status }}
+      </div>
+    </div>
 
     <div class="absolute top-6 right-6">
       <Link href="/register"
