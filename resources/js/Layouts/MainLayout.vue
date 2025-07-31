@@ -62,54 +62,69 @@
     </header>
 
     <!--  MAIN CONTENT -->
-    <main class="flex-1 max-w-6xl w-full mx-auto min-h-[60vh] pt-3">
+    <main>
       <slot />
     </main>
 
     <!--  FOOTER  -->
-    <footer class="bg-[#ede7e0] text-[#333] py-14 border-t mt-4">
-      <div class="max-w-6xl mx-auto grid grid-cols-4 gap-8 px-8">
+    <footer class="bg-[#ededed] text-[#47312a] pt-16 pb-10 border-t border-[#ede7e0]">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 px-6 md:px-10">
         <!-- About Section -->
         <div>
-          <div class="font-bold mb-2">About FindMe</div>
-          <div class="text-sm text-[#666]">
+          <div class="font-bold text-lg mb-3 tracking-wide">About FindMe</div>
+          <div class="text-base text-[#7a7a7a] leading-relaxed">
             FindMe is a secure platform that connects families, volunteers, and the community to help locate missing
             persons.
           </div>
         </div>
         <!-- Quick Links -->
         <div>
-          <div class="font-bold mb-2">FindMe</div>
-          <a href="#" class="block">About</a>
-          <a href="/cases" class="block">View Case</a>
-          <a href="/missing-persons/report" class="block">Report Case</a>
-          <a href="/volunteer/projects" class="block">Volunteer</a>
+          <div class="font-bold text-lg mb-3 tracking-wide">Quick Links</div>
+          <nav class="flex flex-col gap-2 text-base">
+            <a href="#" class="hover:text-[#A67B5B]">About</a>
+            <a href="/cases" class="hover:text-[#A67B5B]">View Case</a>
+            <a href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
+            <a href="/volunteer/projects" class="hover:text-[#A67B5B]">Volunteer</a>
+          </nav>
         </div>
         <!-- Help Section -->
         <div>
-          <div class="font-bold mb-2">Help</div>
-          <a href="#" class="block">Contact Us</a>
-          <a href="#" class="block">Terms & Conditions</a>
-          <a href="#" class="block">Privacy Policy</a>
+          <div class="font-bold text-lg mb-3 tracking-wide">Help</div>
+          <nav class="flex flex-col gap-2 text-base">
+            <a href="#" class="hover:text-[#A67B5B]">Contact Us</a>
+            <a href="#" class="hover:text-[#A67B5B]">Terms & Conditions</a>
+            <a href="#" class="hover:text-[#A67B5B]">Privacy Policy</a>
+          </nav>
         </div>
         <!-- Social Media Section -->
         <div>
-          <div class="font-bold mb-2">Social Media</div>
-          <div class="flex gap-3 text-xl mt-2 mb-1">
-            <a href="#"><i class="fab fa-twitter"></i></a>
-            <a href="#"><i class="fab fa-facebook"></i></a>
-            <a href="#"><i class="fab fa-instagram"></i></a>
+          <div class="font-bold text-lg mb-3 tracking-wide">Connect</div>
+          <div class="flex gap-5 text-2xl mb-3 mt-2">
+            <a href="#" class="bg-white rounded-full p-2 shadow hover:bg-[#ede7e0] transition"><i
+                class="fab fa-twitter"></i></a>
+            <a href="#" class="bg-white rounded-full p-2 shadow hover:bg-[#ede7e0] transition"><i
+                class="fab fa-facebook"></i></a>
+            <a href="#" class="bg-white rounded-full p-2 shadow hover:bg-[#ede7e0] transition"><i
+                class="fab fa-instagram"></i></a>
           </div>
-          <div class="text-sm mt-1">Twitter Facebook Instagram</div>
+          <div class="text-base mt-2 text-[#a67b5b]">Follow us for updates</div>
         </div>
       </div>
+      <!-- 分隔线 -->
+      <div class="border-t border-[#ede7e0] mt-10 pt-6 text-center text-sm text-[#7a7a7a]">
+        © 2025 FindMe. All Rights Reserved.
+      </div>
     </footer>
+
+    <Chatbot />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
+import Chatbot from '../Components/Chatbot.vue'
+
 
 const dropdownOpen = ref(null)
 function toggleDropdown(menu) {

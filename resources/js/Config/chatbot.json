@@ -1,0 +1,52 @@
+{
+  "mainMenu": [
+    {"label": "Report Missing Person", "action": "reportMissing"},
+    {"label": "Search/Filter Missing Person", "action": "searchFilter"},
+    {"label": "Become Volunteer / Community Projects", "action": "volunteer"},
+    {"label": "FAQ / Help", "action": "faq"},
+    {"label": "Contact Support / Others", "action": "contactSupport"},
+    {"label": "Back to Main Menu", "action": "mainMenu"}
+  ],
+  "faq": [
+    {
+      "question": "How do I report a missing person?",
+      "answer": "You need to log in to your account, then click 'Report Missing Person' and fill in the required details. You can also use this chatbot to access the reporting form."
+    },
+    {
+      "question": "How do I report a sighting?",
+      "answer": "First, search and select the missing person case. On the case detail page, click the 'Report Sighting' button to submit your information. Please provide as much detail as possible."
+    },
+    {
+      "question": "How do I search for a missing person?",
+      "answer": "You can search by name or filter by age, gender, or last seen location using this chatbot or from the platform’s main search page."
+    },
+    {
+      "question": "How do I become a volunteer?",
+      "answer": "Log in to your account, then click 'Become a Volunteer' and fill out the application. You can also browse current community projects to join."
+    },
+    {
+      "question": "How do I earn points?",
+      "answer": "You can earn points by reporting missing persons, submitting sighting reports, sharing cases on social media, and participating in community projects."
+    },
+    {
+      "question": "How do I redeem rewards?",
+      "answer": "After earning enough points, go to the 'My Rewards' page and select the reward you want to redeem. Points will be deducted upon successful redemption."
+    },
+    {
+      "question": "Is my personal information safe?",
+      "answer": "Yes, your information is protected with strong encryption and strict access controls. Only authorized administrators can access your data."
+    },
+    {
+      "question": "Can I report anonymously?",
+      "answer": "You must register and log in to submit a report, but your identity will only be shared with authorized personnel and not made public."
+    },
+    {
+      "question": "How do I contact support?",
+      "answer": "You can leave a message here in the chatbot under 'Contact Support,' or email us at support@email.com. Our team will assist you as soon as possible."
+    },
+    {
+      "question": "Others",
+      "answer": "For any other questions, please use 'Contact Support' in this chatbot or check our website for more information."
+    }
+  ]
+}

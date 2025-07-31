@@ -17,6 +17,10 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/missing-persons', function() {
+    return Inertia::render('MissingPersons/Index');
+});
+
 Route::post('/missing-persons', [MissingReportController::class, 'store'])->name('missing-persons.store');
 
 

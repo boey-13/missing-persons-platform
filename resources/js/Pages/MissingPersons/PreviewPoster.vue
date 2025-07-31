@@ -29,7 +29,6 @@ function copyLink() {
 </script>
 
 <template>
-    <!-- Outer background is light beige -->
     <div class="min-h-screen bg-[#f5f3f0] flex flex-col items-center py-8 font-['Poppins'] text-[#333]">
         <!-- Page header area-->
         <div class="w-full flex items-center justify-between px-6 mb-2">
@@ -123,7 +122,7 @@ function copyLink() {
                     </div>
                 </div>
             </div>
-            <!-- Section 2: Last seen -->
+            <!-- Last seen -->
             <div class="w-full border-l-4 border-[#b12a1a] pl-4 mb-7">
                 <div class="mb-2 text-[22px]"><span class="font-bold text-[#b12a1a]">Last Seen Location:</span>
                     <span class="font-medium text-gray-900">{{ props.report.last_seen_location }}</span>
@@ -136,7 +135,7 @@ function copyLink() {
                     </span>
                 </div>
             </div>
-            <!-- Section 3: Description -->
+            <!-- Description -->
             <div class="w-full grid grid-cols-2 gap-8 mb-7">
                 <div>
                     <div class="font-bold text-gray-800 mb-1 text-lg">Physical Description:</div>
@@ -161,7 +160,7 @@ function copyLink() {
                 <div class="text-[22px] font-medium tracking-wider mb-4">
                     <i class="fas fa-phone-alt mr-2"></i>{{ props.report.contact_number || 'Not Provided' }}
                 </div>
-                <!-- FindMe Logo, platform and link, now in normal flow -->
+                <!-- FindMe Logo-->
                 <img src="/images/findme_logo.png" alt="FindMe Logo" class="h-10 mb-1" />
                 <div class="text-[#b12a1a] font-extrabold text-lg mb-1">FindMe Platform</div>
                 <a href="https://findme.com" target="_blank" class="text-blue-600 underline text-base mb-4">

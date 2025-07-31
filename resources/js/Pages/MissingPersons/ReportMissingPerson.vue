@@ -30,7 +30,7 @@ const form = useForm({
 const errors = ref({})
 const photoPreviews = ref([])
 
-// --- Handle photo upload & preview (multiple images) ---
+// --- Handle photo upload & preview---
 function onPhotosChange(e) {
   const files = Array.from(e.target.files)
   form.photos = files
@@ -126,7 +126,7 @@ watch([mapLat, mapLng], showMap)
 
 const uploading = ref(false)
 
-// --- Frontend validation (simple sample) ---
+// --- Frontend validation ---
 function validateForm() {
   errors.value = {}
 
@@ -236,7 +236,6 @@ function goToHome() {
         <!-- Basic Information -->
         <div class="mb-7">
           <h2 class="font-bold text-lg text-[#b12a1a] mb-2">Basic Information</h2>
-          <!-- ...表单内容如前... -->
           <div class="mb-4">
             <label class="block mb-1">Full Name</label>
             <input v-model="form.full_name" type="text" class="w-full border px-4 py-2 rounded" required />

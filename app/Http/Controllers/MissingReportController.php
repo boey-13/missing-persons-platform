@@ -80,6 +80,98 @@ class MissingReportController extends Controller
         ]);
     }
 
+    public function index(Request $request)
+    {
+        $query = MissingReport::query();
+
+        // Search by full_name
+        if ($request->filled('search')) {
+            $query->where('full_name', 'like', '%' . $request->search . '%');
+        }
+        // Age filter
+        if ($request->filled('ageMin')) {
+            $query->where('age', '>=', $request->ageMin);
+        }
+        if ($request->filled('ageMax')) {
+            $query->where('age', '<=', $request->ageMax);
+        }
+        // Gender filter (multi-select)
+        if ($request->filled('gender')) {
+            $genders = is_array($request->gender) ? $request->gender : explode(',', $request->gender);
+            $query->whereIn('gender', $genders);
+        }
+        // Location filter (multi-select)
+        if ($request->filled('location')) {
+            $locations = is_array($request->location) ? $request->location : explode(',', $request->location);
+            $query->whereIn('last_seen_location', $locations);
+        }
+        // Report time (multi-select)
+        if ($request->filled('reportTime')) {
+            $reportTimes = is_array($request->reportTime) ? $request->reportTime : explode(',', $request->reportTime);
+            $query->where(function ($q) use ($reportTimes) {
+                foreach ($reportTimes as $rt) {
+                    if ($rt === "7")
+                        $q->orWhere('created_at', '>=', now()->subDays(7));
+                    if ($rt === "30")
+                        $q->orWhere('created_at', '>=', now()->subDays(30));
+                    if ($rt === "more")
+                        $q->orWhere('created_at', '<', now()->subDays(30));
+                }
+            });
+        }
+        // Weight filter (字段应该是 weight_kg)
+        if ($request->filled('weightMin')) {
+            $query->where('weight_kg', '>=', $request->weightMin);
+        }
+        if ($request->filled('weightMax')) {
+            $query->where('weight_kg', '<=', $request->weightMax);
+        }
+        // Height filter (字段应该是 height_cm)
+        if ($request->filled('heightMin')) {
+            $query->where('height_cm', '>=', $request->heightMin);
+        }
+        if ($request->filled('heightMax')) {
+            $query->where('height_cm', '<=', $request->heightMax);
+        }
+
+        // Pagination
+        $perPage = $request->input('per_page', 8);
+        $cases = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Format and return
+        $cases->getCollection()->transform(function ($item) {
+            $photoUrl = null;
+            if ($item->photo_paths) {
+                $photos = is_array($item->photo_paths)
+                    ? $item->photo_paths
+                    : json_decode($item->photo_paths, true);
+
+                if (is_array($photos) && count($photos) > 0) {
+                    $photoUrl = asset('storage/' . $photos[0]);
+                }
+            }
+            return [
+                'id' => $item->id,
+                'full_name' => $item->full_name,
+                'age' => $item->age,
+                'gender' => $item->gender,
+                'last_seen_location' => $item->last_seen_location,
+                'height_cm' => $item->height_cm,
+                'weight_kg' => $item->weight_kg,
+                'photo_url' => $photoUrl,
+            ];
+        });
+
+
+        return response()->json([
+            'data' => $cases->items(),
+            'total' => $cases->total(),
+            'current_page' => $cases->currentPage(),
+            'per_page' => $cases->perPage(),
+        ]);
+    }
+
+
 
 
 }
