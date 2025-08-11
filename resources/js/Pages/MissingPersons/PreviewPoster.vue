@@ -75,7 +75,7 @@ function copyLink() {
 
         </div>
         <!-- Responsive Poster Card -->
-        <div class="bg-white rounded-2xl shadow-xl border-2 border-[#ebebeb] flex flex-col items-center relative
+        <div class="bg-white rounded-none shadow-xl border-2 border-[#ebebeb] flex flex-col items-center relative
                 w-[95vw] max-w-[1000px] min-w-[320px] sm:w-[90vw] md:w-[85vw] lg:w-[900px] xl:w-[1000px] py-14 px-8"
             style="box-sizing:border-box;">
             <!-- Top: urgent flag + case number -->
@@ -89,25 +89,25 @@ function copyLink() {
                 style="font-family:'Arial Black',Arial,sans-serif;">
                 MISSING PERSON
             </h1>
-            <!-- Section 1: Basic info -->
+            <!-- Section 1: Basic info (photo centered and larger) -->
             <div
-                class="w-full border-2 border-[#e6d8d8] rounded-xl bg-[#fff8f5] flex flex-row gap-12 mb-7 py-5 px-6 shadow">
+                class="w-full border-2 border-[#e6d8d8] rounded-xl bg-[#fff8f5] flex flex-col items-center gap-4 md:gap-6 mb-7 py-6 px-6 shadow">
                 <!-- Photo -->
                 <div
-                    class="w-[200px] h-[260px] rounded-lg bg-gray-200 border-2 border-gray-400 flex items-center justify-center overflow-hidden shadow-inner">
+                    class="w-[280px] h-[360px] md:w-[320px] md:h-[420px] rounded-lg bg-gray-200 border-2 border-gray-400 flex items-center justify-center overflow-hidden shadow-inner">
                     <template v-if="props.report.photo_paths && props.report.photo_paths.length">
                         <img :src="photoUrl(props.report.photo_paths[0])" alt="Photo"
                             class="w-full h-full object-cover object-center" />
                     </template>
                     <template v-else>
-                        <i class="fas fa-user text-7xl text-white"></i>
+                        <i class="fas fa-user text-8xl text-white"></i>
                     </template>
                 </div>
+                <!-- Big centered name -->
+                <div class="text-3xl md:text-4xl font-extrabold tracking-wide text-center">{{ props.report.full_name }}</div>
+
                 <!-- Basic info -->
-                <div class="flex-1 text-left leading-snug text-[23px] font-sans">
-                    <div class="mb-1.5"><span class="font-bold text-gray-800">Name: </span>
-                        <span class="font-medium">{{ props.report.full_name }}</span>
-                    </div>
+                <div class="w-full max-w-[680px] text-center leading-snug text-[23px] font-sans">
                     <div class="mb-1.5"><span class="font-bold text-gray-800">Gender: </span>
                         <span class="font-medium">{{ props.report.gender }}</span>
                     </div>
@@ -120,15 +120,16 @@ function copyLink() {
                     <div class="mb-1.5"><span class="font-bold text-gray-800">Weight: </span>
                         <span class="font-medium">{{ props.report.weight_kg }} kg</span>
                     </div>
+
                 </div>
             </div>
             <!-- Last seen -->
             <div class="w-full border-l-4 border-[#b12a1a] pl-4 mb-7">
                 <div class="mb-2 text-[22px]"><span class="font-bold text-[#b12a1a]">Last Seen Location:</span>
-                    <span class="font-medium text-gray-900">{{ props.report.last_seen_location }}</span>
+                    <span class="font-semibold text-gray-900 text-[24px] md:text-[26px]">{{ props.report.last_seen_location }}</span>
                 </div>
                 <div class="mb-1 text-[22px]"><span class="font-bold text-[#b12a1a]">Last Seen Date:</span>
-                    <span class="font-medium text-gray-900">
+                    <span class="font-semibold text-gray-900 text-[24px] md:text-[26px]">
                         {{ new Date(props.report.last_seen_date).toLocaleDateString('en-GB', {
                             day: 'numeric', month: 'long', year: 'numeric'
                         }) }}

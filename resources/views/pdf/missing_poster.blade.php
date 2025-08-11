@@ -14,11 +14,15 @@
         }
 
         .poster-wrap {
-            width: 190mm;
-            min-height: 277mm;
-            margin: 0 auto;
-            padding: 10px;
+            /* use @page margins to avoid dompdf blank first page */
+            width: 100%;
+            height: auto;
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
+            page-break-inside: avoid;
+            overflow: hidden;
+            word-break: break-word;
         }
 
         .header-row {
@@ -53,34 +57,33 @@
         .main-title {
             width: 100%;
             text-align: center;
-            font-size: 44px;
+            font-size: 40px;
             font-weight: 900;
             color: #b12a1a;
-            margin: 38px 0 25px 0;
+            margin: 6mm 0 4mm 0;
             letter-spacing: 2px;
         }
 
         .info-card {
-            background: #fffaf6;
-            border: 1.7px solid #e6d8d8;
-            padding: 18px 28px 18px 28px;
+            background: #fff8f5;
+            border: 2px solid #e6d8d8;
+            padding: 5mm;
             box-sizing: border-box;
-            margin: 0 auto 0 auto;
-            width: 90%;
+            margin: 0 auto 4mm auto;
+            width: 100%;
             text-align: center;
             display: flex;
-            gap: 32px;
+            flex-direction: column;
+            gap: 4mm;
             align-items: center;
-            /* 上下居中 */
             justify-content: center;
-            /* 左右居中 */
         }
 
         .photo-box {
-            width: 175px;
-            height: 200px;
-            background: #eee;
-            border: 2px solid #bbb;
+            width: 68mm;
+            height: 85mm;
+            background: #e5e7eb; /* gray-200 */
+            border: 2px solid #9ca3af; /* gray-400 */
             display: flex;
             /* flex模式 */
             align-items: center;
@@ -90,18 +93,20 @@
             overflow: hidden;
             margin: 0 auto;
             /* 再保证父容器时，盒子本身也居中 */
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
         }
 
         .photo-box img {
-            max-width: 165px;
-            max-height: 190px;
+            max-width: 100%;
+            max-height: 100%;
             object-fit: cover;
         }
 
         .main-info-details {
-            font-size: 19px;
+            font-size: 10pt;
             color: #222;
-            padding-top: 10px;
+            padding-top: 2mm;
         }
 
         .main-info-details b {
@@ -109,26 +114,38 @@
         }
 
         .last-seen-row {
-            margin: 0 auto 14px auto;
-            width: 97%;
+            margin: 0 0 4mm 0;
+            width: 100%;
             text-align: left;
+            border-left: 4px solid #b12a1a;
+            padding-left: 4mm;
         }
 
         .last-seen-row span {
             font-weight: 700;
             color: #b12a1a;
-            font-size: 18px;
+            font-size: 11pt;
+        }
+
+        .last-seen-value {
+            font-size: 11pt;
+            color: #111;
+        }
+
+        .name-large {
+            font-size: 14pt;
+            font-weight: 800;
         }
 
         .desc-table {
             width: 100%;
-            margin: 0 auto 10px auto;
+            margin: 0 0 4mm 0;
             border-collapse: collapse;
         }
 
         .desc-table td {
-            font-size: 16px;
-            padding: 0 30px 8px 0;
+            font-size: 11pt;
+            padding: 0 20px 4px 0;
             vertical-align: top;
         }
 
@@ -142,32 +159,32 @@
             border: none;
             border-top: 2px solid #ddd;
             width: 100%;
-            margin: 24px 0 14px 0;
+            margin: 4mm 0 3mm 0;
         }
 
         .contact-title {
-            font-size: 21px;
-            font-weight: bold;
-            color: #b12a1a;
+            font-size: 12pt;
+            font-weight: 900;
+            color: #222;
             letter-spacing: 2px;
             text-align: center;
-            margin-bottom: 6px;
+            margin-bottom: 3mm;
         }
 
         .contact-info {
-            font-size: 18px;
+            font-size: 11pt;
             text-align: center;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 4mm;
         }
 
         .logo-row {
             text-align: center;
-            margin-top: 2px;
+            margin-top: 2mm;
         }
 
         .logo-row img {
-            height: 25px;
+            height: 18px;
             vertical-align: middle;
             margin: 0 7px;
         }
@@ -175,7 +192,7 @@
         .platform-link {
             color: #b12a1a;
             font-weight: bold;
-            font-size: 15px;
+            font-size: 10pt;
             text-align: center;
             display: block;
         }
@@ -188,17 +205,18 @@
         }
 
         .share-reminder {
-            margin-top: 8px;
-            font-size: 15px;
+            margin-top: 3mm;
+            font-size: 10pt;
             color: #444;
             text-align: center;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 0;
         }
 
-        /* Ensure the poster is always horizontally centered even when printed */
+        /* A4 sizing for dompdf */
         @page {
-            margin: 0;
+            size: A4 portrait;
+            margin: 10mm; /* set page margins here; wrapper has no outer margin */
         }
     </style>
 </head>
@@ -210,7 +228,7 @@
             <span class="case-no">Case No: {{ $report->id }}</span>
         </div>
         <div class="main-title">MISSING PERSON</div>
-        <div class="info-card">
+        <div class="info-card" style="width:190mm; margin:0 auto;">
             <div class="photo-box">
                 @if (!empty($photo_paths) && count($photo_paths) > 0)
                     <img src="{{ public_path('storage/' . $photo_paths[0]) }}" alt="Photo">
@@ -219,7 +237,7 @@
                 @endif
             </div>
             <div class="main-info-details">
-                <div><b>Name:</b> {{ $report->full_name }}</div>
+                <div class="name-large">{{ $report->full_name }}</div>
                 <div><b>Gender:</b> {{ $report->gender }}</div>
                 <div><b>Age:</b> {{ $report->age }}</div>
                 <div><b>Height:</b> {{ $report->height_cm }} cm</div>
@@ -227,9 +245,9 @@
             </div>
         </div>
         <div class="last-seen-row">
-            <span>Last Seen Location:</span>{{ $report->last_seen_location ?? '-' }}<br>
+            <span>Last Seen Location:</span> <span class="last-seen-value">{{ $report->last_seen_location ?? '-' }}</span><br>
             <span>Last Seen
-                Date:</span>{{ $report->last_seen_date ? \Carbon\Carbon::parse($report->last_seen_date)->format('j F Y') : '-' }}
+                Date:</span> <span class="last-seen-value">{{ $report->last_seen_date ? \Carbon\Carbon::parse($report->last_seen_date)->format('j F Y') : '-' }}</span>
         </div>
         <table class="desc-table">
             <tr>

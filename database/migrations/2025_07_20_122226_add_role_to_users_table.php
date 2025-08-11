@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('user'); // 可以是: user, volunteer, admin
+            $table->enum('role', ['user','volunteer','admin'])->default('user');
         });
     }
 

@@ -16,7 +16,7 @@ class PosterController extends Controller
     $pdf = PDF::loadView('pdf.missing_poster', [
         'report' => $report,
         'photo_paths' => $photo_paths,
-    ]);
+    ])->setPaper('a4', 'portrait');
 
     $filename = 'missing_poster_case_' . $report->id . '.pdf';
     return $pdf->download($filename);
