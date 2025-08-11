@@ -17,3 +17,4 @@ class AdminMiddleware
         abort(403, 'Unauthorized.');
     }
 }
+

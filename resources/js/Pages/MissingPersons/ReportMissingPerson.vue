@@ -78,10 +78,12 @@ const map = ref(null)
 const mapLat = ref(3.139)
 const mapLng = ref(101.6869)
 const mapZoom = ref(12)
+let geocoder = null
 onMounted(() => {
   const interval = setInterval(() => {
     if (window.google && window.google.maps && window.google.maps.places) {
       clearInterval(interval)
+      geocoder = new window.google.maps.Geocoder()
       const input = document.getElementById('autocomplete')
       if (!input) return
       const autocomplete = new window.google.maps.places.Autocomplete(input)
@@ -116,6 +118,24 @@ function showMap() {
     marker.value = new window.google.maps.Marker({
       position: { lat: mapLat.value, lng: mapLng.value },
       map: map.value,
+      draggable: true,
+    })
+
+    // Drag marker to change location
+    marker.value.addListener('dragend', (e) => {
+      const pos = e.latLng
+      mapLat.value = pos.lat()
+      mapLng.value = pos.lng()
+      reverseGeocode(pos.lat(), pos.lng())
+    })
+
+    // Click map to set marker
+    map.value.addListener('click', (e) => {
+      const pos = e.latLng
+      mapLat.value = pos.lat()
+      mapLng.value = pos.lng()
+      marker.value.setPosition(pos)
+      reverseGeocode(pos.lat(), pos.lng())
     })
   } else {
     map.value.setCenter({ lat: mapLat.value, lng: mapLng.value })
@@ -203,6 +223,17 @@ function goToLogin() {
 }
 function goToHome() {
   router.visit('/')
+}
+
+function reverseGeocode(lat, lng) {
+  if (!geocoder) return
+  geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+    if (status === 'OK' && results && results.length) {
+      form.last_seen_location = results[0].formatted_address
+    } else {
+      form.last_seen_location = `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+    }
+  })
 }
 </script>
 

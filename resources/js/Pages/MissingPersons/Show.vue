@@ -217,10 +217,10 @@ function closePhotoModal() {
             class="px-7 py-2 rounded bg-sky-500 text-white hover:bg-sky-600 text-base font-semibold shadow transition">
           Download Poster
           </Link>
-          <button
+          <Link :href="`/missing-persons/${report.id}/report-sighting`"
             class="px-7 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 text-base font-semibold shadow transition">
             Submit Sighting
-          </button>
+          </Link>
         </div>
 
         <!-- Map Section -->

@@ -33,6 +33,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Log successful login
+        \App\Models\SystemLog::log(
+            'user_login',
+            "User logged in successfully: " . auth()->user()->email,
+            ['user_id' => auth()->id(), 'ip' => $request->ip()]
+        );
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -41,10 +48,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request)
     {
+        $user = auth()->user();
+        
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        // Log logout
+        if ($user) {
+            \App\Models\SystemLog::log(
+                'user_logout',
+                "User logged out: " . $user->email,
+                ['user_id' => $user->id, 'ip' => $request->ip()]
+            );
+        }
 
         return redirect('/login')->with('status', 'You have successfully logged out.');
     }

@@ -1,5 +1,21 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { Link, usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
+
+const page = usePage()
+const currentUrl = computed(() => page.url)
+
+function isActive(path) {
+  return currentUrl.value?.startsWith(path)
+}
+
+const baseClasses = 'block px-3 py-2 rounded transition-colors'
+const activeClasses = 'bg-white text-[#335a3b] font-semibold'
+const inactiveClasses = 'text-white hover:bg-white/10'
+
+function linkClasses(path, extra = '') {
+  return `${baseClasses} ${isActive(path) ? activeClasses : inactiveClasses} ${extra}`
+}
 </script>
 
 <template>
@@ -7,14 +23,14 @@ import { Link } from '@inertiajs/vue3'
     <aside class="w-64 bg-[#335a3b] text-white p-6">
       <h2 class="text-2xl font-extrabold mb-6">Admin Panel</h2>
       <nav class="space-y-2">
-        <Link href="/admin/dashboard" class="block px-3 py-2 rounded hover:bg-white/10">Dashboard Home</Link>
-        <Link href="/admin/missing-reports" class="block px-3 py-2 rounded hover:bg-white/10">Manage Missing Persons</Link>
-        <Link href="/admin/sighting-reports" class="block px-3 py-2 rounded hover:bg-white/10">Manage Sighting Reports</Link>
-        <Link href="/admin/community-projects" class="block px-3 py-2 rounded hover:bg-white/10">Manage Community Project</Link>
-        <Link href="/admin/rewards" class="block px-3 py-2 rounded hover:bg-white/10">Manage Rewards</Link>
-        <Link href="/admin/users" class="block px-3 py-2 rounded hover:bg-white/10">Manage Users</Link>
-        <Link href="/admin/logs" class="block px-3 py-2 rounded hover:bg-white/10">System Logs</Link>
-        <Link href="/dashboard" class="block px-3 py-2 rounded bg-white text-[#335a3b] font-semibold mt-4">Back To Main Dashboard</Link>
+        <Link :class="linkClasses('/admin/dashboard')" href="/admin/dashboard">Dashboard Home</Link>
+        <Link :class="linkClasses('/admin/missing-reports')" href="/admin/missing-reports">Manage Missing Persons</Link>
+        <Link :class="linkClasses('/admin/sighting-reports')" href="/admin/sighting-reports">Manage Sighting Reports</Link>
+        <Link :class="linkClasses('/admin/community-projects')" href="/admin/community-projects">Manage Community Project</Link>
+        <Link :class="linkClasses('/admin/rewards')" href="/admin/rewards">Manage Rewards</Link>
+        <Link :class="linkClasses('/admin/users')" href="/admin/users">Manage Users</Link>
+        <Link :class="linkClasses('/admin/logs')" href="/admin/logs">System Logs</Link>
+        <Link :class="linkClasses('/dashboard', 'mt-4')" href="/dashboard">Back To Main Dashboard</Link>
       </nav>
     </aside>
     <main class="flex-1 p-8">

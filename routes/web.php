@@ -9,6 +9,8 @@ use App\Http\Controllers\MissingReportController;
 use App\Http\Controllers\PosterController;
 use App\Models\MissingReport;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\SightingReportController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -41,18 +43,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'admin'])->group(function () {
-    // Admin Dashboard Home
+    // Admin Dashboard
     Route::get('/admin/dashboard', function () {
-        return Inertia::render('Admin/Dashboard', [
-            'stats' => [
-                'totalMissingCases' => MissingReport::count(),
-                // Placeholder for pending sightings until the sightings feature is implemented
-                'pendingSightings' => 0,
-                'totalUsers' => User::count(),
-            ],
-        ]);
-    })->name('admin.dashboard');
+        // minimal example stats; adjust as needed
+        $stats = [
+            'totalMissingCases' => \App\Models\MissingReport::count(),
+            'pendingSightings' => \App\Models\SightingReport::where('status', 'Pending')->count(),
+            'totalUsers' => \App\Models\User::count(),
+        ];
+        return Inertia::render('Admin/Dashboard', [ 'stats' => $stats ]);
+    })->middleware(['auth'])->name('admin.dashboard');
 
     // Manage Missing Person Reports
     Route::get('/admin/missing-reports', function () {
@@ -78,33 +78,65 @@ Route::middleware(['auth', 'admin'])->group(function () {
     })->name('admin.missing-reports');
 
     // Placeholders for other admin pages
-    Route::get('/admin/sighting-reports', fn() => Inertia::render('Admin/ManageSightingReports'))
+    Route::get('/admin/sighting-reports', [App\Http\Controllers\SightingReportController::class, 'adminIndex'])
+        ->middleware(['auth'])
         ->name('admin.sighting-reports');
+    Route::post('/admin/sighting-reports/{sighting}/status', [App\Http\Controllers\SightingReportController::class, 'updateStatus'])
+        ->middleware(['auth'])
+        ->name('admin.sighting-reports.status');
+    Route::get('/admin/sighting-reports/{sighting}', [App\Http\Controllers\SightingReportController::class, 'show'])
+        ->middleware(['auth'])
+        ->name('admin.sighting-reports.show');
+        
     Route::get('/admin/community-projects', fn() => Inertia::render('Admin/ManageCommunityProjects'))
+        ->middleware(['auth'])
         ->name('admin.community-projects');
+
     Route::get('/admin/rewards', fn() => Inertia::render('Admin/ManageRewards'))
+        ->middleware(['auth'])
         ->name('admin.rewards');
+
     Route::get('/admin/users', function () {
         $users = User::orderBy('created_at', 'desc')->limit(50)->get(['id','name','email','role','created_at','updated_at']);
         return Inertia::render('Admin/ManageUsers', [ 'users' => $users ]);
-    })->name('admin.users');
+    })->middleware(['auth'])->name('admin.users');
+
     Route::post('/admin/users/{user}/role', function (\Illuminate\Http\Request $request, User $user) {
         $request->validate(['role' => 'required|in:user,volunteer,admin']);
+        $oldRole = $user->role;
         $user->role = $request->role;
         $user->save();
+
+        // Log the role change
+        \App\Models\SystemLog::log(
+            'user_role_changed',
+            "User role changed from {$oldRole} to {$request->role}",
+            ['user_id' => $user->id, 'user_email' => $user->email, 'old_role' => $oldRole, 'new_role' => $request->role]
+        );
+
         return back();
-    })->name('admin.users.role');
+    })->middleware(['auth'])->name('admin.users.role');
+
     Route::delete('/admin/users/{user}', function (User $user) {
         // prevent self-delete of the current admin
         if (auth()->id() === $user->id) {
             return back()->with('error', 'You cannot delete your own account.');
         }
+
+        // Log the user deletion
+        \App\Models\SystemLog::log(
+            'user_deleted',
+            "User account deleted: {$user->email}",
+            ['deleted_user_id' => $user->id, 'deleted_user_email' => $user->email, 'deleted_user_role' => $user->role]
+        );
+
         $user->delete();
         return back();
-    })->name('admin.users.delete');
-    Route::get('/admin/logs', fn() => Inertia::render('Admin/SystemLogs'))
+    })->middleware(['auth'])->name('admin.users.delete');
+    Route::get('/admin/logs', [App\Http\Controllers\SystemLogController::class, 'index'])
+        ->middleware(['auth'])
         ->name('admin.logs');
-});
+// });
 
 Route::post('/forgot-password', function (Illuminate\Http\Request $request) {
     $request->validate(['email' => 'required|email']);
@@ -126,10 +158,17 @@ Route::get('/missing-persons/{id}/preview-poster', function ($id) {
 })->name('missing-person.preview-poster');
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('log.activity')
     ->name('logout');
 
 Route::get('/missing-persons/{id}/download-poster', [PosterController::class, 'downloadPoster'])
     ->name('missing-person.download-poster');
+
+// Sighting reports tied to a specific missing report
+Route::get('/missing-persons/{id}/report-sighting', [SightingReportController::class, 'create'])
+    ->name('sightings.create');
+Route::post('/missing-persons/{id}/sightings', [SightingReportController::class, 'store'])
+    ->name('sightings.store');
 
 
 

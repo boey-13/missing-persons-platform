@@ -61,7 +61,14 @@ class MissingReportController extends Controller
         $validated['user_id'] = Auth::id();
         $validated['case_status'] = 'Missing';
 
-        MissingReport::create($validated);
+        $report = MissingReport::create($validated);
+
+        // Log the missing report creation
+        \App\Models\SystemLog::log(
+            'report_created',
+            "Missing person report created: {$validated['full_name']}",
+            ['report_id' => $report->id, 'reporter_name' => $validated['reporter_name']]
+        );
 
         return redirect()->back()->with('success', 'Report submitted!');
     }

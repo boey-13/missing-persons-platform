@@ -42,6 +42,11 @@ class MissingReport extends Model
         return $this->belongsTo(\App\Models\User::class);
     }
 
+    public function sightings()
+    {
+        return $this->hasMany(\App\Models\SightingReport::class);
+    }
+
 }
 
 
