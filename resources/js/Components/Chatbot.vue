@@ -153,7 +153,8 @@ function handleMenuClick(item) {
     } else if (item.action === "volunteer") {
         messages.value.push({
             role: "system",
-            text: "Please log in to become a volunteer. [Login Button]",
+            text: "Become a Volunteer by submitting an application.",
+            actionBtn: { label: 'Go to Volunteer Application', url: '/volunteer/apply' }
         });
     } else if (item.action === "contactSupport") {
         messages.value.push({

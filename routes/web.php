@@ -11,6 +11,7 @@ use App\Models\MissingReport;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\SightingReportController;
+use App\Http\Controllers\VolunteerApplicationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -41,6 +42,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Volunteer application & home
+    Route::get('/volunteer/apply', [VolunteerApplicationController::class, 'create'])->name('volunteer.apply');
+    Route::post('/volunteer/apply', [VolunteerApplicationController::class, 'store'])->name('volunteer.apply.store');
+    Route::get('/volunteer', [VolunteerApplicationController::class, 'home'])->name('volunteer.home');
 });
 
     // Admin Dashboard
@@ -95,6 +101,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/rewards', fn() => Inertia::render('Admin/ManageRewards'))
         ->middleware(['auth'])
         ->name('admin.rewards');
+
+    // Admin: manage volunteer applications
+    Route::get('/admin/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])
+        ->middleware(['auth'])
+        ->name('admin.volunteers');
+    Route::post('/admin/volunteers/{application}/status', [\App\Http\Controllers\VolunteerApplicationController::class, 'updateStatus'])
+        ->middleware(['auth'])
+        ->name('admin.volunteers.status');
 
     Route::get('/admin/users', function () {
         $users = User::orderBy('created_at', 'desc')->limit(50)->get(['id','name','email','role','created_at','updated_at']);

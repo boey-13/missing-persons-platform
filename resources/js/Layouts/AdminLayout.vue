@@ -26,6 +26,7 @@ function linkClasses(path, extra = '') {
         <Link :class="linkClasses('/admin/dashboard')" href="/admin/dashboard">Dashboard Home</Link>
         <Link :class="linkClasses('/admin/missing-reports')" href="/admin/missing-reports">Manage Missing Persons</Link>
         <Link :class="linkClasses('/admin/sighting-reports')" href="/admin/sighting-reports">Manage Sighting Reports</Link>
+        <Link :class="linkClasses('/admin/volunteers')" href="/admin/volunteers">Manage Volunteers</Link>
         <Link :class="linkClasses('/admin/community-projects')" href="/admin/community-projects">Manage Community Project</Link>
         <Link :class="linkClasses('/admin/rewards')" href="/admin/rewards">Manage Rewards</Link>
         <Link :class="linkClasses('/admin/users')" href="/admin/users">Manage Users</Link>

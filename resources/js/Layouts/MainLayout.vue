@@ -31,7 +31,7 @@
           <div v-if="dropdownOpen === 'volunteer'" @click.away="dropdownOpen = null"
             class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-50">
             <a href="/volunteer/projects" class="block px-4 py-2 hover:bg-[#e7d6c3]">Community Project</a>
-            <a href="/volunteer/become" class="block px-4 py-2 hover:bg-[#e7d6c3]">Become Volunteer</a>
+            <a href="/volunteer/apply" class="block px-4 py-2 hover:bg-[#e7d6c3]">Become Volunteer</a>
           </div>
         </div>
         <a href="#">About Us</a>
