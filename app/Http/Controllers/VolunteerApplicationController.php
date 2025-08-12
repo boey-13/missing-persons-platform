@@ -148,7 +148,7 @@ class VolunteerApplicationController extends Controller
                     'type' => 'volunteer_application',
                     'title' => 'Volunteer Application Approved',
                     'message' => 'Congratulations! Your volunteer application has been approved.',
-                    'data' => ['application_id' => $application->id],
+                    'data' => ['application_id' => $application->id, 'action' => 'open_projects'],
                 ]);
             } elseif ($data['status'] === 'Rejected') {
                 // If there is no other approved application for this user, demote back to user
@@ -165,8 +165,12 @@ class VolunteerApplicationController extends Controller
                     'user_id' => $user->id,
                     'type' => 'volunteer_application',
                     'title' => 'Volunteer Application Rejected',
-                    'message' => $data['reason'] ? ('Rejected: ' . $data['reason']) : 'Your volunteer application has been rejected.',
-                    'data' => ['application_id' => $application->id, 'reason' => $data['reason'] ?? null],
+                    'message' => ($data['reason'] ? ('Rejected: ' . $data['reason'] . '. ') : 'Your volunteer application has been rejected. ') . 'Click to re-apply.',
+                    'data' => [
+                        'application_id' => $application->id,
+                        'reason' => $data['reason'] ?? null,
+                        'action' => 'reapply'
+                    ],
                 ]);
             }
         }

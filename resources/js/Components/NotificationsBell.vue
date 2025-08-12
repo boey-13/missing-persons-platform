@@ -49,10 +49,11 @@ function timeAgo(iso) {
 }
 
 function onItemClick(n) {
-  if (n.data && n.data.reason && n.title?.includes('Rejected')) {
-    alert(`Your volunteer application was rejected. Reason: ${n.data.reason}`)
-    window.location.href = '/volunteer/apply'
-  } else if (n.title?.includes('Approved')) {
+  if (n.data && (n.data.action === 'reapply' || n.title?.includes('Rejected'))) {
+    const reason = n.data?.reason ? `Reason: ${n.data.reason}` : 'You can re-apply with additional info.'
+    const go = confirm(`Your volunteer application was rejected.\n${reason}\n\nRe-apply now?`)
+    if (go) window.location.href = '/volunteer/apply'
+  } else if (n.data?.action === 'open_projects' || n.title?.includes('Approved')) {
     window.location.href = '/volunteer/projects'
   }
 }
