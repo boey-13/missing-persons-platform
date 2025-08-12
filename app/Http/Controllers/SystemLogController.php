@@ -63,6 +63,7 @@ class SystemLogController extends Controller
                 'total' => $logs->total(),
                 'current_page' => $logs->currentPage(),
                 'per_page' => $logs->perPage(),
+                'last_page' => $logs->lastPage(),
             ],
             'filters' => [
                 'actions' => $actions,

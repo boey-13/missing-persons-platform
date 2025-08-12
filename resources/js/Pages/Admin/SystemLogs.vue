@@ -20,7 +20,7 @@ const filters = ref({
 })
 
 function applyFilters() {
-  router.get('/admin/logs', filters.value, { preserveState: true })
+  router.get('/admin/logs', { ...filters.value, page: 1 }, { preserveState: true })
 }
 
 function clearFilters() {
@@ -131,11 +131,17 @@ function getActionColor(action) {
       </table>
     </div>
 
-    <!-- Pagination Info -->
-    <div class="mt-4 text-center text-gray-600">
-      Showing {{ (pagination.current_page - 1) * pagination.per_page + 1 }} to 
-      {{ Math.min(pagination.current_page * pagination.per_page, pagination.total) }} 
-      of {{ pagination.total }} logs
+    <!-- Pagination -->
+    <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+      <div>
+        Showing {{ (pagination.current_page - 1) * pagination.per_page + 1 }} to 
+        {{ Math.min(pagination.current_page * pagination.per_page, pagination.total) }} 
+        of {{ pagination.total }} logs
+      </div>
+      <div class="flex gap-2">
+        <button :disabled="pagination.current_page <= 1" @click="router.get('/admin/logs', { ...filters, page: pagination.current_page - 1 }, { preserveState: true })" class="px-3 py-1 rounded border disabled:opacity-50">Prev</button>
+        <button :disabled="pagination.current_page >= pagination.last_page" @click="router.get('/admin/logs', { ...filters, page: pagination.current_page + 1 }, { preserveState: true })" class="px-3 py-1 rounded border disabled:opacity-50">Next</button>
+      </div>
     </div>
   </div>
 </template>
