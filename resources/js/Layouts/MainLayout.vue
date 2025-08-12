@@ -67,7 +67,7 @@
     </main>
 
     <!--  FOOTER  -->
-    <footer class="bg-[#ededed] text-[#47312a] pt-16 pb-10 border-t border-[#ede7e0]">
+    <footer class="mt-auto bg-[#ededed] text-[#47312a] pt-16 pb-10 border-t border-[#ede7e0]">
       <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 px-6 md:px-10">
         <!-- About Section -->
         <div>
