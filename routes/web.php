@@ -47,6 +47,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/volunteer/apply', [VolunteerApplicationController::class, 'create'])->name('volunteer.apply');
     Route::post('/volunteer/apply', [VolunteerApplicationController::class, 'store'])->name('volunteer.apply.store');
     Route::get('/volunteer', [VolunteerApplicationController::class, 'home'])->name('volunteer.home');
+
+    // Volunteer community projects (only approved volunteers)
+    Route::get('/volunteer/projects', function () {
+        $user = auth()->user();
+        if (!$user || $user->role !== 'volunteer') {
+            return redirect()->route('volunteer.apply')->with('status', 'Only approved volunteers can access Community Projects.');
+        }
+        return Inertia::render('Volunteer/Projects');
+    })->name('volunteer.projects');
 });
 
     // Admin Dashboard
