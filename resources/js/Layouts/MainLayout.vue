@@ -8,7 +8,7 @@
         <span class="italic text-2xl">FindMe</span>
       </div>
       <!-- Navigation Bar -->
-      <nav class="flex gap-8 text-lg font-normal">
+      <nav class="flex gap-8 text-lg font-normal items-center">
         <a href="/">Home</a>
         <!-- Missing Person Dropdown -->
         <div class="relative">
@@ -57,7 +57,7 @@
             </template>
           </div>
         </div>
-
+        <NotificationsBell />
       </nav>
     </header>
 
@@ -124,6 +124,7 @@
 import { ref, computed } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import Chatbot from '../Components/Chatbot.vue'
+import NotificationsBell from '../Components/NotificationsBell.vue'
 
 
 const dropdownOpen = ref(null)

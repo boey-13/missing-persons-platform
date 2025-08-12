@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\SightingReportController;
 use App\Http\Controllers\VolunteerApplicationController;
+use Illuminate\Http\Request as HttpRequest;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -51,11 +52,28 @@ Route::middleware('auth')->group(function () {
     // Volunteer community projects (only approved volunteers)
     Route::get('/volunteer/projects', function () {
         $user = auth()->user();
-        if (!$user || $user->role !== 'volunteer') {
+        if (!$user) {
+            return redirect()->route('login');
+        }
+        $hasApproved = \App\Models\VolunteerApplication::where('user_id', $user->id)
+            ->where('status', 'Approved')
+            ->exists();
+        if (!$hasApproved) {
             return redirect()->route('volunteer.apply')->with('status', 'Only approved volunteers can access Community Projects.');
         }
         return Inertia::render('Volunteer/Projects');
     })->name('volunteer.projects');
+
+    // Lightweight notifications feed (JSON)
+    Route::get('/notifications', function (HttpRequest $request) {
+        $user = $request->user();
+        if (!$user) return response()->json([]);
+        $items = \App\Models\Notification::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get(['id','title','message','data','created_at']);
+        return response()->json($items);
+    })->name('notifications.index');
 });
 
     // Admin Dashboard

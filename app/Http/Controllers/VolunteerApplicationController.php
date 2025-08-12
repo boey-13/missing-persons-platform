@@ -135,6 +135,14 @@ class VolunteerApplicationController extends Controller
                 // Promote to volunteer on approval
                 $user->role = 'volunteer';
                 $user->save();
+                // notify
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'volunteer_application',
+                    'title' => 'Volunteer Application Approved',
+                    'message' => 'Congratulations! Your volunteer application has been approved.',
+                    'data' => ['application_id' => $application->id],
+                ]);
             } elseif ($data['status'] === 'Rejected') {
                 // If there is no other approved application for this user, demote back to user
                 $hasOtherApproved = VolunteerApplication::where('user_id', $user->id)
@@ -145,6 +153,14 @@ class VolunteerApplicationController extends Controller
                     $user->role = 'user';
                     $user->save();
                 }
+                // notify rejection
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'volunteer_application',
+                    'title' => 'Volunteer Application Rejected',
+                    'message' => $data['reason'] ? ('Rejected: ' . $data['reason']) : 'Your volunteer application has been rejected.',
+                    'data' => ['application_id' => $application->id, 'reason' => $data['reason'] ?? null],
+                ]);
             }
         }
 
