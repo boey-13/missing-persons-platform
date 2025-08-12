@@ -129,11 +129,22 @@ class VolunteerApplicationController extends Controller
         $application->status_reason = $data['reason'] ?? null;
         $application->save();
 
-        if ($data['status'] === 'Approved') {
-            $user = $application->user;
-            if ($user) {
+        $user = $application->user;
+        if ($user) {
+            if ($data['status'] === 'Approved') {
+                // Promote to volunteer on approval
                 $user->role = 'volunteer';
                 $user->save();
+            } elseif ($data['status'] === 'Rejected') {
+                // If there is no other approved application for this user, demote back to user
+                $hasOtherApproved = VolunteerApplication::where('user_id', $user->id)
+                    ->where('id', '!=', $application->id)
+                    ->where('status', 'Approved')
+                    ->exists();
+                if (!$hasOtherApproved && $user->role === 'volunteer') {
+                    $user->role = 'user';
+                    $user->save();
+                }
             }
         }
 
