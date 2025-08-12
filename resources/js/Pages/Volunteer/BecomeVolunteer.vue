@@ -1,6 +1,8 @@
 <script setup>
 import { Link, useForm, usePage } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
+import MainLayout from '@/Layouts/MainLayout.vue'
+defineOptions({ layout: MainLayout })
 
 const props = defineProps({
   profile: Object,
