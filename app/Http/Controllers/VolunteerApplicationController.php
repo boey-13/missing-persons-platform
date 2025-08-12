@@ -103,6 +103,13 @@ class VolunteerApplicationController extends Controller
 
     public function home()
     {
+        $user = auth()->user();
+        $hasApproved = \App\Models\VolunteerApplication::where('user_id', $user->id)
+            ->where('status', 'Approved')
+            ->exists();
+        if (!$hasApproved) {
+            return redirect()->route('volunteer.apply')->with('status', 'Only approved volunteers can access this page.');
+        }
         return Inertia::render('Volunteer/Home');
     }
 
