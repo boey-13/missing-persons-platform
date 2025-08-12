@@ -29,14 +29,38 @@ function toggle() {
       <div class="p-3 border-b font-semibold">Notifications</div>
       <div class="max-h-80 overflow-auto">
         <div v-if="!items.length" class="p-4 text-gray-500 text-sm">No notifications</div>
-        <div v-for="n in items" :key="n.id" class="p-3 border-b text-sm">
-          <div class="font-medium">{{ n.title }}</div>
-          <div class="text-gray-600" v-text="n.message"></div>
+        <div v-for="n in items" :key="n.id" class="p-3 border-b text-sm flex justify-between items-start">
+          <div>
+            <div class="font-medium">{{ n.title }}</div>
+            <div class="text-gray-600" v-text="n.message"></div>
+          </div>
+          <button v-if="!n.read_at" class="text-xs text-blue-600 hover:underline" @click="markRead(n)">Mark read</button>
         </div>
       </div>
     </div>
   </div>
   
 </template>
+
+<script>
+export default {
+  methods: {
+    async markRead(n) {
+      try {
+        await fetch('/notifications/read', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({ ids: [n.id] })
+        })
+        n.read_at = new Date().toISOString()
+      } catch (e) {}
+    }
+  }
+}
+</script>
 
 

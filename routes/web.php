@@ -74,6 +74,16 @@ Route::middleware('auth')->group(function () {
             ->get(['id','title','message','data','created_at']);
         return response()->json($items);
     })->name('notifications.index');
+
+    Route::post('/notifications/read', function (HttpRequest $request) {
+        $user = $request->user();
+        if (!$user) return response()->json(['ok' => false]);
+        $ids = $request->input('ids', []);
+        \App\Models\Notification::where('user_id', $user->id)
+            ->whereIn('id', $ids)
+            ->update(['read_at' => now()]);
+        return response()->json(['ok' => true]);
+    })->name('notifications.read');
 });
 
     // Admin Dashboard
