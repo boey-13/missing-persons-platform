@@ -35,7 +35,7 @@ class SystemLogController extends Controller
             $query->where('description', 'like', '%' . $request->search . '%');
         }
 
-        $logs = $query->orderBy('created_at', 'desc')->paginate(20);
+        $logs = $query->orderBy('created_at', 'desc')->paginate(10);
 
         $data = $logs->getCollection()->transform(function ($log) {
             return [

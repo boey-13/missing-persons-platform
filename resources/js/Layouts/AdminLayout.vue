@@ -20,7 +20,7 @@ function linkClasses(path, extra = '') {
 
 <template>
   <div class="min-h-screen flex bg-[#f6f7f9] text-[#1f2937]">
-    <aside class="w-64 bg-[#335a3b] text-white p-6">
+    <aside class="w-64 bg-[#335a3b] text-white p-6 sticky top-0 h-screen overflow-y-auto">
       <h2 class="text-2xl font-extrabold mb-6">Admin Panel</h2>
       <nav class="space-y-2">
         <Link :class="linkClasses('/admin/dashboard')" href="/admin/dashboard">Dashboard Home</Link>
@@ -34,7 +34,7 @@ function linkClasses(path, extra = '') {
         <Link :class="linkClasses('/dashboard', 'mt-4')" href="/dashboard">Back To Main Dashboard</Link>
       </nav>
     </aside>
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-8 overflow-y-auto">
       <slot />
     </main>
   </div>
