@@ -1,5 +1,7 @@
 <script setup>
+import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router } from '@inertiajs/vue3'
+defineOptions({ layout: AdminLayout })
 const props = defineProps({ applications: Object })
 
 function setStatus(id, status) {
