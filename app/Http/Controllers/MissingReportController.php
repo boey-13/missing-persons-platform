@@ -107,22 +107,32 @@ class MissingReportController extends Controller
             $genders = is_array($request->gender) ? $request->gender : explode(',', $request->gender);
             $query->whereIn('gender', $genders);
         }
-        // Location filter (multi-select)
+        // Location filter (multi-select) - use fuzzy match, as stored value is often full address
         if ($request->filled('location')) {
             $locations = is_array($request->location) ? $request->location : explode(',', $request->location);
-            $query->whereIn('last_seen_location', $locations);
+            $query->where(function ($q) use ($locations) {
+                foreach ($locations as $loc) {
+                    $loc = trim($loc);
+                    if ($loc !== '') {
+                        $q->orWhere('last_seen_location', 'like', "%{$loc}%");
+                    }
+                }
+            });
         }
-        // Report time (multi-select)
+        // Report time (multi-select) - mutually inclusive ranges
         if ($request->filled('reportTime')) {
             $reportTimes = is_array($request->reportTime) ? $request->reportTime : explode(',', $request->reportTime);
             $query->where(function ($q) use ($reportTimes) {
                 foreach ($reportTimes as $rt) {
-                    if ($rt === "7")
+                    if ($rt === "7") {
                         $q->orWhere('created_at', '>=', now()->subDays(7));
-                    if ($rt === "30")
-                        $q->orWhere('created_at', '>=', now()->subDays(30));
-                    if ($rt === "more")
+                    } elseif ($rt === "30") {
+                        $q->orWhere(function ($qq) {
+                            $qq->where('created_at', '>=', now()->subDays(30));
+                        });
+                    } elseif ($rt === "more") {
                         $q->orWhere('created_at', '<', now()->subDays(30));
+                    }
                 }
             });
         }
