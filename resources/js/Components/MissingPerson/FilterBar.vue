@@ -141,8 +141,8 @@ function onClear() {
 
     <!-- Action Buttons -->
     <div class="flex gap-5 mt-5">
-      <button type="button" class="rounded-xl px-5 py-2 bg-[#A67B5B] text-white hover:bg-[#876046] shadow" @click="apply">Apply</button>
-      <button type="button" class="rounded-xl px-5 py-2 bg-[#f5e6da] text-[#6B4C3B] hover:bg-[#e7d6c3] border border-[#D9C4B1]" @click="clear">Clear Filter</button>
+      <button type="button" class="rounded-xl px-5 py-2 bg-[#A67B5B] text-white hover:bg-[#876046] shadow" @click="onApply">Apply</button>
+      <button type="button" class="rounded-xl px-5 py-2 bg-[#f5e6da] text-[#6B4C3B] hover:bg-[#e7d6c3] border border-[#D9C4B1]" @click="onClear">Clear Filter</button>
     </div>
   </form>
 </template>
