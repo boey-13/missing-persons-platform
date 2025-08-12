@@ -15,11 +15,11 @@ use App\Http\Controllers\VolunteerApplicationController;
 use Illuminate\Http\Request as HttpRequest;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+    $recent = \App\Models\MissingReport::orderByDesc('created_at')->limit(8)->get([
+        'id','full_name','age','last_seen_location','photo_paths','created_at'
+    ]);
+    return Inertia::render('Home', [
+        'recent' => $recent,
     ]);
 });
 
