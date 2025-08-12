@@ -6,7 +6,10 @@ const items = ref([])
 let timerId = null
 
 async function fetchFeed() {
-  const res = await fetch('/notifications', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+  const res = await fetch(`/notifications?t=${Date.now()}` , {
+    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' },
+    cache: 'no-store'
+  })
   items.value = await res.json()
 }
 
@@ -56,12 +59,20 @@ function onItemClick(n) {
 
 onMounted(async () => {
   await fetchFeed()
-  timerId = setInterval(fetchFeed, 10000)
+  timerId = setInterval(fetchFeed, 5000)
+  document.addEventListener('visibilitychange', onVisibility)
 })
 
 onBeforeUnmount(() => {
   if (timerId) clearInterval(timerId)
+  document.removeEventListener('visibilitychange', onVisibility)
 })
+
+async function onVisibility() {
+  if (document.visibilityState === 'visible') {
+    await fetchFeed()
+  }
+}
 </script>
 
 <template>
