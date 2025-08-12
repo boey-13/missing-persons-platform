@@ -18,7 +18,7 @@
           </button>
           <div v-if="dropdownOpen === 'missing'" @click.away="dropdownOpen = null"
             class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-50">
-            <a href="/cases" class="block px-4 py-2 hover:bg-[#e7d6c3]">View Case</a>
+            <a href="/missing-persons" class="block px-4 py-2 hover:bg-[#e7d6c3]">View Case</a>
             <a href="/missing-persons/report" class="block px-4 py-2 hover:bg-[#e7d6c3]">Report Missing Person</a>
           </div>
         </div>
@@ -82,7 +82,7 @@
           <div class="font-bold text-lg mb-3 tracking-wide">Quick Links</div>
           <nav class="flex flex-col gap-2 text-base">
             <a href="#" class="hover:text-[#A67B5B]">About</a>
-            <a href="/cases" class="hover:text-[#A67B5B]">View Case</a>
+            <a href="/missing-persons" class="hover:text-[#A67B5B]">View Case</a>
             <a href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
             <a href="/volunteer/projects" class="hover:text-[#A67B5B]">Volunteer</a>
           </nav>
