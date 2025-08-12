@@ -9,9 +9,27 @@ async function load() {
   items.value = await res.json()
 }
 
-function toggle() {
+async function toggle() {
   open.value = !open.value
-  if (open.value) load()
+  if (open.value) {
+    await load()
+    const unreadIds = items.value.filter(n => !n.read_at).map(n => n.id)
+    if (unreadIds.length) {
+      try {
+        await fetch('/notifications/read', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({ ids: unreadIds })
+        })
+        const now = new Date().toISOString()
+        items.value.forEach(n => { if (!n.read_at) n.read_at = now })
+      } catch (e) {}
+    }
+  }
 }
 </script>
 

@@ -71,7 +71,7 @@ Route::middleware('auth')->group(function () {
         $items = \App\Models\Notification::where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->limit(20)
-            ->get(['id','title','message','data','created_at']);
+            ->get(['id','title','message','data','created_at','read_at']);
         return response()->json($items);
     })->name('notifications.index');
 
