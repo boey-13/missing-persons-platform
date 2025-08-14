@@ -61,8 +61,16 @@ Route::middleware('auth')->group(function () {
         if (!$hasApproved) {
             return redirect()->route('volunteer.apply')->with('status', 'Only approved volunteers can access Community Projects.');
         }
-        return Inertia::render('Volunteer/Projects');
+        return app(\App\Http\Controllers\VolunteerProjectController::class)->index();
     })->name('volunteer.projects');
+    
+    // Volunteer project applications
+    Route::post('/volunteer/projects/{project}/apply', [\App\Http\Controllers\VolunteerProjectController::class, 'apply'])
+        ->middleware(['auth'])
+        ->name('volunteer.projects.apply');
+    Route::get('/volunteer/my-applications', [\App\Http\Controllers\VolunteerProjectController::class, 'myApplications'])
+        ->middleware(['auth'])
+        ->name('volunteer.my-applications');
 
     // Lightweight notifications feed (JSON)
     Route::get('/notifications', function (HttpRequest $request) {
@@ -131,9 +139,30 @@ Route::middleware('auth')->group(function () {
         ->middleware(['auth'])
         ->name('admin.sighting-reports.show');
         
-    Route::get('/admin/community-projects', fn() => Inertia::render('Admin/ManageCommunityProjects'))
+    // Admin: Community Projects Management
+    Route::get('/admin/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'index'])
         ->middleware(['auth'])
         ->name('admin.community-projects');
+    Route::post('/admin/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'store'])
+        ->middleware(['auth'])
+        ->name('admin.community-projects.store');
+    Route::put('/admin/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'update'])
+        ->middleware(['auth'])
+        ->name('admin.community-projects.update');
+    Route::delete('/admin/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'destroy'])
+        ->middleware(['auth'])
+        ->name('admin.community-projects.destroy');
+    
+    // Admin: Project Applications Management
+    Route::get('/admin/community-projects/applications', [\App\Http\Controllers\CommunityProjectController::class, 'getApplications'])
+        ->middleware(['auth'])
+        ->name('admin.community-projects.applications');
+    Route::post('/admin/community-projects/applications/{application}/approve', [\App\Http\Controllers\CommunityProjectController::class, 'approveApplication'])
+        ->middleware(['auth'])
+        ->name('admin.community-projects.applications.approve');
+    Route::post('/admin/community-projects/applications/{application}/reject', [\App\Http\Controllers\CommunityProjectController::class, 'rejectApplication'])
+        ->middleware(['auth'])
+        ->name('admin.community-projects.applications.reject');
 
     Route::get('/admin/rewards', fn() => Inertia::render('Admin/ManageRewards'))
         ->middleware(['auth'])

@@ -23,12 +23,12 @@ const defaultAvatar = '/images/default-avatar.png'
       <div class="text-sm text-gray-600">AGE: {{ person.age || 'xx' }}</div>
       <div class="text-sm text-gray-600 leading-snug truncate max-w-[200px] mx-auto">{{ person.last_seen_location || 'xx' }}</div>
     </div>
-    <button
-      class="mt-auto px-4 py-1 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition"
-      @click="$inertia.visit(`/missing-person/${person.id}`)"
+    <Link
+      :href="`/missing-persons/${person.id}`"
+      class="mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
     >
       View Details
-    </button>
+    </Link>
   </div>
 </template>
 

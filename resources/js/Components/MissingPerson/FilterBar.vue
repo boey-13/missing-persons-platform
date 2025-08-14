@@ -76,73 +76,163 @@ function onClear() {
 </script>
 
 <template>
-  <form class="space-y-5 text-[#333]">
-    <div>
-      <div class="font-bold text-xl text-[#6B4C3B] mb-3">Filter</div>
-    </div>
-    <div>
-      <div class="font-semibold mb-1">Age Range</div>
-      <div class="flex gap-2">
-        <input type="number" min="0" max="120" v-model="form.ageMin" placeholder="Min" class="w-20 input input-bordered" />
-        <span class="self-center">-</span>
-        <input type="number" min="0" max="120" v-model="form.ageMax" placeholder="Max" class="w-20 input input-bordered" />
+  <!-- Header -->
+  <div class="mb-6">
+    <h3 class="text-xl font-bold text-gray-800 mb-1">Search Filters</h3>
+    <p class="text-sm text-gray-500">Refine your search to find specific cases</p>
+  </div>
+
+  <form class="space-y-6">
+    <!-- Age Range -->
+    <div class="space-y-3">
+      <label class="block text-sm font-semibold text-gray-700">Age Range</label>
+      <div class="flex items-center gap-3">
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="0" 
+            max="120" 
+            v-model="form.ageMin" 
+            placeholder="Min age" 
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors shadow-sm"
+          />
+        </div>
+        <span class="text-gray-400 font-medium">to</span>
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="0" 
+            max="120" 
+            v-model="form.ageMax" 
+            placeholder="Max age" 
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors shadow-sm"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Gender -->
-    <div class="mb-4">
-      <label class="block font-medium mb-2">Gender</label>
-      <div class="flex flex-col gap-1">
-        <label v-for="g in genderOptions" :key="g" class="flex items-center gap-2">
-          <input type="checkbox" v-model="form.gender" :value="g" /> {{ g }}
+    <div class="space-y-3">
+      <label class="block text-sm font-semibold text-gray-700">Gender</label>
+      <div class="space-y-2">
+        <label v-for="g in genderOptions" :key="g" class="flex items-center p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors shadow-sm">
+          <input 
+            type="checkbox" 
+            v-model="form.gender" 
+            :value="g" 
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span class="ml-3 text-sm font-medium text-gray-700">{{ g }}</span>
         </label>
       </div>
     </div>
 
-    <!-- Location (Malaysia States) -->
-    <div class="mb-4">
-      <label class="block font-medium mb-2">Location</label>
-      <div class="grid grid-cols-2 gap-1 max-h-36 overflow-y-auto">
-        <label v-for="loc in states" :key="loc" class="flex items-center gap-2">
-          <input type="checkbox" v-model="form.location" :value="loc" /> {{ loc }}
+    <!-- Location -->
+    <div class="space-y-3">
+      <label class="block text-sm font-semibold text-gray-700">Location</label>
+      <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-2 bg-white shadow-sm">
+        <label v-for="loc in states" :key="loc" class="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors">
+          <input 
+            type="checkbox" 
+            v-model="form.location" 
+            :value="loc" 
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span class="ml-3 text-sm text-gray-700">{{ loc }}</span>
         </label>
       </div>
     </div>
 
     <!-- Report Time -->
-    <div class="mb-4">
-      <label class="block font-medium mb-2">Report Time</label>
-      <div class="flex flex-col gap-1">
-        <label v-for="opt in reportTimeOptions" :key="opt.value" class="flex items-center gap-2">
-          <input type="checkbox" v-model="form.reportTime" :value="opt.value" /> {{ opt.label }}
+    <div class="space-y-3">
+      <label class="block text-sm font-semibold text-gray-700">Report Time</label>
+      <div class="space-y-2">
+        <label v-for="opt in reportTimeOptions" :key="opt.value" class="flex items-center p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors shadow-sm">
+          <input 
+            type="checkbox" 
+            v-model="form.reportTime" 
+            :value="opt.value" 
+            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span class="ml-3 text-sm font-medium text-gray-700">{{ opt.label }}</span>
         </label>
       </div>
     </div>
 
     <!-- Weight Range -->
-    <div class="mb-4">
-      <label class="block font-medium mb-2">Weight (kg)</label>
-      <div class="flex gap-2">
-        <input type="number" min="0" max="200" v-model="form.weightMin" placeholder="Min" class="w-20 input input-bordered" />
-        <span class="self-center">-</span>
-        <input type="number" min="0" max="200" v-model="form.weightMax" placeholder="Max" class="w-20 input input-bordered" />
+    <div class="space-y-3">
+      <label class="block text-sm font-semibold text-gray-700">Weight (kg)</label>
+      <div class="flex items-center gap-3">
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="0" 
+            max="200" 
+            v-model="form.weightMin" 
+            placeholder="Min weight" 
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors shadow-sm"
+          />
+        </div>
+        <span class="text-gray-400 font-medium">to</span>
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="0" 
+            max="200" 
+            v-model="form.weightMax" 
+            placeholder="Max weight" 
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors shadow-sm"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Height Range -->
-    <div class="mb-4">
-      <label class="block font-medium mb-2">Height (cm)</label>
-      <div class="flex gap-2">
-        <input type="number" min="50" max="250" v-model="form.heightMin" placeholder="Min" class="w-20 input input-bordered" />
-        <span class="self-center">-</span>
-        <input type="number" min="50" max="250" v-model="form.heightMax" placeholder="Max" class="w-20 input input-bordered" />
+    <div class="space-y-3">
+      <label class="block text-sm font-semibold text-gray-700">Height (cm)</label>
+      <div class="flex items-center gap-3">
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="50" 
+            max="250" 
+            v-model="form.heightMin" 
+            placeholder="Min height" 
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors shadow-sm"
+          />
+        </div>
+        <span class="text-gray-400 font-medium">to</span>
+        <div class="flex-1">
+          <input 
+            type="number" 
+            min="50" 
+            max="250" 
+            v-model="form.heightMax" 
+            placeholder="Max height" 
+            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors shadow-sm"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex gap-5 mt-5">
-      <button type="button" class="rounded-xl px-5 py-2 bg-[#A67B5B] text-white hover:bg-[#876046] shadow" @click="onApply">Apply</button>
-      <button type="button" class="rounded-xl px-5 py-2 bg-[#f5e6da] text-[#6B4C3B] hover:bg-[#e7d6c3] border border-[#D9C4B1]" @click="onClear">Clear Filter</button>
+    <div class="pt-4 border-t border-gray-200">
+      <div class="flex flex-col gap-3">
+        <button 
+          type="button" 
+          @click="onApply"
+          class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          Apply Filters
+        </button>
+        <button 
+          type="button" 
+          @click="onClear"
+          class="w-full bg-white text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 border border-gray-300 shadow-sm hover:shadow-md"
+        >
+          Clear All
+        </button>
+      </div>
     </div>
   </form>
 </template>

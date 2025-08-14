@@ -77,9 +77,9 @@ onMounted(fetchCases)
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#fcf8f4]">
+  <div class="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
     <!-- Filter Bar -->
-    <aside class="hidden md:block md:w-72 min-h-screen bg-[#fcf8f4] border-r border-[#e3d9cc]">
+    <aside class="hidden md:block md:w-72 min-h-screen bg-gradient-to-b from-white to-gray-50 border-r border-gray-200 shadow-sm">
       <div class="sticky top-0 p-8">
         <FilterBar :filters="filters" @apply="onFilterApply" @clear="onFilterClear" />
       </div>
@@ -96,7 +96,7 @@ onMounted(fetchCases)
           @keyup.enter="onSearch"
           type="text"
           placeholder="Search by name..."
-          class="flex-1 rounded-xl border border-[#e3d9cc] px-6 py-3 bg-[#fff] text-base focus:outline-none focus:ring-2 focus:ring-[#A67B5B] shadow"
+          class="flex-1 rounded-xl border border-[#e3d9cc] px-6 py-3 bg-white text-base focus:outline-none focus:ring-2 focus:ring-[#A67B5B] shadow-sm"
         />
         <button
           @click="onSearch"
