@@ -21,6 +21,7 @@ const showStatusUpdateModal = ref(false)
 // Current report data
 const currentReport = ref(null)
 const selectedReportId = ref(null)
+const selectedReports = ref([]) // For multi-select
 
 // Forms
 const rejectForm = useForm({
@@ -31,6 +32,19 @@ const rejectForm = useForm({
 const statusUpdateForm = useForm({
   new_status: ''
 })
+
+// Get available status options based on current status
+function getAvailableStatusOptions(currentStatus) {
+  const statusFlow = {
+    'Pending': ['Approved', 'Rejected'],
+    'Approved': ['Missing', 'Found', 'Closed'],
+    'Rejected': ['Approved'], // Can be re-approved if user fixes issues
+    'Missing': ['Found', 'Closed'],
+    'Found': ['Closed'],
+    'Closed': [] // Terminal state
+  }
+  return statusFlow[currentStatus] || []
+}
 
 // Preset rejection reasons
 const presetRejectionReasons = [
@@ -112,6 +126,31 @@ function openStatusUpdateModal(report) {
   showStatusUpdateModal.value = true
 }
 
+function openBulkStatusUpdateModal() {
+  if (selectedReports.value.length === 0) {
+    alert('Please select at least one report to update.')
+    return
+  }
+  showStatusUpdateModal.value = true
+}
+
+function toggleReportSelection(report) {
+  const index = selectedReports.value.findIndex(r => r.id === report.id)
+  if (index > -1) {
+    selectedReports.value.splice(index, 1)
+  } else {
+    selectedReports.value.push(report)
+  }
+}
+
+function selectAllReports() {
+  selectedReports.value = [...props.items]
+}
+
+function clearSelection() {
+  selectedReports.value = []
+}
+
 function approveReport() {
   router.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
     status: 'Approved'
@@ -124,15 +163,38 @@ function approveReport() {
 }
 
 function updateStatus() {
-  router.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
-    status: statusUpdateForm.new_status
-  }, {
-    onSuccess: () => {
+  if (selectedReportId.value) {
+    // Single report update
+    router.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
+      status: statusUpdateForm.new_status
+    }, {
+      onSuccess: () => {
+        showStatusUpdateModal.value = false
+        selectedReportId.value = null
+        statusUpdateForm.reset()
+      }
+    })
+  } else if (selectedReports.value.length > 0) {
+    // Bulk update
+    const promises = selectedReports.value.map(report => 
+      fetch(`/admin/missing-reports/${report.id}/status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ status: statusUpdateForm.new_status })
+      })
+    )
+    
+    Promise.all(promises).then(() => {
       showStatusUpdateModal.value = false
-      selectedReportId.value = null
+      selectedReports.value = []
       statusUpdateForm.reset()
-    }
-  })
+      // Refresh the page to show updated data
+      window.location.reload()
+    })
+  }
 }
 
 function rejectReport() {
@@ -257,9 +319,43 @@ function handleImageLoad(event) {
 
     <!-- Reports Table -->
     <div class="bg-white rounded-xl shadow overflow-hidden">
+      <!-- Bulk Actions -->
+      <div v-if="selectedReports.length > 0" class="bg-blue-50 border-b border-blue-200 p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <span class="text-sm font-medium text-blue-900">
+              {{ selectedReports.length }} report{{ selectedReports.length > 1 ? 's' : '' }} selected
+            </span>
+            <button 
+              @click="openBulkStatusUpdateModal"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              Update Status
+            </button>
+          </div>
+          <button 
+            @click="clearSelection"
+            class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            Clear Selection
+          </button>
+        </div>
+      </div>
+      
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50">
           <tr>
+            <th class="px-4 py-3 text-left">
+              <div class="flex items-center space-x-2">
+                <input 
+                  type="checkbox" 
+                  @change="selectAllReports"
+                  :checked="selectedReports.length === props.items.length && props.items.length > 0"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="text-xs text-gray-500">All</span>
+              </div>
+            </th>
             <th class="px-4 py-3 text-left">Case ID</th>
             <th class="px-4 py-3 text-left">Name</th>
             <th class="px-4 py-3 text-left">Age/Gender</th>
@@ -272,6 +368,14 @@ function handleImageLoad(event) {
         </thead>
         <tbody>
           <tr v-for="row in props.items" :key="row.id" class="border-t hover:bg-gray-50">
+            <td class="px-4 py-3">
+              <input 
+                type="checkbox" 
+                @change="toggleReportSelection(row)"
+                :checked="selectedReports.some(r => r.id === row.id)"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </td>
             <td class="px-4 py-3 font-medium">#{{ row.id }}</td>
             <td class="px-4 py-3 font-medium">{{ row.name }}</td>
             <td class="px-4 py-3">{{ row.age }}/{{ row.gender }}</td>
@@ -711,13 +815,27 @@ function handleImageLoad(event) {
       <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold">Update Report Status</h2>
+            <h2 class="text-xl font-bold">
+              {{ selectedReportId ? 'Update Report Status' : 'Bulk Update Status' }}
+            </h2>
             <button @click="showStatusUpdateModal = false" class="text-gray-500 hover:text-black">
               ✕
             </button>
           </div>
           
-          <p class="text-gray-600 mb-6">Select a new status for this missing person report.</p>
+          <div v-if="selectedReportId" class="mb-4">
+            <p class="text-gray-600 mb-6">Select a new status for this missing person report.</p>
+          </div>
+          <div v-else class="mb-4">
+            <p class="text-gray-600 mb-6">
+              Update status for {{ selectedReports.length }} selected report{{ selectedReports.length > 1 ? 's' : '' }}.
+            </p>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p class="text-sm text-yellow-800">
+                <strong>Note:</strong> This will update all selected reports to the same status, regardless of their current status.
+              </p>
+            </div>
+          </div>
           
           <div class="grid grid-cols-1 gap-4">
             <div>
@@ -728,12 +846,14 @@ function handleImageLoad(event) {
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Missing">Missing</option>
-                <option value="Found">Found</option>
-                <option value="Closed">Closed</option>
+                <option v-if="selectedReportId" v-for="status in getAvailableStatusOptions(currentReport?.status || '')" :key="status" :value="status">
+                  {{ status }}
+                </option>
+                <option v-if="!selectedReportId" value="Approved">Approved</option>
+                <option v-if="!selectedReportId" value="Rejected">Rejected</option>
+                <option v-if="!selectedReportId" value="Missing">Missing</option>
+                <option v-if="!selectedReportId" value="Found">Found</option>
+                <option v-if="!selectedReportId" value="Closed">Closed</option>
               </select>
             </div>
           </div>
@@ -741,7 +861,7 @@ function handleImageLoad(event) {
           <div class="flex gap-3 pt-4">
             <button 
               @click="updateStatus"
-              :disabled="statusUpdateForm.processing"
+              :disabled="statusUpdateForm.processing || !statusUpdateForm.new_status"
               class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
             >
               {{ statusUpdateForm.processing ? 'Updating...' : 'Update Status' }}
