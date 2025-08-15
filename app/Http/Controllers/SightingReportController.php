@@ -6,12 +6,30 @@ use App\Models\MissingReport;
 use App\Models\SightingReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Services\NotificationService;
 
 class SightingReportController extends Controller
 {
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
-        $items = SightingReport::orderBy('created_at', 'desc')->paginate(15);
+        $query = SightingReport::with('missingReport')->orderBy('created_at', 'desc');
+        
+        // Filter by missing report ID if provided
+        if ($request->filled('missing_report_id')) {
+            $query->where('missing_report_id', $request->missing_report_id);
+        }
+        
+        // Filter by status if provided
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Search by location if provided
+        if ($request->filled('search')) {
+            $query->where('location', 'like', '%' . $request->search . '%');
+        }
+
+        $items = $query->paginate(15);
         $data = $items->getCollection()->transform(function ($r) {
             return [
                 'id' => $r->id,
@@ -19,6 +37,8 @@ class SightingReportController extends Controller
                 'sighted_at' => optional($r->sighted_at)->toDateTimeString(),
                 'reporter' => $r->reporter_name,
                 'status' => $r->status,
+                'missing_report_id' => $r->missing_report_id,
+                'missing_person_name' => $r->missingReport ? $r->missingReport->full_name : 'Unknown',
             ];
         });
 
@@ -27,7 +47,12 @@ class SightingReportController extends Controller
             'pagination' => [
                 'total' => $items->total(),
                 'current_page' => $items->currentPage(),
-                'per_page' => $items->PerPage(),
+                'per_page' => $items->perPage(),
+            ],
+            'filters' => [
+                'missing_report_id' => $request->missing_report_id,
+                'status' => $request->status,
+                'search' => $request->search,
             ],
         ]);
     }
@@ -97,14 +122,11 @@ class SightingReportController extends Controller
 
         $sighting = SightingReport::create($validated);
 
-        // Log the sighting submission
-        \App\Models\SystemLog::log(
-            'sighting_submitted',
-            "Sighting report submitted for missing person: {$report->full_name}",
-            ['sighting_id' => $sighting->id, 'missing_report_id' => $report->id]
-        );
+        // Send notifications
+        NotificationService::sightingReportSubmitted($sighting);
+        NotificationService::newSightingReportForAdmin($sighting);
 
-        return redirect()->route('missing-persons.show', $report->id)->with('status', 'Sighting submitted.');
+        return redirect()->back()->with('success', 'Sighting report submitted successfully!');
     }
 }
 

@@ -95,38 +95,33 @@ Route::middleware('auth')->group(function () {
 });
 
     // Admin Dashboard
-    Route::get('/admin/dashboard', function () {
-        // minimal example stats; adjust as needed
-        $stats = [
-            'totalMissingCases' => \App\Models\MissingReport::count(),
-            'pendingSightings' => \App\Models\SightingReport::where('status', 'Pending')->count(),
-            'totalUsers' => \App\Models\User::count(),
-        ];
-        return Inertia::render('Admin/Dashboard', [ 'stats' => $stats ]);
-    })->middleware(['auth'])->name('admin.dashboard');
+    Route::get('/admin/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])
+        ->middleware(['auth'])
+        ->name('admin.dashboard');
 
     // Manage Missing Person Reports
-    Route::get('/admin/missing-reports', function () {
-        $cases = MissingReport::orderBy('created_at', 'desc')->paginate(15);
-        $data = $cases->getCollection()->transform(function ($item) {
-            return [
-                'id' => $item->id,
-                'name' => $item->full_name,
-                'reporter' => $item->reporter_name,
-                'created_at' => $item->created_at?->toDateTimeString(),
-                'last_seen' => $item->last_seen_location,
-                'status' => $item->case_status,
-            ];
-        });
-        return Inertia::render('Admin/ManageMissingReports', [
-            'items' => $data,
-            'pagination' => [
-                'total' => $cases->total(),
-                'current_page' => $cases->currentPage(),
-                'per_page' => $cases->perPage(),
-            ],
-        ]);
-    })->name('admin.missing-reports');
+    Route::get('/admin/missing-reports', [App\Http\Controllers\AdminController::class, 'missingReports'])
+        ->middleware(['auth'])
+        ->name('admin.missing-reports');
+    
+    Route::get('/admin/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'showMissingReport'])
+        ->middleware(['auth'])
+        ->name('admin.missing-reports.show');
+    Route::get('/admin/missing-reports/{id}/sightings', function($id) {
+        return redirect()->route('admin.sighting-reports', ['missing_report_id' => $id]);
+    })->middleware(['auth'])->name('admin.missing-reports.sightings');
+    
+    Route::get('/admin/missing-reports/{id}/create-project', [App\Http\Controllers\CommunityProjectController::class, 'createFromMissingReport'])
+        ->middleware(['auth'])
+        ->name('admin.missing-reports.create-project');
+    
+    Route::post('/admin/missing-reports/{id}/status', [App\Http\Controllers\AdminController::class, 'updateMissingReportStatus'])
+        ->middleware(['auth'])
+        ->name('admin.missing-reports.status');
+    
+    Route::put('/admin/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'updateMissingReport'])
+        ->middleware(['auth'])
+        ->name('admin.missing-reports.update');
 
     // Placeholders for other admin pages
     Route::get('/admin/sighting-reports', [App\Http\Controllers\SightingReportController::class, 'adminIndex'])
@@ -250,7 +245,10 @@ Route::get('/missing-persons/{id}/report-sighting', [SightingReportController::c
 Route::post('/missing-persons/{id}/sightings', [SightingReportController::class, 'store'])
     ->name('sightings.store');
 
-
+    // Missing Person Reports API
+    Route::get('/api/missing-persons', [App\Http\Controllers\MissingReportController::class, 'index']);
+    Route::get('/api/user/missing-reports', [App\Http\Controllers\MissingReportController::class, 'userReports'])
+        ->middleware(['auth']);
 
 
 require __DIR__ . '/auth.php';

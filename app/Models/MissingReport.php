@@ -31,6 +31,7 @@ class MissingReport extends Model
         'reporter_email',
         'additional_notes',
         'case_status',
+        'rejection_reason',
     ];
 
     protected $casts = [

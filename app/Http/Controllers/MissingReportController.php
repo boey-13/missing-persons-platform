@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MissingReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\NotificationService;
 
 class MissingReportController extends Controller
 {
@@ -59,9 +60,13 @@ class MissingReportController extends Controller
         }
 
         $validated['user_id'] = Auth::id();
-        $validated['case_status'] = 'Missing';
+        $validated['case_status'] = 'Pending';
 
         $report = MissingReport::create($validated);
+
+        // Send notifications
+        NotificationService::missingReportSubmitted($report);
+        NotificationService::newMissingReportForAdmin($report);
 
         // Log the missing report creation
         \App\Models\SystemLog::log(
@@ -70,7 +75,8 @@ class MissingReportController extends Controller
             ['report_id' => $report->id, 'reporter_name' => $validated['reporter_name']]
         );
 
-        return redirect()->back()->with('success', 'Report submitted!');
+        return redirect()->route('missing-persons.index')
+            ->with('success', 'Report submitted!');
     }
 
     public function show($id)
@@ -90,6 +96,9 @@ class MissingReportController extends Controller
     public function index(Request $request)
     {
         $query = MissingReport::query();
+
+        // Only show approved cases to the public
+        $query->where('case_status', 'Approved');
 
         // Search by full_name
         if ($request->filled('search')) {
@@ -176,9 +185,10 @@ class MissingReportController extends Controller
                 'height_cm' => $item->height_cm,
                 'weight_kg' => $item->weight_kg,
                 'photo_url' => $photoUrl,
+                'case_status' => $item->case_status,
+                'created_at' => $item->created_at,
             ];
         });
-
 
         return response()->json([
             'data' => $cases->items(),
@@ -188,7 +198,62 @@ class MissingReportController extends Controller
         ]);
     }
 
+    /**
+     * Get user's own missing reports (including pending ones)
+     */
+    public function userReports(Request $request)
+    {
+        $user = auth()->user();
+        $query = MissingReport::where('user_id', $user->id);
 
+        // Search by full_name
+        if ($request->filled('search')) {
+            $query->where('full_name', 'like', '%' . $request->search . '%');
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('case_status', $request->status);
+        }
+
+        // Pagination
+        $perPage = $request->input('per_page', 10);
+        $cases = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        // Format and return
+        $cases->getCollection()->transform(function ($item) {
+            $photoUrl = null;
+            if ($item->photo_paths) {
+                $photos = is_array($item->photo_paths)
+                    ? $item->photo_paths
+                    : json_decode($item->photo_paths, true);
+
+                if (is_array($photos) && count($photos) > 0) {
+                    $photoUrl = asset('storage/' . $photos[0]);
+                }
+            }
+            return [
+                'id' => $item->id,
+                'full_name' => $item->full_name,
+                'age' => $item->age,
+                'gender' => $item->gender,
+                'last_seen_location' => $item->last_seen_location,
+                'height_cm' => $item->height_cm,
+                'weight_kg' => $item->weight_kg,
+                'photo_url' => $photoUrl,
+                'case_status' => $item->case_status,
+                'rejection_reason' => $item->rejection_reason,
+                'created_at' => $item->created_at,
+            ];
+        });
+
+        return response()->json([
+            'data' => $cases->items(),
+            'total' => $cases->total(),
+            'current_page' => $cases->currentPage(),
+            'per_page' => $cases->perPage(),
+        ]);
+    }
 
 
 }

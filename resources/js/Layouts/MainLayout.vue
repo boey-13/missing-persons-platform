@@ -16,8 +16,8 @@
             Missing Person
             <span :class="{ 'rotate-180': dropdownOpen === 'missing' }">▼</span>
           </button>
-          <div v-if="dropdownOpen === 'missing'" @click.away="dropdownOpen = null"
-            class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-50">
+          <div v-if="dropdownOpen === 'missing'" 
+            class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-40">
             <a href="/missing-persons" class="block px-4 py-2 hover:bg-[#e7d6c3]">View Case</a>
             <a href="/missing-persons/report" class="block px-4 py-2 hover:bg-[#e7d6c3]">Report Missing Person</a>
           </div>
@@ -28,8 +28,8 @@
             Volunteer
             <span :class="{ 'rotate-180': dropdownOpen === 'volunteer' }">▼</span>
           </button>
-          <div v-if="dropdownOpen === 'volunteer'" @click.away="dropdownOpen = null"
-            class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-50">
+          <div v-if="dropdownOpen === 'volunteer'" 
+            class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-40">
             <a href="/volunteer/projects" class="block px-4 py-2 hover:bg-[#e7d6c3]">Community Project</a>
             <a href="/volunteer/apply" class="block px-4 py-2 hover:bg-[#e7d6c3]">Become Volunteer</a>
           </div>
@@ -42,8 +42,8 @@
             {{ currentUser ? currentUser.name : 'Login' }}
             <span :class="{ 'rotate-180': dropdownOpen === 'user' }">▼</span>
           </button>
-          <div v-if="dropdownOpen === 'user'" @click.away="dropdownOpen = null"
-            class="absolute right-0 mt-2 w-52 bg-white text-[#333] rounded shadow z-50">
+          <div v-if="dropdownOpen === 'user'" 
+            class="absolute right-0 mt-2 w-52 bg-white text-[#333] rounded shadow z-40">
             <template v-if="currentUser">
               <a href="/profile" class="block px-4 py-2 hover:bg-[#ddc3a5]">User Profile</a>
               <a href="/admin/dashboard" class="block px-4 py-2 hover:bg-[#ddc3a5]">Admin Dashboard</a>
@@ -60,6 +60,13 @@
         <NotificationsBell />
       </nav>
     </header>
+
+    <!-- Click outside overlay to close dropdowns -->
+    <div 
+      v-if="dropdownOpen" 
+      class="fixed inset-0 z-30" 
+      @click="closeAllDropdowns"
+    ></div>
 
     <!--  MAIN CONTENT -->
     <main>
@@ -121,22 +128,40 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
 import Chatbot from '../Components/Chatbot.vue'
 import NotificationsBell from '../Components/NotificationsBell.vue'
 
-
 const dropdownOpen = ref(null)
+
 function toggleDropdown(menu) {
   dropdownOpen.value = dropdownOpen.value === menu ? null : menu
 }
+
+function closeAllDropdowns() {
+  dropdownOpen.value = null
+}
+
+// Close dropdown on escape key
+function handleEscapeKey(e) {
+  if (e.key === 'Escape' && dropdownOpen.value) {
+    closeAllDropdowns()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscapeKey)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscapeKey)
+})
 
 // Get current user from Inertia page props
 const page = usePage()
 const currentUser = computed(() => page.props.auth?.user)
 </script>
-
 
 <style scoped>
 /* Utility: Flip arrow icon */

@@ -8,7 +8,32 @@ const props = defineProps({
         required: true
     }
 })
+
 const defaultAvatar = '/images/default-avatar.png'
+
+function getStatusColor(status) {
+  const colors = {
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Approved': 'bg-green-100 text-green-800',
+    'Rejected': 'bg-red-100 text-red-800',
+    'Missing': 'bg-blue-100 text-blue-800',
+    'Found': 'bg-green-100 text-green-800',
+    'Closed': 'bg-gray-100 text-gray-800'
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+function getDisplayStatus(status) {
+  const displayStatus = {
+    'Pending': 'Pending Verify',
+    'Approved': 'Verified',
+    'Rejected': 'Rejected',
+    'Missing': 'Missing',
+    'Found': 'Found',
+    'Closed': 'Closed'
+  }
+  return displayStatus[status] || status
+}
 </script>
 
 <template>
@@ -18,6 +43,14 @@ const defaultAvatar = '/images/default-avatar.png'
       <img v-if="person.photo_url" :src="person.photo_url" alt="Photo" class="w-full h-full rounded object-cover" />
       <div v-else class="w-20 h-20 bg-[#87CEEB] rounded-full"></div>
     </div>
+    
+    <!-- Status Badge -->
+    <div v-if="person.case_status" class="mb-2">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="getStatusColor(person.case_status)">
+        {{ getDisplayStatus(person.case_status) }}
+      </span>
+    </div>
+    
     <div class="text-center flex-1 flex flex-col justify-center">
       <div class="font-medium text-md">{{ person.full_name || 'Name:xx' }}</div>
       <div class="text-sm text-gray-600">AGE: {{ person.age || 'xx' }}</div>

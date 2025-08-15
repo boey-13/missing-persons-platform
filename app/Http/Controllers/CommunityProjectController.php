@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CommunityProject;
 use App\Models\ProjectApplication;
+use App\Services\NotificationService;
 use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -83,13 +84,17 @@ class CommunityProjectController extends Controller
             'photo_paths' => $photoPaths
         ]);
 
+        // Send notifications
+        NotificationService::projectCreated($project);
+
         SystemLog::log(
             'project_created',
             'Created new community project: ' . $project->title,
             auth()->user()->id
         );
 
-        return redirect()->back()->with('success', 'Project created successfully!');
+        return redirect()->route('admin.community-projects')
+            ->with('success', 'Project created successfully!');
     }
 
     public function update(Request $request, CommunityProject $project)
@@ -243,5 +248,44 @@ class CommunityProjectController extends Controller
         );
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Show create project form with pre-filled data from missing report
+     */
+    public function createFromMissingReport($missingReportId)
+    {
+        $missingReport = \App\Models\MissingReport::findOrFail($missingReportId);
+        
+        // Pre-fill data based on missing report
+        $prefilledData = [
+            'title' => "Search Operation for {$missingReport->full_name}",
+            'description' => "Community search operation to help locate {$missingReport->full_name}. " . 
+                           ($missingReport->physical_description ? "Physical description: {$missingReport->physical_description}. " : "") .
+                           ($missingReport->additional_notes ? "Additional notes: {$missingReport->additional_notes}" : ""),
+            'location' => $missingReport->last_seen_location,
+            'category' => 'search',
+            'status' => 'active',
+            'volunteers_needed' => 10,
+            'points_reward' => 50,
+            'date' => now()->addDays(3)->format('Y-m-d'), // Default to 3 days from now
+            'time' => '09:00',
+            'duration' => '4 hours'
+        ];
+        
+        return Inertia::render('Admin/CreateProjectFromMissingReport', [
+            'missingReport' => [
+                'id' => $missingReport->id,
+                'full_name' => $missingReport->full_name,
+                'age' => $missingReport->age,
+                'gender' => $missingReport->gender,
+                'last_seen_location' => $missingReport->last_seen_location,
+                'last_seen_date' => $missingReport->last_seen_date,
+                'physical_description' => $missingReport->physical_description,
+                'additional_notes' => $missingReport->additional_notes,
+                'photo_paths' => $missingReport->photo_paths,
+            ],
+            'prefilledData' => $prefilledData
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VolunteerApplication;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -76,29 +77,14 @@ class VolunteerApplicationController extends Controller
             }
         }
 
-        $application = VolunteerApplication::create([
-            'user_id' => $user->id,
-            'motivation' => $validated['motivation'],
-            'skills' => $validated['skills'] ?? [],
-            'languages' => $validated['languages'] ?? [],
-            'availability' => $validated['availability'] ?? [],
-            'preferred_roles' => $validated['preferred_roles'] ?? [],
-            'areas' => $validated['areas'] ?? null,
-            'transport_mode' => $validated['transport_mode'] ?? null,
-            'emergency_contact_name' => $validated['emergency_contact_name'],
-            'emergency_contact_phone' => $validated['emergency_contact_phone'],
-            'prior_experience' => $validated['prior_experience'] ?? null,
-            'supporting_documents' => $paths,
-            'status' => 'Pending',
-        ]);
+        $application = VolunteerApplication::create($validated);
 
-        \App\Models\SystemLog::log('volunteer_application_submitted', 'Volunteer application submitted', [
-            'application_id' => $application->id,
-        ]);
+        // Send notifications
+        NotificationService::volunteerApplicationSubmitted($application);
+        NotificationService::newVolunteerApplicationForAdmin($application);
 
-        return Inertia::render('Volunteer/ApplicationPending', [
-            'application' => $application,
-        ])->with('status', 'Application submitted.');
+        return redirect()->route('volunteer.application-pending')
+            ->with('status', 'Application submitted.');
     }
 
     public function home()
