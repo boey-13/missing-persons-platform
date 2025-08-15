@@ -122,6 +122,7 @@ function openApproveModal(report) {
 
 function openStatusUpdateModal(report) {
   selectedReportId.value = report.id
+  currentReport.value = report
   statusUpdateForm.new_status = report.status
   showStatusUpdateModal.value = true
 }
@@ -131,6 +132,8 @@ function openBulkStatusUpdateModal() {
     alert('Please select at least one report to update.')
     return
   }
+  selectedReportId.value = null // Clear for bulk update
+  currentReport.value = null // Clear for bulk update
   showStatusUpdateModal.value = true
 }
 
@@ -172,6 +175,12 @@ function updateStatus() {
         showStatusUpdateModal.value = false
         selectedReportId.value = null
         statusUpdateForm.reset()
+        // Refresh the page to show updated data
+        window.location.reload()
+      },
+      onError: (errors) => {
+        console.error('Status update failed:', errors)
+        alert('Failed to update status. Please try again.')
       }
     })
   } else if (selectedReports.value.length > 0) {
@@ -193,7 +202,12 @@ function updateStatus() {
       statusUpdateForm.reset()
       // Refresh the page to show updated data
       window.location.reload()
+    }).catch(error => {
+      console.error('Bulk status update failed:', error)
+      alert('Failed to update status. Please try again.')
     })
+  } else {
+    alert('Please select at least one report to update.')
   }
 }
 
@@ -442,6 +456,70 @@ function handleImageLoad(event) {
                     class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
                   >
                     Create Project
+                  </button>
+                </template>
+                
+                <!-- Rejected Status Actions -->
+                <template v-if="row.status === 'Rejected'">
+                  <button 
+                    @click="openStatusUpdateModal(row)"
+                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+                  >
+                    Update Status
+                  </button>
+                </template>
+                
+                <!-- Missing Status Actions -->
+                <template v-if="row.status === 'Missing'">
+                  <button
+                    @click="openEditModal(row)"
+                    class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    @click="openStatusUpdateModal(row)"
+                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+                  >
+                    Update Status
+                  </button>
+                  <button 
+                    @click="viewRelatedSightings(row.id)"
+                    class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors text-xs"
+                  >
+                    Sightings
+                  </button>
+                  <button 
+                    @click="createProjectFromMissing(row.id)"
+                    class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
+                  >
+                    Create Project
+                  </button>
+                </template>
+                
+                <!-- Found Status Actions -->
+                <template v-if="row.status === 'Found'">
+                  <button
+                    @click="openEditModal(row)"
+                    class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    @click="openStatusUpdateModal(row)"
+                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+                  >
+                    Update Status
+                  </button>
+                </template>
+                
+                <!-- Closed Status Actions -->
+                <template v-if="row.status === 'Closed'">
+                  <button
+                    @click="openEditModal(row)"
+                    class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+                  >
+                    Edit
                   </button>
                 </template>
               </div>
@@ -815,26 +893,14 @@ function handleImageLoad(event) {
       <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
         <div class="p-6">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold">
-              {{ selectedReportId ? 'Update Report Status' : 'Bulk Update Status' }}
-            </h2>
+            <h2 class="text-xl font-bold">Update Report Status</h2>
             <button @click="showStatusUpdateModal = false" class="text-gray-500 hover:text-black">
               ✕
             </button>
           </div>
           
-          <div v-if="selectedReportId" class="mb-4">
+          <div class="mb-4">
             <p class="text-gray-600 mb-6">Select a new status for this missing person report.</p>
-          </div>
-          <div v-else class="mb-4">
-            <p class="text-gray-600 mb-6">
-              Update status for {{ selectedReports.length }} selected report{{ selectedReports.length > 1 ? 's' : '' }}.
-            </p>
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <p class="text-sm text-yellow-800">
-                <strong>Note:</strong> This will update all selected reports to the same status, regardless of their current status.
-              </p>
-            </div>
           </div>
           
           <div class="grid grid-cols-1 gap-4">
@@ -846,14 +912,12 @@ function handleImageLoad(event) {
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select Status</option>
-                <option v-if="selectedReportId" v-for="status in getAvailableStatusOptions(currentReport?.status || '')" :key="status" :value="status">
-                  {{ status }}
-                </option>
-                <option v-if="!selectedReportId" value="Approved">Approved</option>
-                <option v-if="!selectedReportId" value="Rejected">Rejected</option>
-                <option v-if="!selectedReportId" value="Missing">Missing</option>
-                <option v-if="!selectedReportId" value="Found">Found</option>
-                <option v-if="!selectedReportId" value="Closed">Closed</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Missing">Missing</option>
+                <option value="Found">Found</option>
+                <option value="Closed">Closed</option>
               </select>
             </div>
           </div>

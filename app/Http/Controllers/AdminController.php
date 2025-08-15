@@ -99,8 +99,14 @@ class AdminController extends Controller
      */
     public function updateMissingReportStatus(Request $request, $id)
     {
+        \Log::info('Status update request received', [
+            'id' => $id,
+            'status' => $request->status,
+            'user_id' => auth()->id()
+        ]);
+
         $request->validate([
-            'status' => 'required|in:Approved,Rejected,Pending',
+            'status' => 'required|in:Pending,Approved,Rejected,Missing,Found,Closed',
             'rejection_reason' => 'required_if:status,Rejected|string|max:500',
         ]);
 
@@ -115,6 +121,12 @@ class AdminController extends Controller
         }
         
         $report->save();
+
+        \Log::info('Status updated successfully', [
+            'report_id' => $report->id,
+            'old_status' => $oldStatus,
+            'new_status' => $request->status
+        ]);
 
         // Log the status change
         SystemLog::create([
@@ -136,7 +148,7 @@ class AdminController extends Controller
             NotificationService::missingReportRejected($report, $request->rejection_reason);
         }
 
-        return response()->json(['success' => true, 'message' => 'Status updated successfully']);
+        return back()->with('success', 'Status updated successfully');
     }
 
     /**
