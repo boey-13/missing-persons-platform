@@ -16,6 +16,7 @@ const showViewModal = ref(false)
 const showEditModal = ref(false)
 const showRejectModal = ref(false)
 const showApproveModal = ref(false)
+const showStatusUpdateModal = ref(false)
 
 // Current report data
 const currentReport = ref(null)
@@ -25,6 +26,10 @@ const selectedReportId = ref(null)
 const rejectForm = useForm({
   rejection_reason: '',
   preset_reason: ''
+})
+
+const statusUpdateForm = useForm({
+  new_status: ''
 })
 
 // Preset rejection reasons
@@ -53,9 +58,19 @@ const statusFilter = ref(props.filters?.status || '')
 const searchFilter = ref(props.filters?.search || '')
 
 // Functions
-function openViewModal(report) {
-  currentReport.value = report
-  showViewModal.value = true
+async function openViewModal(report) {
+  try {
+    // Fetch complete report details from the server
+    const response = await fetch(`/admin/missing-reports/${report.id}`)
+    const reportData = await response.json()
+    currentReport.value = reportData
+    showViewModal.value = true
+  } catch (error) {
+    console.error('Error fetching report details:', error)
+    // Fallback to using the table data
+    currentReport.value = report
+    showViewModal.value = true
+  }
 }
 
 function openEditModal(report) {
@@ -91,6 +106,12 @@ function openApproveModal(report) {
   showApproveModal.value = true
 }
 
+function openStatusUpdateModal(report) {
+  selectedReportId.value = report.id
+  statusUpdateForm.new_status = report.status
+  showStatusUpdateModal.value = true
+}
+
 function approveReport() {
   router.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
     status: 'Approved'
@@ -98,6 +119,18 @@ function approveReport() {
     onSuccess: () => {
       showApproveModal.value = false
       selectedReportId.value = null
+    }
+  })
+}
+
+function updateStatus() {
+  router.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
+    status: statusUpdateForm.new_status
+  }, {
+    onSuccess: () => {
+      showStatusUpdateModal.value = false
+      selectedReportId.value = null
+      statusUpdateForm.reset()
     }
   })
 }
@@ -166,6 +199,20 @@ function viewRelatedSightings(reportId) {
 
 function createProjectFromMissing(reportId) {
   router.get(`/admin/missing-reports/${reportId}/create-project`)
+}
+
+function handleImageError(event) {
+  console.error('Image failed to load:', event.target.src)
+  event.target.style.display = 'none'
+  // Show error message
+  const errorDiv = document.createElement('div')
+  errorDiv.className = 'w-32 h-32 bg-red-100 border border-red-300 rounded-lg flex items-center justify-center text-red-600 text-xs'
+  errorDiv.textContent = 'Image Error'
+  event.target.parentNode.appendChild(errorDiv)
+}
+
+function handleImageLoad(event) {
+  console.log('Image loaded successfully:', event.target.src)
 }
 </script>
 
@@ -273,6 +320,12 @@ function createProjectFromMissing(reportId) {
                     class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
                   >
                     Edit
+                  </button>
+                  <button 
+                    @click="openStatusUpdateModal(row)"
+                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+                  >
+                    Update Status
                   </button>
                   <button 
                     @click="viewRelatedSightings(row.id)"
@@ -396,14 +449,25 @@ function createProjectFromMissing(reportId) {
             <div v-if="currentReport.photo_paths && currentReport.photo_paths.length > 0" class="md:col-span-2">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">Photos</h3>
               <div class="flex gap-4 flex-wrap">
-                <img 
+                <div 
                   v-for="(photo, index) in currentReport.photo_paths" 
                   :key="index"
-                  :src="photo"
-                  :alt="`Photo ${index + 1}`"
-                  class="w-32 h-32 object-cover rounded-lg border"
-                />
+                  class="relative"
+                >
+                  <img 
+                    :src="photo"
+                    :alt="`Photo ${index + 1}`"
+                    class="w-32 h-32 object-cover rounded-lg border"
+                    @error="handleImageError"
+                    @load="handleImageLoad"
+                  />
+                  <div class="text-xs text-gray-500 mt-1">Photo {{ index + 1 }}</div>
+                </div>
               </div>
+            </div>
+            <div v-else class="md:col-span-2">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Photos</h3>
+              <div class="text-gray-500">No photos available</div>
             </div>
           </div>
         </div>
@@ -638,6 +702,58 @@ function createProjectFromMissing(reportId) {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div v-if="showStatusUpdateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Update Report Status</h2>
+            <button @click="showStatusUpdateModal = false" class="text-gray-500 hover:text-black">
+              ✕
+            </button>
+          </div>
+          
+          <p class="text-gray-600 mb-6">Select a new status for this missing person report.</p>
+          
+          <div class="grid grid-cols-1 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">New Status</label>
+              <select 
+                v-model="statusUpdateForm.new_status"
+                required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Missing">Missing</option>
+                <option value="Found">Found</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="flex gap-3 pt-4">
+            <button 
+              @click="updateStatus"
+              :disabled="statusUpdateForm.processing"
+              class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+            >
+              {{ statusUpdateForm.processing ? 'Updating...' : 'Update Status' }}
+            </button>
+            <button 
+              type="button"
+              @click="showStatusUpdateModal = false"
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
