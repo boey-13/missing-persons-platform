@@ -31,7 +31,6 @@ const props = defineProps({
                                 <h1 class="text-2xl font-bold">Welcome back, {{ user?.name }}!</h1>
                                 <p class="text-blue-100 mt-1">Thank you for helping make our community safer.</p>
                             </div>
-                            <div class="text-4xl">👋</div>
                         </div>
                     </div>
                 </div>
@@ -45,7 +44,6 @@ const props = defineProps({
                                 <div class="text-3xl font-bold text-gray-900">{{ userPoints || 0 }}</div>
                                 <div class="text-green-600 text-sm mt-1">Available points</div>
                             </div>
-                            <div class="text-yellow-500 text-2xl">⭐</div>
                         </div>
                     </div>
 
@@ -56,7 +54,6 @@ const props = defineProps({
                                 <div class="text-3xl font-bold text-gray-900">{{ userRewards?.length || 0 }}</div>
                                 <div class="text-purple-600 text-sm mt-1">Total rewards</div>
                             </div>
-                            <div class="text-purple-500 text-2xl">🎁</div>
                         </div>
                     </div>
 
@@ -67,7 +64,6 @@ const props = defineProps({
                                 <div class="text-3xl font-bold text-gray-900">{{ stats?.userReports || 0 }}</div>
                                 <div class="text-blue-600 text-sm mt-1">Your contributions</div>
                             </div>
-                            <div class="text-blue-500 text-2xl">📋</div>
                         </div>
                     </div>
                 </div>
@@ -80,7 +76,6 @@ const props = defineProps({
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Link href="/missing-persons/report" 
                                       class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                                    <div class="text-blue-600 text-2xl mr-4">📝</div>
                                     <div>
                                         <div class="font-medium text-gray-900">Report Missing Person</div>
                                         <div class="text-sm text-gray-500">Help find someone</div>
@@ -89,7 +84,6 @@ const props = defineProps({
 
                                 <Link href="/sighting-reports/report" 
                                       class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                                    <div class="text-green-600 text-2xl mr-4">👁️</div>
                                     <div>
                                         <div class="font-medium text-gray-900">Report Sighting</div>
                                         <div class="text-sm text-gray-500">Share what you saw</div>
@@ -98,7 +92,6 @@ const props = defineProps({
 
                                 <Link href="/rewards" 
                                       class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                                    <div class="text-purple-600 text-2xl mr-4">🎁</div>
                                     <div>
                                         <div class="font-medium text-gray-900">Browse Rewards</div>
                                         <div class="text-sm text-gray-500">Redeem your points</div>
@@ -107,7 +100,6 @@ const props = defineProps({
 
                                 <Link href="/volunteer" 
                                       class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
-                                    <div class="text-orange-600 text-2xl mr-4">🤝</div>
                                     <div>
                                         <div class="font-medium text-gray-900">Become Volunteer</div>
                                         <div class="text-sm text-gray-500">Join our community</div>
@@ -136,7 +128,6 @@ const props = defineProps({
                         </div>
                         
                         <div v-else class="text-center py-4 text-gray-500">
-                            <div class="text-2xl mb-1">📋</div>
                             <p class="text-sm">No recent cases</p>
                         </div>
                     </div>

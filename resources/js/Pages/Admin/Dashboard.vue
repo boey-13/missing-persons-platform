@@ -28,7 +28,6 @@ const props = defineProps({
             <div class="text-3xl font-bold text-gray-900">{{ stats?.totalMissingCases || 0 }}</div>
             <div class="text-green-600 text-sm mt-1">Active cases</div>
           </div>
-          <div class="text-blue-500 text-2xl">👥</div>
         </div>
       </div>
 
@@ -39,7 +38,6 @@ const props = defineProps({
             <div class="text-3xl font-bold text-gray-900">{{ stats?.pendingSightings || 0 }}</div>
             <div class="text-orange-600 text-sm mt-1">Awaiting review</div>
           </div>
-          <div class="text-orange-500 text-2xl">🔍</div>
         </div>
       </div>
 
@@ -50,7 +48,6 @@ const props = defineProps({
             <div class="text-3xl font-bold text-gray-900">{{ stats?.totalUsers || 0 }}</div>
             <div class="text-blue-600 text-sm mt-1">Registered users</div>
           </div>
-          <div class="text-green-500 text-2xl">👤</div>
         </div>
       </div>
 
@@ -61,7 +58,6 @@ const props = defineProps({
             <div class="text-3xl font-bold text-gray-900">{{ stats?.activeRewards || 0 }}</div>
             <div class="text-purple-600 text-sm mt-1">Available rewards</div>
           </div>
-          <div class="text-purple-500 text-2xl">🎁</div>
         </div>
       </div>
     </div>
@@ -125,7 +121,6 @@ const props = defineProps({
           </div>
           
           <div v-else class="text-center py-8 text-gray-500">
-            <div class="text-4xl mb-2">📋</div>
             <p>No recent missing reports</p>
           </div>
         </div>
@@ -175,7 +170,6 @@ const props = defineProps({
           </div>
           
           <div v-else class="text-center py-4 text-gray-500">
-            <div class="text-2xl mb-1">👁️</div>
             <p class="text-sm">No recent sightings</p>
           </div>
         </div>
