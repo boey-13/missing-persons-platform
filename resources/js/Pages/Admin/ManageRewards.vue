@@ -41,6 +41,13 @@ function deleteReward(rewardId) {
 
 <template>
   <div>
+    <!-- Success Message -->
+    <div v-if="$page.props.flash?.success" class="fixed top-4 right-4 z-50">
+      <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+        {{ $page.props.flash.success }}
+      </div>
+    </div>
+
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-extrabold">Manage Rewards</h1>
       <Link
