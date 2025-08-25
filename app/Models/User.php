@@ -54,4 +54,38 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\MissingReport::class);
     }
 
+    public function userPoint()
+    {
+        return $this->hasOne(UserPoint::class);
+    }
+
+    public function pointTransactions()
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    public function userRewards()
+    {
+        return $this->hasMany(UserReward::class);
+    }
+
+    public function socialShares()
+    {
+        return $this->hasMany(SocialShare::class);
+    }
+
+    public function getCurrentPointsAttribute()
+    {
+        return $this->userPoint?->current_points ?? 0;
+    }
+
+    public function getTotalEarnedPointsAttribute()
+    {
+        return $this->userPoint?->total_earned_points ?? 0;
+    }
+
+    public function getTotalSpentPointsAttribute()
+    {
+        return $this->userPoint?->total_spent_points ?? 0;
+    }
 }

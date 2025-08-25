@@ -15,9 +15,17 @@ use App\Models\SightingReport;
 use App\Models\CommunityProject;
 use App\Models\ProjectApplication;
 use App\Models\SystemLog;
+use App\Services\PointsService;
 
 class ProfileController extends Controller
 {
+    protected $pointsService;
+
+    public function __construct(PointsService $pointsService)
+    {
+        $this->pointsService = $pointsService;
+    }
+
     /**
      * Display the user's profile form.
      */
@@ -42,11 +50,11 @@ class ProfileController extends Controller
             })->filter();
         }
 
-        // Calculate total points (this would need to be implemented based on your points system)
-        $totalPoints = $this->calculateUserPoints($user);
+        // Calculate total points using the points service
+        $totalPoints = $this->pointsService->getCurrentPoints($user);
 
-        // Get points history (this would need to be implemented based on your points system)
-        $pointsHistory = $this->getUserPointsHistory($user);
+        // Get points history using the points service
+        $pointsHistory = $this->pointsService->getPointsHistory($user);
 
         return Inertia::render('Profile/Index', [
             'user' => $user,
@@ -136,106 +144,5 @@ class ProfileController extends Controller
         return Redirect::to('/');
     }
 
-    /**
-     * Calculate user's total points
-     */
-    private function calculateUserPoints($user): int
-    {
-        $points = 0;
 
-        // Points for missing reports (5 points each)
-        $missingReportsCount = MissingReport::where('user_id', $user->id)->count();
-        $points += $missingReportsCount * 5;
-
-        // Points for approved sighting reports (10 points each)
-        $approvedSightingReportsCount = SightingReport::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->count();
-        $points += $approvedSightingReportsCount * 10;
-
-        // Points for completed community projects
-        if ($user->role === 'volunteer') {
-            $completedProjects = ProjectApplication::where('user_id', $user->id)
-                ->where('status', 'approved')
-                ->with('project')
-                ->get();
-
-            foreach ($completedProjects as $application) {
-                if ($application->project) {
-                    $points += $application->project->points_reward ?? 0;
-                }
-            }
-        }
-
-        // Bonus points for registration (10 points)
-        $points += 10;
-
-        return $points;
-    }
-
-    /**
-     * Get user's points history
-     */
-    private function getUserPointsHistory($user): array
-    {
-        $history = [];
-
-        // Add registration bonus
-        $history[] = [
-            'id' => 'reg_' . $user->id,
-            'description' => 'Account registration bonus',
-            'points' => 10,
-            'created_at' => $user->created_at
-        ];
-
-        // Add missing reports
-        $missingReports = MissingReport::where('user_id', $user->id)->get();
-        foreach ($missingReports as $report) {
-            $history[] = [
-                'id' => 'missing_' . $report->id,
-                'description' => "Submitted missing person report for {$report->full_name}",
-                'points' => 5,
-                'created_at' => $report->created_at
-            ];
-        }
-
-        // Add approved sighting reports
-        $sightingReports = SightingReport::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->get();
-        foreach ($sightingReports as $report) {
-            $history[] = [
-                'id' => 'sighting_' . $report->id,
-                'description' => 'Submitted approved sighting report',
-                'points' => 10,
-                'created_at' => $report->created_at
-            ];
-        }
-
-        // Add community project points
-        if ($user->role === 'volunteer') {
-            $projectApplications = ProjectApplication::where('user_id', $user->id)
-                ->where('status', 'approved')
-                ->with('project')
-                ->get();
-
-            foreach ($projectApplications as $application) {
-                if ($application->project) {
-                    $history[] = [
-                        'id' => 'project_' . $application->id,
-                        'description' => "Completed community project: {$application->project->title}",
-                        'points' => $application->project->points_reward ?? 0,
-                        'created_at' => $application->updated_at
-                    ];
-                }
-            }
-        }
-
-        // Sort by date (newest first)
-        usort($history, function ($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
-
-        return $history;
-    }
 }

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { router, useForm, Link } from '@inertiajs/vue3'
 import axios from 'axios'
 
 defineOptions({ layout: MainLayout })
@@ -225,12 +225,26 @@ function shareToSocial(reportId) {
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-600 mb-2">{{ props.totalPoints || 0 }}</div>
               <div class="text-gray-600 mb-4">Total Points</div>
-              <button
-                @click="showPointsModal = true"
-                class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-              >
-                View History
-              </button>
+              <div class="space-y-2">
+                <button
+                  @click="showPointsModal = true"
+                  class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  View History
+                </button>
+                <Link
+                  href="/rewards"
+                  class="w-full bg-[#5C4033] text-white py-2 px-4 rounded-lg font-medium hover:bg-[#4A3329] transition-colors inline-block"
+                >
+                  My Rewards
+                </Link>
+                <Link
+                  href="/rewards/my-vouchers"
+                  class="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors inline-block"
+                >
+                  My Vouchers
+                </Link>
+              </div>
             </div>
           </div>
           

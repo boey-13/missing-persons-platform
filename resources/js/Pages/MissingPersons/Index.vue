@@ -119,16 +119,35 @@ onMounted(fetchCases)
       <div v-else-if="!loading" class="text-gray-400 text-center py-20">No cases found</div>
       <!-- Pagination -->
       <div class="mt-10 flex justify-center">
-        <nav v-if="total > perPage" class="flex gap-2">
+        <nav v-if="total > perPage" class="flex items-center space-x-4">
+          <button
+            :disabled="page <= 1"
+            @click="onPageChange(page - 1)"
+            class="text-[#A67B5B] hover:text-[#6B4C3B] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            &lt;
+          </button>
+          
           <button
             v-for="n in Math.ceil(total / perPage)"
             :key="n"
-            class="px-4 py-2 rounded-full border border-[#e3d9cc] text-[#A67B5B] font-bold transition
-                   hover:bg-[#f5e6da] hover:text-[#6B4C3B]"
-            :class="{ 'bg-[#A67B5B] text-white border-[#A67B5B]': page === n }"
+            :class="[
+              'text-sm',
+              page === n 
+                ? 'underline font-medium' 
+                : 'text-[#A67B5B] hover:text-[#6B4C3B]'
+            ]"
             @click="onPageChange(n)"
           >
             {{ n }}
+          </button>
+          
+          <button
+            :disabled="page >= Math.ceil(total / perPage)"
+            @click="onPageChange(page + 1)"
+            class="text-[#A67B5B] hover:text-[#6B4C3B] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            &gt;
           </button>
         </nav>
       </div>

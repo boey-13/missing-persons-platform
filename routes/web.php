@@ -159,9 +159,79 @@ Route::middleware('auth')->group(function () {
         ->middleware(['auth'])
         ->name('admin.community-projects.applications.reject');
 
-    Route::get('/admin/rewards', fn() => Inertia::render('Admin/ManageRewards'))
+    // User Rewards Routes
+    Route::get('/rewards', [App\Http\Controllers\RewardController::class, 'index'])
+        ->middleware(['auth'])
+        ->name('rewards.index');
+    
+    Route::get('/rewards/my-vouchers', [App\Http\Controllers\RewardController::class, 'myVouchers'])
+        ->middleware(['auth'])
+        ->name('rewards.my-vouchers');
+    
+    Route::get('/rewards/{id}', [App\Http\Controllers\RewardController::class, 'show'])
+        ->middleware(['auth'])
+        ->name('rewards.show');
+    
+    Route::post('/rewards/{id}/redeem', [App\Http\Controllers\RewardController::class, 'redeem'])
+        ->middleware(['auth'])
+        ->name('rewards.redeem');
+    
+    Route::get('/rewards/points/history', [App\Http\Controllers\RewardController::class, 'pointsHistory'])
+        ->middleware(['auth'])
+        ->name('rewards.points.history');
+    
+    Route::post('/social-share', [App\Http\Controllers\RewardController::class, 'recordSocialShare'])
+        ->middleware(['auth'])
+        ->name('social.share');
+    
+    Route::get('/vouchers/{id}/qr-code', [App\Http\Controllers\RewardController::class, 'getVoucherQrCode'])
+        ->middleware(['auth'])
+        ->name('vouchers.qr-code');
+
+    // Admin Rewards Routes
+    Route::get('/admin/rewards', [App\Http\Controllers\AdminRewardController::class, 'index'])
         ->middleware(['auth'])
         ->name('admin.rewards');
+    
+    Route::get('/admin/rewards/create', [App\Http\Controllers\AdminRewardController::class, 'create'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.create');
+    
+    Route::post('/admin/rewards', [App\Http\Controllers\AdminRewardController::class, 'store'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.store');
+    
+    Route::get('/admin/rewards/{id}/edit', [App\Http\Controllers\AdminRewardController::class, 'edit'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.edit');
+    
+    Route::put('/admin/rewards/{id}', [App\Http\Controllers\AdminRewardController::class, 'update'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.update');
+    
+    Route::delete('/admin/rewards/{id}', [App\Http\Controllers\AdminRewardController::class, 'destroy'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.destroy');
+    
+    Route::get('/admin/rewards/categories', [App\Http\Controllers\AdminRewardController::class, 'categories'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.categories');
+    
+    Route::post('/admin/rewards/categories', [App\Http\Controllers\AdminRewardController::class, 'storeCategory'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.categories.store');
+    
+    Route::put('/admin/rewards/categories/{id}', [App\Http\Controllers\AdminRewardController::class, 'updateCategory'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.categories.update');
+    
+    Route::delete('/admin/rewards/categories/{id}', [App\Http\Controllers\AdminRewardController::class, 'destroyCategory'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.categories.destroy');
+    
+    Route::get('/admin/rewards/stats', [App\Http\Controllers\AdminRewardController::class, 'stats'])
+        ->middleware(['auth'])
+        ->name('admin.rewards.stats');
 
     // Admin: manage volunteer applications
     Route::get('/admin/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])

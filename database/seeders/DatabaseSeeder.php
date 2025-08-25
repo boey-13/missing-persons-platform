@@ -16,5 +16,10 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password123'),
             'role' => 'admin',
         ]);
+
+        // Seed rewards
+        $this->call([
+            RewardSeeder::class,
+        ]);
     }
 }

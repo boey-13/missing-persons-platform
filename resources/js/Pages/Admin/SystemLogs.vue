@@ -132,15 +132,27 @@ function getActionColor(action) {
     </div>
 
     <!-- Pagination -->
-    <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
-      <div>
-        Showing {{ (pagination.current_page - 1) * pagination.per_page + 1 }} to 
-        {{ Math.min(pagination.current_page * pagination.per_page, pagination.total) }} 
-        of {{ pagination.total }} logs
-      </div>
-      <div class="flex gap-2">
-        <button :disabled="pagination.current_page <= 1" @click="router.get('/admin/logs', { ...filters, page: pagination.current_page - 1 }, { preserveState: true })" class="px-3 py-1 rounded border disabled:opacity-50">Prev</button>
-        <button :disabled="pagination.current_page >= pagination.last_page" @click="router.get('/admin/logs', { ...filters, page: pagination.current_page + 1 }, { preserveState: true })" class="px-3 py-1 rounded border disabled:opacity-50">Next</button>
+    <div class="mt-6 flex justify-center">
+      <div class="flex items-center space-x-4">
+        <button 
+          :disabled="pagination.current_page <= 1" 
+          @click="router.get('/admin/logs', { ...filters, page: pagination.current_page - 1 }, { preserveState: true })" 
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          &lt;
+        </button>
+        
+        <span class="text-sm text-gray-600">
+          Page {{ pagination.current_page }} of {{ pagination.last_page }}
+        </span>
+        
+        <button 
+          :disabled="pagination.current_page >= pagination.last_page" 
+          @click="router.get('/admin/logs', { ...filters, page: pagination.current_page + 1 }, { preserveState: true })" 
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          &gt;
+        </button>
       </div>
     </div>
   </div>

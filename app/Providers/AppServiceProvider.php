@@ -12,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\PointsService::class);
+        $this->app->singleton(\App\Services\RewardService::class);
     }
 
     /**

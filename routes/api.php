@@ -9,3 +9,8 @@ Route::get('/test-connection', function () {
 });
 
 Route::get('/missing-persons', [MissingReportController::class, 'index']);
+
+// User missing reports API
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user/missing-reports', [MissingReportController::class, 'userReports']);
+});

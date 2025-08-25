@@ -540,19 +540,35 @@ function handleImageLoad(event) {
 
     <!-- Pagination -->
     <div v-if="props.pagination && props.pagination.total > props.pagination.per_page" class="mt-6 flex justify-center">
-      <div class="flex space-x-2">
+      <div class="flex items-center space-x-4">
+        <button 
+          :disabled="props.pagination.current_page <= 1"
+          @click="router.get('/admin/missing-reports', { page: props.pagination.current_page - 1, ...$page.props.filters })"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          &lt;
+        </button>
+        
         <button 
           v-for="page in Math.ceil(props.pagination.total / props.pagination.per_page)" 
           :key="page"
           @click="router.get('/admin/missing-reports', { page, ...$page.props.filters })"
           :class="[
-            'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            'text-sm',
             page === props.pagination.current_page 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'underline font-medium' 
+              : 'text-gray-600 hover:text-gray-900'
           ]"
         >
           {{ page }}
+        </button>
+        
+        <button 
+          :disabled="props.pagination.current_page >= Math.ceil(props.pagination.total / props.pagination.per_page)"
+          @click="router.get('/admin/missing-reports', { page: props.pagination.current_page + 1, ...$page.props.filters })"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          &gt;
         </button>
       </div>
     </div>
@@ -912,7 +928,6 @@ function handleImageLoad(event) {
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select Status</option>
-                <option value="Pending">Pending</option>
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
                 <option value="Missing">Missing</option>
