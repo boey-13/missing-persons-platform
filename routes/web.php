@@ -75,13 +75,21 @@ Route::middleware('auth')->group(function () {
     // Lightweight notifications feed (JSON)
     Route::get('/notifications', function (HttpRequest $request) {
         $user = $request->user();
-        if (!$user) return response()->json([]);
-        $items = \App\Models\Notification::where('user_id', $user->id)
-            ->orderByDesc('created_at')
-            ->limit(20)
-            ->get(['id','title','message','data','created_at','read_at']);
-        return response()->json($items);
-    })->name('notifications.index');
+        if (!$user) {
+            return response()->json([]);
+        }
+        
+        $notifications = \App\Models\Notification::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get(['id', 'type', 'title', 'message', 'data', 'read_at', 'created_at']);
+            
+        return response()->json($notifications);
+    })->name('notifications');
+
+    // Social share API
+    Route::post('/api/social-share', [\App\Http\Controllers\RewardController::class, 'recordSocialShare'])
+        ->name('api.social-share');
 
     Route::post('/notifications/read', function (HttpRequest $request) {
         $user = $request->user();
@@ -94,159 +102,123 @@ Route::middleware('auth')->group(function () {
     })->name('notifications.read');
 });
 
+// Admin routes group with AdminMiddleware protection
+Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
     // Admin Dashboard
-    Route::get('/admin/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])
-        ->middleware(['auth'])
-        ->name('admin.dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])
+        ->name('dashboard');
 
     // Manage Missing Person Reports
-    Route::get('/admin/missing-reports', [App\Http\Controllers\AdminController::class, 'missingReports'])
-        ->middleware(['auth'])
-        ->name('admin.missing-reports');
+    Route::get('/missing-reports', [App\Http\Controllers\AdminController::class, 'missingReports'])
+        ->name('missing-reports');
     
-    Route::get('/admin/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'showMissingReport'])
-        ->middleware(['auth'])
-        ->name('admin.missing-reports.show');
-    Route::get('/admin/missing-reports/{id}/sightings', function($id) {
+    Route::get('/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'showMissingReport'])
+        ->name('missing-reports.show');
+    Route::get('/missing-reports/{id}/sightings', function($id) {
         return redirect()->route('admin.sighting-reports', ['missing_report_id' => $id]);
-    })->middleware(['auth'])->name('admin.missing-reports.sightings');
+    })->name('missing-reports.sightings');
     
-    Route::get('/admin/missing-reports/{id}/create-project', [App\Http\Controllers\CommunityProjectController::class, 'createFromMissingReport'])
-        ->middleware(['auth'])
-        ->name('admin.missing-reports.create-project');
+    Route::get('/missing-reports/{id}/create-project', [App\Http\Controllers\CommunityProjectController::class, 'createFromMissingReport'])
+        ->name('missing-reports.create-project');
     
-    Route::post('/admin/missing-reports/{id}/status', [App\Http\Controllers\AdminController::class, 'updateMissingReportStatus'])
-        ->middleware(['auth'])
-        ->name('admin.missing-reports.status');
+    Route::post('/missing-reports/{id}/status', [App\Http\Controllers\AdminController::class, 'updateMissingReportStatus'])
+        ->name('missing-reports.status');
     
-    Route::put('/admin/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'updateMissingReport'])
-        ->middleware(['auth'])
-        ->name('admin.missing-reports.update');
+    Route::put('/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'updateMissingReport'])
+        ->name('missing-reports.update');
 
     // Placeholders for other admin pages
-    Route::get('/admin/sighting-reports', [App\Http\Controllers\SightingReportController::class, 'adminIndex'])
-        ->middleware(['auth'])
-        ->name('admin.sighting-reports');
-    Route::post('/admin/sighting-reports/{sighting}/status', [App\Http\Controllers\SightingReportController::class, 'updateStatus'])
-        ->middleware(['auth'])
-        ->name('admin.sighting-reports.status');
-    Route::get('/admin/sighting-reports/{sighting}', [App\Http\Controllers\SightingReportController::class, 'show'])
-        ->middleware(['auth'])
-        ->name('admin.sighting-reports.show');
+    Route::get('/sighting-reports', [App\Http\Controllers\SightingReportController::class, 'adminIndex'])
+        ->name('sighting-reports');
+    Route::post('/sighting-reports/{sighting}/status', [App\Http\Controllers\SightingReportController::class, 'updateStatus'])
+        ->name('sighting-reports.status');
+    Route::get('/sighting-reports/{sighting}', [App\Http\Controllers\SightingReportController::class, 'show'])
+        ->name('sighting-reports.show');
         
     // Admin: Community Projects Management
-    Route::get('/admin/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'index'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects');
-    Route::post('/admin/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'store'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects.store');
-    Route::put('/admin/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'update'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects.update');
-    Route::delete('/admin/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'destroy'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects.destroy');
+    Route::get('/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'index'])
+        ->name('community-projects');
+    Route::post('/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'store'])
+        ->name('community-projects.store');
+    Route::put('/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'update'])
+        ->name('community-projects.update');
+    Route::delete('/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'destroy'])
+        ->name('community-projects.destroy');
     
     // Admin: Project Applications Management
-    Route::get('/admin/community-projects/applications', [\App\Http\Controllers\CommunityProjectController::class, 'getApplications'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects.applications');
-    Route::post('/admin/community-projects/applications/{application}/approve', [\App\Http\Controllers\CommunityProjectController::class, 'approveApplication'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects.applications.approve');
-    Route::post('/admin/community-projects/applications/{application}/reject', [\App\Http\Controllers\CommunityProjectController::class, 'rejectApplication'])
-        ->middleware(['auth'])
-        ->name('admin.community-projects.applications.reject');
+    Route::get('/community-projects/applications', [\App\Http\Controllers\CommunityProjectController::class, 'getApplications'])
+        ->name('community-projects.applications');
+    Route::post('/community-projects/applications/{application}/approve', [\App\Http\Controllers\CommunityProjectController::class, 'approveApplication'])
+        ->name('community-projects.applications.approve');
+    Route::post('/community-projects/applications/{application}/reject', [\App\Http\Controllers\CommunityProjectController::class, 'rejectApplication'])
+        ->name('community-projects.applications.reject');
+    
+    // Admin: Project Status Management
+    Route::post('/community-projects/{project}/status', [\App\Http\Controllers\CommunityProjectController::class, 'updateStatus'])
+        ->name('community-projects.status');
 
-    // User Rewards Routes
-    Route::get('/rewards', [App\Http\Controllers\RewardController::class, 'index'])
-        ->middleware(['auth'])
-        ->name('rewards.index');
-    
-    Route::get('/rewards/my-vouchers', [App\Http\Controllers\RewardController::class, 'myVouchers'])
-        ->middleware(['auth'])
-        ->name('rewards.my-vouchers');
-    
-    Route::get('/rewards/{id}', [App\Http\Controllers\RewardController::class, 'show'])
-        ->middleware(['auth'])
-        ->name('rewards.show');
-    
-    Route::post('/rewards/{id}/redeem', [App\Http\Controllers\RewardController::class, 'redeem'])
-        ->middleware(['auth'])
-        ->name('rewards.redeem');
-    
-    Route::get('/rewards/points/history', [App\Http\Controllers\RewardController::class, 'pointsHistory'])
-        ->middleware(['auth'])
-        ->name('rewards.points.history');
-    
-    Route::post('/social-share', [App\Http\Controllers\RewardController::class, 'recordSocialShare'])
-        ->middleware(['auth'])
-        ->name('social.share');
-    
-    Route::get('/vouchers/{id}/qr-code', [App\Http\Controllers\RewardController::class, 'getVoucherQrCode'])
-        ->middleware(['auth'])
-        ->name('vouchers.qr-code');
+    // Admin: Project News Management
+    Route::post('/community-projects/{project}/update-news', [\App\Http\Controllers\CommunityProjectController::class, 'updateNews'])
+        ->name('community-projects.update-news');
+    Route::delete('/community-projects/{project}/news/{newsId}', [\App\Http\Controllers\CommunityProjectController::class, 'deleteNews'])
+        ->name('community-projects.delete-news');
 
     // Admin Rewards Routes
-    Route::get('/admin/rewards', [App\Http\Controllers\AdminRewardController::class, 'index'])
-        ->middleware(['auth'])
-        ->name('admin.rewards');
+    Route::get('/rewards', [App\Http\Controllers\AdminRewardController::class, 'index'])
+        ->name('rewards');
     
-    Route::get('/admin/rewards/create', [App\Http\Controllers\AdminRewardController::class, 'create'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.create');
+    Route::get('/rewards/create', [App\Http\Controllers\AdminRewardController::class, 'create'])
+        ->name('rewards.create');
     
-    Route::post('/admin/rewards', [App\Http\Controllers\AdminRewardController::class, 'store'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.store');
+    Route::post('/rewards', [App\Http\Controllers\AdminRewardController::class, 'store'])
+        ->name('rewards.store');
     
-    Route::get('/admin/rewards/{id}/edit', [App\Http\Controllers\AdminRewardController::class, 'edit'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.edit');
+    Route::get('/rewards/{id}/edit', [App\Http\Controllers\AdminRewardController::class, 'edit'])
+        ->name('rewards.edit');
     
-    Route::put('/admin/rewards/{id}', [App\Http\Controllers\AdminRewardController::class, 'update'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.update');
+    Route::put('/rewards/{id}', [App\Http\Controllers\AdminRewardController::class, 'update'])
+        ->name('rewards.update');
     
-    Route::delete('/admin/rewards/{id}', [App\Http\Controllers\AdminRewardController::class, 'destroy'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.destroy');
+    Route::delete('/rewards/{id}', [App\Http\Controllers\AdminRewardController::class, 'destroy'])
+        ->name('rewards.destroy');
     
-    Route::get('/admin/rewards/categories', [App\Http\Controllers\AdminRewardController::class, 'categories'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.categories');
+    Route::get('/rewards/categories', [App\Http\Controllers\AdminRewardController::class, 'categories'])
+        ->name('rewards.categories');
     
-    Route::post('/admin/rewards/categories', [App\Http\Controllers\AdminRewardController::class, 'storeCategory'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.categories.store');
+    Route::post('/rewards/categories', [App\Http\Controllers\AdminRewardController::class, 'storeCategory'])
+        ->name('rewards.categories.store');
     
-    Route::put('/admin/rewards/categories/{id}', [App\Http\Controllers\AdminRewardController::class, 'updateCategory'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.categories.update');
+    Route::put('/rewards/categories/{id}', [App\Http\Controllers\AdminRewardController::class, 'updateCategory'])
+        ->name('rewards.categories.update');
     
-    Route::delete('/admin/rewards/categories/{id}', [App\Http\Controllers\AdminRewardController::class, 'destroyCategory'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.categories.destroy');
+    Route::delete('/rewards/categories/{id}', [App\Http\Controllers\AdminRewardController::class, 'destroyCategory'])
+        ->name('rewards.categories.destroy');
     
-    Route::get('/admin/rewards/stats', [App\Http\Controllers\AdminRewardController::class, 'stats'])
-        ->middleware(['auth'])
-        ->name('admin.rewards.stats');
+    Route::get('/rewards/stats', [App\Http\Controllers\AdminRewardController::class, 'stats'])
+        ->name('rewards.stats');
 
     // Admin: manage volunteer applications
-    Route::get('/admin/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])
-        ->middleware(['auth'])
-        ->name('admin.volunteers');
-    Route::post('/admin/volunteers/{application}/status', [\App\Http\Controllers\VolunteerApplicationController::class, 'updateStatus'])
-        ->middleware(['auth'])
-        ->name('admin.volunteers.status');
+    Route::get('/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])
+        ->name('volunteers');
+    Route::post('/volunteers/{application}/status', [\App\Http\Controllers\VolunteerApplicationController::class, 'updateStatus'])
+        ->name('volunteers.status');
 
-    Route::get('/admin/users', function () {
+    Route::get('/users', function () {
         $users = User::orderBy('created_at', 'desc')->limit(50)->get(['id','name','email','role','created_at','updated_at']);
         return Inertia::render('Admin/ManageUsers', [ 'users' => $users ]);
-    })->middleware(['auth'])->name('admin.users');
+    })->name('users');
 
-    Route::post('/admin/users/{user}/role', function (\Illuminate\Http\Request $request, User $user) {
+    // Test route for applications
+    Route::get('/test-applications', function () {
+        return Inertia::render('Admin/TestApplications');
+    })->name('test.applications');
+
+    // Debug route for authentication
+    Route::get('/debug-auth', function () {
+        return Inertia::render('Admin/DebugAuth');
+    })->name('debug.auth');
+
+    Route::post('/users/{user}/role', function (\Illuminate\Http\Request $request, User $user) {
         $request->validate(['role' => 'required|in:user,volunteer,admin']);
         $oldRole = $user->role;
         $user->role = $request->role;
@@ -260,9 +232,9 @@ Route::middleware('auth')->group(function () {
         );
 
         return back();
-    })->middleware(['auth'])->name('admin.users.role');
+    })->name('users.role');
 
-    Route::delete('/admin/users/{user}', function (User $user) {
+    Route::delete('/users/{user}', function (User $user) {
         // prevent self-delete of the current admin
         if (auth()->id() === $user->id) {
             return back()->with('error', 'You cannot delete your own account.');
@@ -277,11 +249,45 @@ Route::middleware('auth')->group(function () {
 
         $user->delete();
         return back();
-    })->middleware(['auth'])->name('admin.users.delete');
-    Route::get('/admin/logs', [App\Http\Controllers\SystemLogController::class, 'index'])
-        ->middleware(['auth'])
-        ->name('admin.logs');
-// });
+    })->name('users.delete');
+    
+    Route::get('/logs', [App\Http\Controllers\SystemLogController::class, 'index'])
+        ->name('logs');
+});
+
+// Community Project Details (for both admin and volunteers) - outside admin group
+Route::get('/community-projects/{project}', [\App\Http\Controllers\CommunityProjectController::class, 'show'])
+    ->middleware(['auth'])
+    ->name('community-projects.show');
+
+// User Rewards Routes
+Route::get('/rewards', [App\Http\Controllers\RewardController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('rewards.index');
+
+Route::get('/rewards/my-vouchers', [App\Http\Controllers\RewardController::class, 'myVouchers'])
+    ->middleware(['auth'])
+    ->name('rewards.my-vouchers');
+
+Route::get('/rewards/{id}', [App\Http\Controllers\RewardController::class, 'show'])
+    ->middleware(['auth'])
+    ->name('rewards.show');
+
+Route::post('/rewards/{id}/redeem', [App\Http\Controllers\RewardController::class, 'redeem'])
+    ->middleware(['auth'])
+    ->name('rewards.redeem');
+
+Route::get('/rewards/points/history', [App\Http\Controllers\RewardController::class, 'pointsHistory'])
+    ->middleware(['auth'])
+    ->name('rewards.points.history');
+
+Route::post('/social-share', [App\Http\Controllers\RewardController::class, 'recordSocialShare'])
+    ->middleware(['auth'])
+    ->name('social.share');
+
+Route::get('/vouchers/{id}/qr-code', [App\Http\Controllers\RewardController::class, 'getVoucherQrCode'])
+    ->middleware(['auth'])
+    ->name('vouchers.qr-code');
 
 Route::post('/forgot-password', function (Illuminate\Http\Request $request) {
     $request->validate(['email' => 'required|email']);

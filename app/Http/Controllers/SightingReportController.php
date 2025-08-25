@@ -4,12 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\MissingReport;
 use App\Models\SightingReport;
+use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\NotificationService;
 
 class SightingReportController extends Controller
 {
+    protected $pointsService;
+
+    public function __construct(PointsService $pointsService)
+    {
+        $this->pointsService = $pointsService;
+    }
+
     public function adminIndex(Request $request)
     {
         $query = SightingReport::with('missingReport')->orderBy('created_at', 'desc');
@@ -63,6 +71,11 @@ class SightingReportController extends Controller
         $oldStatus = $sighting->status;
         $sighting->status = $request->status;
         $sighting->save();
+
+        // Award points if sighting report is approved
+        if ($request->status === 'Approved' && $oldStatus !== 'Approved' && $sighting->user_id) {
+            $this->pointsService->awardSightingReportPoints($sighting->user, $sighting->id);
+        }
 
         // Log the status change
         \App\Models\SystemLog::log(

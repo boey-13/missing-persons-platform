@@ -21,13 +21,16 @@ class CommunityProject extends Model
         'points_reward',
         'category',
         'status',
-        'photo_paths'
+        'photo_paths',
+        'latest_news',
+        'news_files'
     ];
 
     protected $casts = [
         'date' => 'date',
         'time' => 'datetime:H:i',
         'photo_paths' => 'array',
+        'news_files' => 'array',
         'volunteers_needed' => 'integer',
         'volunteers_joined' => 'integer',
         'points_reward' => 'integer'
@@ -51,6 +54,11 @@ class CommunityProject extends Model
     public function rejectedApplications()
     {
         return $this->applications()->where('status', 'rejected');
+    }
+
+    public function news()
+    {
+        return $this->hasMany(ProjectNews::class)->orderBy('created_at', 'desc');
     }
 
     public function getPhotoUrlAttribute()

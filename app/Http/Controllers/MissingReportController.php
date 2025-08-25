@@ -3,12 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\MissingReport;
+use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\NotificationService;
 
 class MissingReportController extends Controller
 {
+    protected $pointsService;
+
+    public function __construct(PointsService $pointsService)
+    {
+        $this->pointsService = $pointsService;
+    }
 
 
     public function store(Request $request)
@@ -97,8 +104,8 @@ class MissingReportController extends Controller
     {
         $query = MissingReport::query();
 
-        // Only show approved cases to the public
-        $query->where('case_status', 'Approved');
+        // Show approved, missing, and found cases to the public
+        $query->whereIn('case_status', ['Approved', 'Missing', 'Found']);
 
         // Search by full_name
         if ($request->filled('search')) {

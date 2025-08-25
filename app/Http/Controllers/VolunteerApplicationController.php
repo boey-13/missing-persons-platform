@@ -77,6 +77,11 @@ class VolunteerApplicationController extends Controller
             }
         }
 
+        // Add user_id to validated data
+        $validated['user_id'] = $user->id;
+        $validated['supporting_documents'] = $paths;
+        $validated['status'] = 'Pending';
+
         $application = VolunteerApplication::create($validated);
 
         // Send notifications

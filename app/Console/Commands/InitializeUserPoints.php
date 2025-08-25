@@ -47,12 +47,6 @@ class InitializeUserPoints extends Command
             // Award registration points
             $this->pointsService->awardRegistrationPoints($user);
 
-            // Award points for missing reports
-            $missingReports = MissingReport::where('user_id', $user->id)->get();
-            foreach ($missingReports as $report) {
-                $this->pointsService->awardMissingReportPoints($user, $report->id, $report->full_name);
-            }
-
             // Award points for approved sighting reports
             $sightingReports = SightingReport::where('user_id', $user->id)
                 ->where('status', 'approved')

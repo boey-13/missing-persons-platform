@@ -41,6 +41,9 @@ class PointsService
                 'metadata' => $metadata,
             ]);
 
+            // Send notification to user
+            $this->sendPointsEarnedNotification($user, $points, $description, $action);
+
             return $userPoint;
         });
     }
@@ -86,20 +89,6 @@ class PointsService
             10,
             'registration',
             'Account registration bonus'
-        );
-    }
-
-    /**
-     * Award points for missing report
-     */
-    public function awardMissingReportPoints(User $user, $reportId, $reportName)
-    {
-        return $this->awardPoints(
-            $user,
-            5,
-            'missing_report',
-            "Submitted missing person report for {$reportName}",
-            ['report_id' => $reportId]
         );
     }
 
@@ -246,5 +235,28 @@ class PointsService
 
             return $userPoint;
         });
+    }
+
+    /**
+     * Send points earned notification
+     */
+    private function sendPointsEarnedNotification(User $user, int $points, string $description, string $action)
+    {
+        // Map action to user-friendly reason
+        $reasonMap = [
+            'registration' => 'account registration',
+            'sighting_report' => 'submitting an approved sighting report',
+            'social_share' => 'sharing on social media',
+            'community_project' => 'completing a community project',
+        ];
+
+        $reason = $reasonMap[$action] ?? $description;
+
+        \App\Services\NotificationService::pointsEarned(
+            $user->id,
+            $points,
+            $reason,
+            $action
+        );
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\PointsService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,13 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
+    protected $pointsService;
+
+    public function __construct(PointsService $pointsService)
+    {
+        $this->pointsService = $pointsService;
+    }
+
     /**
      * Display the registration view.
      */
@@ -45,6 +53,12 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'user', 
         ]);
+
+        // Award registration points
+        $this->pointsService->awardRegistrationPoints($user);
+
+        // Send welcome notification
+        \App\Services\NotificationService::welcomeNewUser($user);
 
         Auth::login($user);
 

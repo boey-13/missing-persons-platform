@@ -1,12 +1,13 @@
 <script setup>
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { ref, onMounted, watch, computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 
 defineOptions({ layout: MainLayout })
 
 const props = defineProps({
-  report: Object
+  report: Object,
+  flash: Object
 })
 
 // Google Map setup
@@ -84,6 +85,73 @@ function openPhotoModal() {
 function closePhotoModal() {
   showPhotoModal.value = false
 }
+
+// Social share functions with points tracking
+async function shareToSocial(platform) {
+  try {
+    // Record the share for points
+    const response = await fetch('/api/social-share', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({
+        report_id: props.report.id,
+        platform: platform
+      })
+    })
+
+    const result = await response.json()
+    
+    if (result.success) {
+      // Show success message
+      alert(`Shared successfully! You earned ${result.pointsAwarded} point!`)
+    } else {
+      // Show message if already shared
+      alert(result.message)
+    }
+
+    // Open social media share URL
+    const shareUrls = {
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}&text=Help%20find%20this%20missing%20person!`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(currentUrl)}`,
+      instagram: 'https://www.instagram.com/'
+    }
+
+    if (shareUrls[platform]) {
+      window.open(shareUrls[platform], '_blank')
+    }
+
+  } catch (error) {
+    console.error('Error recording social share:', error)
+    alert('Error recording share. Please try again.')
+  }
+}
+
+function reportSighting() {
+  router.visit(`/sighting-reports/report?report_id=${props.report.id}`)
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+function getStatusColor(status) {
+  const colors = {
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Approved': 'bg-green-100 text-green-800',
+    'Missing': 'bg-red-100 text-red-800',
+    'Found': 'bg-blue-100 text-blue-800',
+    'Rejected': 'bg-gray-100 text-gray-800'
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
 </script>
 
 <template>
@@ -104,21 +172,18 @@ function closePhotoModal() {
         <div class="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-sm text-center">
           <h2 class="text-lg font-semibold mb-4">Share to Social Media</h2>
           <div class="flex justify-around mb-4 text-3xl">
-            <a :href="`https://www.instagram.com/`" target="_blank" class="hover:scale-110 transition">
+            <button @click="shareToSocial('instagram')" class="hover:scale-110 transition">
               <i class="fab fa-instagram text-[#E4405F]"></i>
-            </a>
-            <a :href="`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`" target="_blank"
-              class="hover:scale-110 transition">
+            </button>
+            <button @click="shareToSocial('facebook')" class="hover:scale-110 transition">
               <i class="fab fa-facebook text-[#1877F2]"></i>
-            </a>
-            <a :href="`https://wa.me/?text=${encodeURIComponent(currentUrl)}`" target="_blank"
-              class="hover:scale-110 transition">
+            </button>
+            <button @click="shareToSocial('whatsapp')" class="hover:scale-110 transition">
               <i class="fab fa-whatsapp text-[#25D366]"></i>
-            </a>
-            <a :href="`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}&text=Help%20find%20this%20missing%20person!`"
-              target="_blank" class="hover:scale-110 transition">
+            </button>
+            <button @click="shareToSocial('twitter')" class="hover:scale-110 transition">
               <i class="fab fa-twitter text-[#1DA1F2]"></i>
-            </a>
+            </button>
           </div>
           <button @click="showShareModal = false" class="text-sm text-gray-600 hover:text-black">Close</button>
         </div>

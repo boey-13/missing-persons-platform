@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { router, useForm, Link } from '@inertiajs/vue3'
 
 defineOptions({ layout: MainLayout })
 
@@ -375,7 +375,7 @@ function getCategoryColor(category) {
         <div
           v-for="project in filteredProjects"
           :key="project.id"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
         >
           <!-- Project Image -->
           <div class="h-48 relative">
@@ -404,7 +404,7 @@ function getCategoryColor(category) {
           </div>
 
           <!-- Project Content -->
-          <div class="p-6">
+          <div class="p-6 flex flex-col flex-1">
             <h3 class="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">{{ project.title }}</h3>
             <p class="text-gray-600 mb-4 line-clamp-2">{{ project.description }}</p>
             
@@ -420,7 +420,7 @@ function getCategoryColor(category) {
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
-                {{ formatDate(project.date) }} at {{ project.time }}
+                {{ formatDate(project.date) }} at {{ formatTime(project.time) }}
               </div>
               <div class="flex items-center text-sm text-gray-600">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -444,14 +444,23 @@ function getCategoryColor(category) {
               </div>
             </div>
 
-            <!-- Action Button -->
-            <button
-              @click="applyToProject(project)"
-              :class="getApplicationButtonClass(project)"
-              :disabled="!canApplyToProject(project)"
-            >
-              {{ getApplicationButtonText(project) }}
-            </button>
+            <!-- Action Buttons - Now at the bottom -->
+            <div class="flex space-x-2 mt-auto">
+              <Link
+                :href="`/community-projects/${project.id}`"
+                class="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center"
+              >
+                View Details
+              </Link>
+              <button
+                @click="applyToProject(project)"
+                :class="getApplicationButtonClass(project)"
+                :disabled="!canApplyToProject(project)"
+                class="flex-1"
+              >
+                {{ getApplicationButtonText(project) }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
