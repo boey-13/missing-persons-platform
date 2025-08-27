@@ -303,16 +303,7 @@ async function handleInput() {
     messages.value.push({ role: "user", text: userInput.value.trim() });
     
     await simulateTyping(() => {
-        // Check for quick commands
-        for (const [command, action] of Object.entries(quickCommands)) {
-            if (input.includes(command)) {
-                handleQuickCommand(action);
-                userInput.value = "";
-                return;
-            }
-        }
-        
-        // Check for search queries
+        // Check for search queries FIRST (highest priority)
         if (input.startsWith('search ')) {
             const searchQuery = userInput.value.trim().substring(7);
             handleSearch(searchQuery);
@@ -320,9 +311,43 @@ async function handleInput() {
             return;
         }
         
+        // Check for direct search patterns
+        if (input.includes('find') || input.includes('look for') || input.includes('search for')) {
+            const searchTerms = input.replace(/(find|look for|search for)/g, '').trim();
+            if (searchTerms) {
+                handleSearch(searchTerms);
+                userInput.value = "";
+                return;
+            }
+        }
+        
+        // Check for quick commands (but exclude 'search' to avoid conflict)
+        for (const [command, action] of Object.entries(quickCommands)) {
+            if (command !== 'search' && input.includes(command)) {
+                handleQuickCommand(action);
+                userInput.value = "";
+                return;
+            }
+        }
+        
         // Check for specific questions
         if (input.includes('how') || input.includes('what') || input.includes('where') || input.includes('when')) {
             handleQuestion(userInput.value.trim());
+            userInput.value = "";
+            return;
+        }
+        
+        // Check if input might be a search query (names, locations, etc.)
+        if (input.length > 2 && !input.includes('help') && !input.includes('menu')) {
+            // Ask user if they want to search
+            messages.value.push({
+                role: "system",
+                text: `Did you want to search for "${userInput.value.trim()}"? I can help you find missing persons by name, location, or other details.`,
+                menu: [
+                    { label: `🔍 Search for "${userInput.value.trim()}"`, action: "searchDirect", query: userInput.value.trim() },
+                    { label: "❌ No, show me other options", action: "showOtherOptions" }
+                ]
+            });
             userInput.value = "";
             return;
         }
