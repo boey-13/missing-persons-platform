@@ -1,12 +1,14 @@
 <template>
     <div>
-        <button class="chatbot-btn" @click="toggleChat" v-if="!isOpen && shouldShowChatbot">
-            <svg class="chatbot-icon" width="24" height="24" fill="white" viewBox="0 0 24 24">
-                <path
-                    d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12zM7 9h2v2H7V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9z" />
-            </svg>
-            <div v-if="unreadCount > 0" class="notification-badge">{{ unreadCount }}</div>
-        </button>
+        <div class="chatbot-btn-container">
+            <button class="chatbot-btn" @click="toggleChat" v-if="!isOpen && shouldShowChatbot">
+                <svg class="chatbot-icon" width="24" height="24" fill="white" viewBox="0 0 24 24">
+                    <path
+                        d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12zM7 9h2v2H7V9zm4 0h2v2h-2V9zm4 0h2v2h-2V9z" />
+                </svg>
+                <div v-if="unreadCount > 0" class="notification-badge">{{ unreadCount }}</div>
+            </button>
+        </div>
         <div class="findme-chatbot-modal" v-if="isOpen && shouldShowChatbot">
             <div class="chatbot-header">
                 <img src="../assets/chatbot.png" alt="bot" class="header-bot-img" />
@@ -488,17 +490,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.chatbot-btn {
+.chatbot-btn-container {
     position: fixed;
     right: 24px;
     bottom: 24px;
+    z-index: 1000;
+}
+
+.chatbot-btn {
     width: 56px;
     height: 56px;
     background: #5C4033;
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
