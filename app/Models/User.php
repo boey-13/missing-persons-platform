@@ -161,4 +161,52 @@ class User extends Authenticatable
             'last_failed_login' => null,
         ]);
     }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is approved volunteer
+     */
+    public function isApprovedVolunteer(): bool
+    {
+        return $this->volunteerApplication && $this->volunteerApplication->status === 'Approved';
+    }
+
+    /**
+     * Check if user has volunteer application
+     */
+    public function hasVolunteerApplication(): bool
+    {
+        return $this->volunteerApplication !== null;
+    }
+
+    /**
+     * Check if user can access volunteer projects
+     */
+    public function canAccessVolunteerProjects(): bool
+    {
+        return $this->isAdmin() || $this->isApprovedVolunteer();
+    }
+
+    /**
+     * Check if user can access admin dashboard
+     */
+    public function canAccessAdminDashboard(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * Get volunteer application relationship
+     */
+    public function volunteerApplication()
+    {
+        return $this->hasOne(VolunteerApplication::class);
+    }
 }

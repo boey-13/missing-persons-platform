@@ -16,7 +16,7 @@ class HandleInertiaRequests extends Middleware
 
             // 你已有的
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? $request->user()->load('volunteerApplication') : null,
             ],
 
             // ✅ 新增：把 Laravel 的 session flash 共享给前端

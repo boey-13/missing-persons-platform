@@ -79,23 +79,13 @@ Route::middleware('auth')->group(function () {
     // Volunteer application & home
     Route::get('/volunteer/apply', [VolunteerApplicationController::class, 'create'])->name('volunteer.apply');
     Route::post('/volunteer/apply', [VolunteerApplicationController::class, 'store'])->name('volunteer.apply.store');
-    Route::get('/volunteer/application-pending', [VolunteerApplicationController::class, 'create'])->name('volunteer.application-pending');
+    Route::get('/volunteer/application-pending', [VolunteerApplicationController::class, 'applicationPending'])->name('volunteer.application-pending');
     Route::get('/volunteer', [VolunteerApplicationController::class, 'home'])->name('volunteer.home');
 
     // Volunteer community projects (only approved volunteers)
     Route::get('/volunteer/projects', function () {
-        $user = auth()->user();
-        if (!$user) {
-            return redirect()->route('login');
-        }
-        $hasApproved = \App\Models\VolunteerApplication::where('user_id', $user->id)
-            ->where('status', 'Approved')
-            ->exists();
-        if (!$hasApproved) {
-            return redirect()->route('volunteer.apply')->with('status', 'Only approved volunteers can access Community Projects.');
-        }
         return app(\App\Http\Controllers\VolunteerProjectController::class)->index(request());
-    })->name('volunteer.projects');
+    })->middleware(\App\Http\Middleware\VolunteerMiddleware::class)->name('volunteer.projects');
     
     // Volunteer project applications
     Route::post('/volunteer/projects/{project}/apply', [\App\Http\Controllers\VolunteerProjectController::class, 'apply'])

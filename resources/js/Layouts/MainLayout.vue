@@ -18,19 +18,24 @@
           <div v-if="dropdownOpen === 'missing'" 
             class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-40">
             <a href="/missing-persons" class="block px-4 py-2 hover:bg-[#e7d6c3]">View Case</a>
-            <a href="/missing-persons/report" class="block px-4 py-2 hover:bg-[#e7d6c3]">Report Missing Person</a>
+            <!-- Show Report Missing Person only for logged in users -->
+            <a v-if="currentUser" href="/missing-persons/report" class="block px-4 py-2 hover:bg-[#e7d6c3]">Report Missing Person</a>
           </div>
         </div>
         <!-- Volunteer Dropdown -->
-        <div class="relative">
+        <div v-if="currentUser" class="relative">
           <button @click="toggleDropdown('volunteer')" class="flex items-center gap-1">
             Volunteer
             <span :class="{ 'rotate-180': dropdownOpen === 'volunteer' }">▼</span>
           </button>
           <div v-if="dropdownOpen === 'volunteer'" 
             class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-40">
-            <a href="/volunteer/projects" class="block px-4 py-2 hover:bg-[#e7d6c3]">Community Project</a>
-            <a href="/volunteer/apply" class="block px-4 py-2 hover:bg-[#e7d6c3]">Become Volunteer</a>
+            <!-- Show Community Projects only for approved volunteers and admins -->
+            <a v-if="canAccessVolunteerProjects" href="/volunteer/projects" class="block px-4 py-2 hover:bg-[#e7d6c3]">Community Project</a>
+            <!-- Show Become Volunteer only for users without approved application -->
+            <a v-if="!hasApprovedVolunteerApplication" href="/volunteer/apply" class="block px-4 py-2 hover:bg-[#e7d6c3]">Become Volunteer</a>
+            <!-- Show application status for pending/rejected applications -->
+            <a v-if="hasVolunteerApplication && !isApprovedVolunteer" href="/volunteer/application-pending" class="block px-4 py-2 hover:bg-[#e7d6c3]">Application Status</a>
           </div>
         </div>
         <a href="/about">About Us</a>
@@ -41,11 +46,12 @@
             {{ currentUser ? currentUser.name : 'Login' }}
             <span :class="{ 'rotate-180': dropdownOpen === 'user' }">▼</span>
           </button>
-          <div v-if="dropdownOpen === 'user'" 
+                      <div v-if="dropdownOpen === 'user'" 
             class="absolute right-0 mt-2 w-52 bg-white text-[#333] rounded shadow z-40">
             <template v-if="currentUser">
               <a href="/profile" class="block px-4 py-2 hover:bg-[#ddc3a5]">User Profile</a>
-              <a href="/admin/dashboard" class="block px-4 py-2 hover:bg-[#ddc3a5]">Admin Dashboard</a>
+              <!-- Show Admin Dashboard only for admins -->
+              <a v-if="isAdmin" href="/admin/dashboard" class="block px-4 py-2 hover:bg-[#ddc3a5]">Admin Dashboard</a>
               <Link href="/logout" method="post" as="button"
                 class="block px-4 py-2 hover:bg-[#ddc3a5] w-full text-left">
               Log Out
@@ -89,8 +95,15 @@
           <nav class="flex flex-col gap-2 text-base">
             <a href="/about" class="hover:text-[#A67B5B]">About</a>
             <a href="/missing-persons" class="hover:text-[#A67B5B]">View Case</a>
-            <a href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
-            <a href="/volunteer/projects" class="hover:text-[#A67B5B]">Volunteer</a>
+            <!-- Show Report Case only for logged in users -->
+            <a v-if="currentUser" href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
+            <!-- Show Become Volunteer only for logged in users without approved application -->
+            <a v-if="currentUser && !hasApprovedVolunteerApplication" href="/volunteer/apply" class="hover:text-[#A67B5B]">Become Volunteer</a>
+            <!-- Show Community Projects for approved volunteers and admins -->
+            <a v-if="canAccessVolunteerProjects" href="/volunteer/projects" class="hover:text-[#A67B5B]">Community Projects</a>
+            <!-- Show Admin Dashboard for admins -->
+            <a v-if="isAdmin" href="/admin/dashboard" class="hover:text-[#A67B5B]">Admin Dashboard</a>
+            <a href="/contact" class="hover:text-[#A67B5B]">Contact Us</a>
           </nav>
         </div>
         <!-- Help Section -->
@@ -98,8 +111,13 @@
           <div class="font-bold text-lg mb-3 tracking-wide">Help</div>
           <nav class="flex flex-col gap-2 text-base">
             <a href="/contact" class="hover:text-[#A67B5B]">Contact Us</a>
-            <a href="#" class="hover:text-[#A67B5B]">Terms & Conditions</a>
-            <a href="#" class="hover:text-[#A67B5B]">Privacy Policy</a>
+            <a href="/about" class="hover:text-[#A67B5B]">About Us</a>
+            <a href="/missing-persons" class="hover:text-[#A67B5B]">View Cases</a>
+            <!-- Show Report Case only for logged in users -->
+            <a v-if="currentUser" href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
+            <!-- Show volunteer-related help for logged in users -->
+            <a v-if="currentUser" href="/volunteer/apply" class="hover:text-[#A67B5B]">Become Volunteer</a>
+            <a v-if="canAccessVolunteerProjects" href="/volunteer/projects" class="hover:text-[#A67B5B]">Community Projects</a>
           </nav>
         </div>
         <!-- Social Media Section -->
@@ -160,6 +178,19 @@ onUnmounted(() => {
 // Get current user from Inertia page props
 const page = usePage()
 const currentUser = computed(() => page.props.auth?.user)
+
+// Permission checks
+const isAdmin = computed(() => currentUser.value?.role === 'admin')
+const hasVolunteerApplication = computed(() => currentUser.value?.volunteer_application !== null)
+const isApprovedVolunteer = computed(() => 
+  currentUser.value?.volunteer_application?.status === 'Approved'
+)
+const hasApprovedVolunteerApplication = computed(() => 
+  currentUser.value?.volunteer_application?.status === 'Approved'
+)
+const canAccessVolunteerProjects = computed(() => 
+  isAdmin.value || isApprovedVolunteer.value
+)
 </script>
 
 <style scoped>

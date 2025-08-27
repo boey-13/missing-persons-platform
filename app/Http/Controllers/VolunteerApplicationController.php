@@ -92,6 +92,22 @@ class VolunteerApplicationController extends Controller
             ->with('status', 'Application submitted.');
     }
 
+    public function applicationPending()
+    {
+        $user = auth()->user();
+        $application = VolunteerApplication::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (!$application) {
+            return redirect()->route('volunteer.apply')->with('status', 'No volunteer application found.');
+        }
+
+        return Inertia::render('Volunteer/ApplicationPending', [
+            'application' => $application,
+        ]);
+    }
+
     public function home()
     {
         $user = auth()->user();

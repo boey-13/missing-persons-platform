@@ -40,6 +40,9 @@ class AuthenticatedSessionController extends Controller
             ['user_id' => auth()->id(), 'ip' => $request->ip()]
         );
 
+        // Load user with volunteer application for frontend permissions
+        $user = auth()->user()->load('volunteerApplication');
+
         return redirect()->intended(route('home', absolute: false))->with('status', 'Welcome back! You have successfully logged in.');
     }
 
