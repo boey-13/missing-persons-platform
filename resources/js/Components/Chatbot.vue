@@ -118,9 +118,86 @@ const warningTimeout = ref(null);
 function generateSessionId() {
   return 'fm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
-function loadSession() { return false; }  // 先直接返回 false：表示没有历史会话
-function saveSession() {}                  // 需要的话再补
-function updateActivity() {}               // 需要的话再补
+function loadSession() {
+  try {
+    const sessionData = localStorage.getItem('findme_chat_session');
+    if (sessionData) {
+      const data = JSON.parse(sessionData);
+      const now = Date.now();
+      
+      // 检查会话是否在30分钟内
+      if (data.timestamp && (now - data.timestamp) < 30 * 60 * 1000) {
+        sessionId.value = data.sessionId;
+        messages.value = data.messages || [];
+        return true; // 有有效会话
+      }
+    }
+  } catch (e) {
+    console.error('Error loading session:', e);
+  }
+  return false; // 没有有效会话
+}
+
+function saveSession() {
+  try {
+    const sessionData = {
+      sessionId: sessionId.value,
+      messages: messages.value,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('findme_chat_session', JSON.stringify(sessionData));
+  } catch (e) {
+    console.error('Error saving session:', e);
+  }
+}
+
+function clearSession() {
+  try {
+    localStorage.removeItem('findme_chat_session');
+    sessionId.value = null;
+    messages.value = [];
+  } catch (e) {
+    console.error('Error clearing session:', e);
+  }
+}
+
+function updateActivity() {
+  // 清除之前的超时
+  if (autoEndTimeout.value) {
+    clearTimeout(autoEndTimeout.value);
+    autoEndTimeout.value = null;
+  }
+  if (warningTimeout.value) {
+    clearTimeout(warningTimeout.value);
+    warningTimeout.value = null;
+  }
+  
+  // 设置1分钟警告
+  warningTimeout.value = setTimeout(() => {
+    messages.value.push({
+      role: "system",
+      text: "⚠️ You've been inactive for 1 minute. The chat will end in 2 minutes if you don't respond.",
+      isWarning: true
+    });
+    scrollToBottom();
+  }, 60 * 1000); // 1分钟
+  
+  // 设置3分钟自动结束
+  autoEndTimeout.value = setTimeout(() => {
+    messages.value.push({
+      role: "system",
+      text: "⏰ Chat ended due to inactivity. You can start a new chat anytime!",
+      isEnd: true
+    });
+    scrollToBottom();
+    
+    // 2秒后关闭聊天
+    setTimeout(() => {
+      isOpen.value = false;
+      clearSession();
+    }, 2000);
+  }, 3 * 60 * 1000); // 3分钟
+}
 
 function toggleChat() {
     isOpen.value = !isOpen.value;
@@ -319,6 +396,19 @@ async function handleMenuClick(item) {
                 role: "system",
                 text: "Contact us at support@findme.com or call us at 011-11223344. You can also leave a message here and we'll get back to you.",
             });
+        } else if (item.action === "endChat") {
+            messages.value.push({
+                role: "system",
+                text: "👋 Thank you for using FindMe ChatBot! Have a great day!",
+                isEnd: true
+            });
+            
+            // 2秒后关闭聊天并清除会话
+            setTimeout(() => {
+                isOpen.value = false;
+                clearSession();
+            }, 2000);
+            return; // 不显示"Anything else?"消息
         } else {
             messages.value.push({ role: "system", text: "This feature is coming soon!" });
         }
