@@ -41,12 +41,38 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        // Check if user exists and is locked
+        $user = \App\Models\User::where('email', $this->email)->first();
+        
+        if ($user && $user->isAccountLocked()) {
+            throw ValidationException::withMessages([
+                'account_locked' => 'Your account has been locked for 5 minutes due to too many failed login attempts. Please try again later or reset your password.',
+            ]);
+        }
+
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            // Increment failed login attempts if user exists
+            if ($user) {
+                $user->incrementFailedLoginAttempts();
+                
+                // Check if account should be locked
+                if ($user->isAccountLocked()) {
+                    throw ValidationException::withMessages([
+                        'account_locked' => 'Your account has been locked for 5 minutes due to too many failed login attempts. Please try again later or reset your password.',
+                    ]);
+                }
+            }
+
+            RateLimiter::hit($this->throttleKey(), 300); // 5 minutes = 300 seconds
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
+        }
+
+        // Reset failed login attempts on successful login
+        if ($user) {
+            $user->resetFailedLoginAttempts();
         }
 
         RateLimiter::clear($this->throttleKey());
@@ -59,7 +85,7 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 3)) {
             return;
         }
 
@@ -68,10 +94,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'account_locked' => 'Your account has been locked for 5 minutes due to too many failed login attempts. Please try again later or reset your password.',
         ]);
     }
 

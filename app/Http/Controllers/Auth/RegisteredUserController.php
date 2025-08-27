@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\PointsService;
+use App\Mail\WelcomeEmail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -60,9 +62,16 @@ class RegisteredUserController extends Controller
         // Send welcome notification
         \App\Services\NotificationService::welcomeNewUser($user);
 
-        Auth::login($user);
+        // Send welcome email
+        try {
+            Mail::to($user->email)->send(new WelcomeEmail($user));
+        } catch (\Exception $e) {
+            // Log the error but don't fail the registration
+            \Log::error('Failed to send welcome email: ' . $e->getMessage());
+        }
 
-        return redirect('/login')->with('status', 'Registration successful! Please log in.');
+        // Don't auto-login, let user login manually
+        return redirect('/login')->with('status', 'Registration successful! Please log in with your new account.');
 
     }
 }

@@ -40,7 +40,7 @@ class AuthenticatedSessionController extends Controller
             ['user_id' => auth()->id(), 'ip' => $request->ip()]
         );
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('home', absolute: false))->with('status', 'Welcome back! You have successfully logged in.');
     }
 
     /**

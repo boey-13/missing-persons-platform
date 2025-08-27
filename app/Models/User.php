@@ -24,6 +24,10 @@ class User extends Authenticatable
         'role',
         'phone',
         'avatar_url',
+        'is_locked',
+        'locked_until',
+        'failed_login_attempts',
+        'last_failed_login',
     ];
 
     /**
@@ -46,6 +50,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'locked_until' => 'datetime',
+            'last_failed_login' => 'datetime',
         ];
     }
 
@@ -87,5 +93,72 @@ class User extends Authenticatable
     public function getTotalSpentPointsAttribute()
     {
         return $this->userPoint?->total_spent_points ?? 0;
+    }
+
+    /**
+     * Check if the user account is currently locked
+     */
+    public function isAccountLocked(): bool
+    {
+        if (!$this->is_locked) {
+            return false;
+        }
+
+        // If locked_until is null or in the past, unlock the account
+        if (!$this->locked_until || $this->locked_until->isPast()) {
+            $this->unlockAccount();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Lock the user account for 5 minutes
+     */
+    public function lockAccount(): void
+    {
+        $this->update([
+            'is_locked' => true,
+            'locked_until' => now()->addMinutes(5),
+            'failed_login_attempts' => 0, // Reset counter when locked
+        ]);
+    }
+
+    /**
+     * Unlock the user account
+     */
+    public function unlockAccount(): void
+    {
+        $this->update([
+            'is_locked' => false,
+            'locked_until' => null,
+            'failed_login_attempts' => 0,
+        ]);
+    }
+
+    /**
+     * Increment failed login attempts
+     */
+    public function incrementFailedLoginAttempts(): void
+    {
+        $this->increment('failed_login_attempts');
+        $this->update(['last_failed_login' => now()]);
+
+        // Lock account after 3 failed attempts
+        if ($this->failed_login_attempts >= 3) {
+            $this->lockAccount();
+        }
+    }
+
+    /**
+     * Reset failed login attempts on successful login
+     */
+    public function resetFailedLoginAttempts(): void
+    {
+        $this->update([
+            'failed_login_attempts' => 0,
+            'last_failed_login' => null,
+        ]);
     }
 }

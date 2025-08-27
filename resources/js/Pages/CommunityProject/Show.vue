@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { Head, Link, useForm, router } from '@inertiajs/vue3'
+import { ref, computed, onMounted, watch } from 'vue'
+import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import axios from 'axios'
 
@@ -11,6 +11,35 @@ const props = defineProps({
   userApplication: Object,
   isAdmin: Boolean
 })
+
+const $page = usePage()
+
+// Flash message auto-hide functionality
+const showFlash = ref(true)
+
+// Function to hide flash message
+function hideFlash() {
+  showFlash.value = false
+}
+
+// Auto-hide flash messages after 3 seconds
+onMounted(() => {
+  if ($page.props.flash?.success || $page.props.flash?.error) {
+    setTimeout(() => {
+      showFlash.value = false
+    }, 3000)
+  }
+})
+
+// Watch for new flash messages
+watch(() => $page.props.flash, (newFlash) => {
+  if (newFlash?.success || newFlash?.error) {
+    showFlash.value = true
+    setTimeout(() => {
+      showFlash.value = false
+    }, 3000)
+  }
+}, { deep: true })
 
 // Form for updating latest news (admin only)
 const newsForm = useForm({
@@ -165,31 +194,49 @@ function goBack() {
     <!-- Flash Messages (Top-center, prettier UI) -->
     <teleport to="body">
       <div
-        v-if="$page.props.flash?.success || $page.props.flash?.error"
+        v-if="showFlash && ($page.props.flash?.success || $page.props.flash?.error)"
         class="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex justify-center px-4"
       >
         <div class="pointer-events-auto max-w-lg w-full space-y-2">
           <div
             v-if="$page.props.flash?.success"
-            class="flex items-start gap-3 rounded-xl bg-green-600/90 text-white px-4 py-3 shadow-lg"
+            class="flex items-start gap-3 rounded-xl bg-green-600/90 text-white px-4 py-3 shadow-lg transition-all duration-300"
             role="alert"
           >
             <svg class="mt-0.5 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 12l2 2 4-4m6 2a10 10 0 11-20 0 10 10 0 0120 0"/>
             </svg>
-            <div class="text-sm font-medium">{{ $page.props.flash.success }}</div>
+            <div class="text-sm font-medium flex-1">{{ $page.props.flash.success }}</div>
+            <button
+              @click="hideFlash"
+              class="text-white/80 hover:text-white transition-colors"
+              title="Close message"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
           </div>
           <div
             v-if="$page.props.flash?.error"
-            class="flex items-start gap-3 rounded-xl bg-red-600/90 text-white px-4 py-3 shadow-lg"
+            class="flex items-start gap-3 rounded-xl bg-red-600/90 text-white px-4 py-3 shadow-lg transition-all duration-300"
             role="alert"
           >
             <svg class="mt-0.5 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <div class="text-sm font-medium">{{ $page.props.flash.error }}</div>
+            <div class="text-sm font-medium flex-1">{{ $page.props.flash.error }}</div>
+            <button
+              @click="hideFlash"
+              class="text-white/80 hover:text-white transition-colors"
+              title="Close message"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>

@@ -23,8 +23,9 @@ Route::get('/', function () {
         ]);
     return Inertia::render('Home', [
         'recent' => $recent,
+        'status' => session('status'),
     ]);
-});
+})->name('home');
 
 // About Us and Contact Us pages
 Route::get('/about', function () {

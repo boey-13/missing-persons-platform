@@ -87,8 +87,8 @@ onMounted(fetchCases)
     <!-- Main Content -->
     <main class="flex-1 flex flex-col items-center px-4 md:px-12 py-10 bg-white">
       <!-- Title -->
-      <h1 class="text-4xl font-extrabold text-[#6B4C3B] mb-1 tracking-tight">Missing Person Cases</h1>
-      <div class="w-24 h-1 bg-[#A67B5B] rounded-full mx-auto mb-8"></div>
+      <h1 class="text-4xl font-extrabold text-gray-900 mb-1 tracking-tight">Missing Person Cases</h1>
+      <div class="w-24 h-1 bg-gray-400 rounded-full mx-auto mb-8"></div>
       <!-- Search Bar -->
       <div class="mb-10 flex w-full max-w-2xl gap-2 items-center">
         <input
@@ -96,11 +96,11 @@ onMounted(fetchCases)
           @keyup.enter="onSearch"
           type="text"
           placeholder="Search by name..."
-          class="flex-1 rounded-xl border border-[#e3d9cc] px-6 py-3 bg-white text-base focus:outline-none focus:ring-2 focus:ring-[#A67B5B] shadow-sm"
+          class="flex-1 rounded-xl border border-gray-300 px-6 py-3 bg-gray-100 text-base focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 shadow-sm"
         />
         <button
           @click="onSearch"
-          class="rounded-xl px-5 py-2 bg-[#A67B5B] text-white font-bold shadow hover:bg-[#876046] transition"
+          class="rounded-xl px-5 py-3 bg-gray-800 text-white font-medium shadow hover:bg-gray-700 transition-colors"
         >
           <i class="fas fa-search mr-1"></i>Search
         </button>
@@ -123,7 +123,7 @@ onMounted(fetchCases)
           <button
             :disabled="page <= 1"
             @click="onPageChange(page - 1)"
-            class="text-[#A67B5B] hover:text-[#6B4C3B] disabled:opacity-50 disabled:cursor-not-allowed"
+            class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             &lt;
           </button>
@@ -132,10 +132,10 @@ onMounted(fetchCases)
             v-for="n in Math.ceil(total / perPage)"
             :key="n"
             :class="[
-              'text-sm',
+              'text-sm transition-colors',
               page === n 
-                ? 'underline font-medium' 
-                : 'text-[#A67B5B] hover:text-[#6B4C3B]'
+                ? 'text-gray-900 underline font-medium' 
+                : 'text-gray-600 hover:text-gray-900'
             ]"
             @click="onPageChange(n)"
           >
@@ -145,7 +145,7 @@ onMounted(fetchCases)
           <button
             :disabled="page >= Math.ceil(total / perPage)"
             @click="onPageChange(page + 1)"
-            class="text-[#A67B5B] hover:text-[#6B4C3B] disabled:opacity-50 disabled:cursor-not-allowed"
+            class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             &gt;
           </button>
