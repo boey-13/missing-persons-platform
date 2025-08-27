@@ -16,7 +16,7 @@ const props = defineProps({
   <Head title="Access Denied - Volunteer Area" />
 
   <div class="bg-gray-50 min-h-screen">
-    <div class="max-w-3xl mx-auto py-12 px-4">
+    <div class="max-w-[1400px] mx-auto py-12 px-4">
       <!-- Main Content -->
       <div class="text-center mb-8">
         <div class="w-20 h-20 bg-orange-100 flex items-center justify-center mx-auto mb-6">

@@ -77,17 +77,17 @@ function goBack() {
 <template>
   <div class="bg-white min-h-screen">
          <!-- Top bar -->
-     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+     <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
        <button @click="goBack" class="text-gray-700 hover:text-black text-sm font-medium">← Back</button>
      </div>
 
      <!-- Header -->
-     <header class="max-w-7xl mx-auto px-6 pb-2 text-center">
+     <header class="max-w-[1400px] mx-auto px-6 pb-2 text-center">
        <h1 class="text-3xl font-extrabold text-gray-900">My Vouchers</h1>
        <p class="text-gray-600 mt-2">Your redeemed rewards and vouchers</p>
        
        <!-- Points Display -->
-       <div class="mt-6 inline-flex items-center gap-3 border border-gray-200 rounded-md px-4 py-2">
+       <div class="mt-6 inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm rounded-md px-6 py-3">
          <div class="w-8 h-8 rounded-md bg-gray-900 text-white flex items-center justify-center text-sm font-bold">
            P
          </div>
@@ -99,8 +99,8 @@ function goBack() {
      </header>
 
     <!-- Filters -->
-    <section class="max-w-7xl mx-auto px-6 pt-6 pb-4">
-      <div class="flex items-center justify-between gap-4 flex-wrap md:flex-nowrap">
+    <section class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
+      <div class="flex items-center justify-between gap-4 flex-wrap md:flex-nowrap p-5 bg-gray-50 rounded-lg">
         <!-- Status chips -->
         <div class="overflow-x-auto hide-scrollbar -mx-1">
           <div class="flex items-center gap-2 px-1">
@@ -141,12 +141,12 @@ function goBack() {
     </section>
 
     <!-- Grid -->
-    <main class="max-w-7xl mx-auto px-6 pb-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <main class="max-w-[1400px] mx-auto px-6 pb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <article
           v-for="voucher in vouchers"
           :key="voucher.id"
-          class="group border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-sm transition-shadow cursor-pointer"
+          class="group border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
           @click="openVoucherModal(voucher)"
         >
           <!-- Image -->
@@ -165,8 +165,8 @@ function goBack() {
           </div>
 
           <!-- Body -->
-          <div class="p-4">
-            <h3 class="text-base font-semibold text-gray-900 line-clamp-2 mb-1">
+          <div class="p-5">
+            <h3 class="text-lg font-semibold text-gray-900 line-clamp-2 mb-1">
               {{ voucher.reward?.name }}
             </h3>
 
@@ -195,7 +195,7 @@ function goBack() {
             </div>
 
             <button
-              class="w-full py-2.5 rounded-md text-sm font-semibold transition-colors"
+              class="w-full py-2.5 px-3 rounded-md text-sm font-medium transition-colors"
               :disabled="voucher.status !== 'active'"
               :class="voucher.status === 'active'
                 ? 'bg-gray-900 text-white hover:bg-black'

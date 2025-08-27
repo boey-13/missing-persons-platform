@@ -103,7 +103,7 @@ function goBack() {
 <template>
   <div class="bg-white min-h-screen">
          <!-- Top bar -->
-     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+     <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
        <button @click="goBack" class="text-gray-700 hover:text-black text-sm font-medium">← Back</button>
       <Link
         href="/rewards/my-vouchers"
@@ -118,12 +118,12 @@ function goBack() {
     </div>
 
     <!-- Header -->
-    <header class="max-w-7xl mx-auto px-6 pb-2 text-center">
+    <header class="max-w-[1400px] mx-auto px-6 pb-2 text-center">
       <h1 class="text-3xl font-extrabold text-gray-900">Rewards</h1>
       <p class="text-gray-600 mt-2">Redeem your points for available rewards</p>
 
       <!-- Points summary -->
-      <div class="mt-6 inline-flex items-center gap-3 border border-gray-200 rounded-md px-4 py-2">
+      <div class="mt-6 inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm rounded-md px-6 py-3">
         <div class="w-8 h-8 rounded-md bg-gray-900 text-white flex items-center justify-center text-sm font-bold">
           P
         </div>
@@ -135,8 +135,8 @@ function goBack() {
     </header>
 
     <!-- Filters -->
-    <section class="max-w-7xl mx-auto px-6 pt-6 pb-4">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <section class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5 bg-gray-50 rounded-lg">
         <!-- Category chips -->
         <div class="overflow-x-auto hide-scrollbar -mx-1">
           <div class="flex items-center gap-2 px-1">
@@ -186,12 +186,12 @@ function goBack() {
     </section>
 
     <!-- Rewards grid -->
-    <main class="max-w-7xl mx-auto px-6 pb-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <main class="max-w-[1400px] mx-auto px-6 pb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <article
           v-for="reward in rewards"
           :key="reward.id"
-          class="group border border-gray-200 rounded-md overflow-hidden hover:shadow-sm transition-shadow bg-white flex flex-col"
+          class="group border border-gray-200 rounded-md overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 bg-white flex flex-col"
           @click="openRewardModal(reward)"
         >
           <!-- Image -->
@@ -210,8 +210,8 @@ function goBack() {
           </div>
 
           <!-- Body -->
-          <div class="p-4 flex flex-col gap-3 flex-1">
-            <h3 class="text-base font-semibold text-gray-900 line-clamp-2">{{ reward.name }}</h3>
+          <div class="p-5 flex flex-col gap-3 flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ reward.name }}</h3>
             <p v-if="reward.description" class="text-sm text-gray-600 line-clamp-2">
               {{ reward.description }}
             </p>
@@ -246,7 +246,7 @@ function goBack() {
 
             <!-- CTA -->
             <button
-              class="mt-auto w-full py-2.5 rounded-md text-sm font-semibold transition-colors"
+              class="mt-auto w-full py-2.5 px-3 rounded-md text-sm font-medium transition-colors"
               :disabled="!reward.can_redeem || reward.is_fully_redeemed"
               :class="
                 reward.can_redeem && !reward.is_fully_redeemed
@@ -304,7 +304,7 @@ function goBack() {
           <button
             @click="goToPage(pagination.current_page + 1)"
             :disabled="pagination.current_page >= pagination.last_page"
-            class="px-3 py-2 border border-gray-300 rounded-r-md text-sm hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
+            class="px-3 py-2 border border-gray-300 rounded-r-md text-sm hover:bg-gray-50 disabled:hover:bg-white"
           >
             Next
           </button>

@@ -159,7 +159,7 @@ function toggle(array, value) { const idx = array.indexOf(value); if (idx >= 0) 
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto py-10">
+  <div class="max-w-[1400px] mx-auto py-10">
     <div class="text-center mb-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Become a Volunteer</h1>
       <p class="text-gray-600">Join our community and help find missing persons</p>

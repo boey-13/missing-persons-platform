@@ -6,7 +6,7 @@ const props = defineProps({ application: Object })
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto py-12 text-center">
+  <div class="max-w-[1400px] mx-auto py-12 text-center">
     <!-- Success Icon -->
     <div class="mb-6">
       <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
