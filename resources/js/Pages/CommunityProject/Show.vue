@@ -244,7 +244,7 @@ function goBack() {
 
     <!-- Header -->
     <div class="bg-white/80 backdrop-blur shadow-sm border-b border-gray-200">
-      <div class="px-6 py-5 max-w-7xl mx-auto">
+      <div class="px-6 py-5 max-w-[1400px] mx-auto">
         <!-- Back Button -->
         <div class="mb-4">
           <button
@@ -284,7 +284,7 @@ function goBack() {
     
 
     <!-- Main Content -->
-    <div class="flex-1 max-w-7xl mx-auto p-6">
+    <div class="flex-1 max-w-[1400px] mx-auto p-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Column -->
         <div class="lg:col-span-2 space-y-6">
