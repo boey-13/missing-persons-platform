@@ -1,13 +1,54 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
-import { router, useForm, Link } from '@inertiajs/vue3'
+import { router, useForm, Link, usePage } from '@inertiajs/vue3'
 
 defineOptions({ layout: MainLayout })
 
+// 👉 Add: flash + local toast state
+const page = usePage()
+const successMsg = computed(() => page.props.flash?.success || '')
+const errorMsg   = computed(() => page.props.flash?.error || '')
+
+const localMsg  = ref('')
+const localType = ref('success')
+
+// Final message/type used by the toast
+const displayMsg  = computed(() => errorMsg.value || successMsg.value || localMsg.value)
+const displayType = computed(() => errorMsg.value ? 'error' : (successMsg.value ? 'success' : (localType.value === 'info' ? 'success' : localType.value)))
+
+const showFlash = ref(false)
+let hideTimer = null
+
+// 👉 Add: use this for JSON endpoints (fetch/axios) to show toast
+function showToast(message, type = 'success') {
+  localMsg.value  = message
+  localType.value = type
+  showFlash.value = true
+  clearTimeout(hideTimer)
+  hideTimer = setTimeout(() => {
+    showFlash.value = false
+    localMsg.value = ''
+  }, 3000)
+}
+
+// 👉 Add: auto-show for backend flash & local toast
+watch([successMsg, errorMsg, localMsg], ([s, e, l]) => {
+  clearTimeout(hideTimer)
+  showFlash.value = !!(s || e || l)
+  if (showFlash.value) {
+    hideTimer = setTimeout(() => {
+      showFlash.value = false
+      localMsg.value = ''
+    }, 3000)
+  }
+}, { immediate: true })
+
+onBeforeUnmount(() => clearTimeout(hideTimer))
+
 // Props from backend
 const props = defineProps({
-  projects: Array,
+  projects: Object, // 现在是分页对象
   flash: Object
 })
 
@@ -15,13 +56,50 @@ const props = defineProps({
 const selectedProject = ref(null)
 const showDetailModal = ref(false)
 const showApplicationModal = ref(false)
-const notification = ref({ show: false, message: '', type: 'success' })
 
 const filters = ref({
   category: 'all',
   status: 'all',
   location: ''
 })
+
+// 监听过滤器变化，重新请求数据
+watch(filters, (newFilters) => {
+  // 构建查询参数
+  const params = new URLSearchParams()
+  if (newFilters.category !== 'all') params.append('category', newFilters.category)
+  if (newFilters.status !== 'all') params.append('status', newFilters.status)
+  if (newFilters.location) params.append('location', newFilters.location)
+  
+  // 重新请求数据
+  router.get(route('volunteer.projects'), params.toString() ? Object.fromEntries(params) : {}, {
+    preserveState: true,
+    preserveScroll: true
+  })
+}, { deep: true })
+
+// 清除过滤器
+function clearFilters() {
+  filters.value = { category: 'all', status: 'all', location: '' }
+  // 重新请求数据
+  router.get(route('volunteer.projects'), {}, {
+    preserveState: true,
+    preserveScroll: true
+  })
+}
+
+// 解码 HTML 实体
+function decodeHtmlEntities(text) {
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  return textarea.value
+}
+
+// 判断是否是导航链接（Previous/Next）
+function isNavigationLink(label) {
+  return label === '&laquo; Previous' || label === 'Next &raquo;' || 
+         label === 'Previous' || label === 'Next'
+}
 
 // Application form
 const applicationForm = useForm({
@@ -88,14 +166,7 @@ const statuses = [
 ]
 
 const filteredProjects = computed(() => {
-  return props.projects.filter(project => {
-    const categoryMatch = filters.value.category === 'all' || project.category === filters.value.category
-    const statusMatch = filters.value.status === 'all' || project.status === filters.value.status
-    const locationMatch = !filters.value.location || 
-      project.location.toLowerCase().includes(filters.value.location.toLowerCase())
-    
-    return categoryMatch && statusMatch && locationMatch
-  })
+  return props.projects?.data || []
 })
 
 function viewProjectDetail(project) {
@@ -113,14 +184,7 @@ function applyToProject(project) {
       message = 'You have already been approved for this project!'
     }
     
-    notification.value = {
-      show: true,
-      message: message,
-      type: 'info'
-    }
-    setTimeout(() => {
-      notification.value.show = false
-    }, 3000)
+    showToast(message, 'success')
     return
   }
   
@@ -143,26 +207,12 @@ function submitApplication() {
   
   // Frontend validation
   if (applicationForm.experience.length < 10) {
-    notification.value = {
-      show: true,
-      message: 'Experience must be at least 10 characters long.',
-      type: 'error'
-    }
-    setTimeout(() => {
-      notification.value.show = false
-    }, 5000)
+    showToast('Experience must be at least 10 characters long.', 'error')
     return
   }
   
   if (applicationForm.motivation.length < 10) {
-    notification.value = {
-      show: true,
-      message: 'Motivation must be at least 10 characters long.',
-      type: 'error'
-    }
-    setTimeout(() => {
-      notification.value.show = false
-    }, 5000)
+    showToast('Motivation must be at least 10 characters long.', 'error')
     return
   }
   
@@ -172,15 +222,7 @@ function submitApplication() {
       showApplicationModal.value = false
       applicationForm.reset()
       // Show success notification
-      notification.value = {
-        show: true,
-        message: 'Application submitted successfully!',
-        type: 'success'
-      }
-      // Hide notification after 3 seconds
-      setTimeout(() => {
-        notification.value.show = false
-      }, 3000)
+      showToast('Application submitted successfully!', 'success')
     },
     onError: (errors) => {
       console.error('Form errors:', errors)
@@ -199,15 +241,7 @@ function submitApplication() {
         errorMessage = errors
       }
       
-      notification.value = {
-        show: true,
-        message: errorMessage,
-        type: 'error'
-      }
-      // Hide notification after 5 seconds
-      setTimeout(() => {
-        notification.value.show = false
-      }, 5000)
+      showToast(errorMessage, 'error')
     },
     onFinish: () => {
       console.log('Form submission finished')
@@ -279,32 +313,7 @@ function getCategoryColor(category) {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-    <!-- Flash Messages -->
-    <div v-if="$page.props.flash?.success" class="fixed top-4 right-4 z-50">
-      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-        {{ $page.props.flash.success }}
-      </div>
-    </div>
-    
-    <div v-if="$page.props.flash?.error" class="fixed top-4 right-4 z-50">
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        {{ $page.props.flash.error }}
-      </div>
-    </div>
-
-    <!-- Custom Notification -->
-    <div v-if="notification.show" class="fixed top-4 right-4 z-50">
-      <div :class="[
-        'px-4 py-3 rounded shadow-lg',
-        notification.type === 'success' 
-          ? 'bg-green-100 border border-green-400 text-green-700' 
-          : notification.type === 'error'
-          ? 'bg-red-100 border border-red-400 text-red-700'
-          : 'bg-blue-100 border border-blue-400 text-blue-700'
-      ]">
-        {{ notification.message }}
-      </div>
-    </div>
+    <!-- 👉 原有的 Flash Messages 和 Custom Notification 已移除，统一使用新的顶部居中提示 -->
 
     <!-- Header Section -->
     <div class="bg-white shadow-sm">
@@ -312,12 +321,12 @@ function getCategoryColor(category) {
         <div class="text-center">
           <h1 class="text-4xl font-bold text-gray-900 mb-4">Community Projects</h1>
           <p class="text-xl text-gray-600 mb-2">Join our community initiatives and make a difference</p>
-          <div class="inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-            </svg>
-            Points Available: {{ filteredProjects.reduce((total, project) => total + project.points_reward, 0) }}
-          </div>
+                      <div class="inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
+              <svg class="w-4 h-12 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              </svg>
+              Points Available: {{ filteredProjects.reduce((total, project) => total + project.points_reward, 0) }}
+            </div>
         </div>
       </div>
     </div>
@@ -359,7 +368,7 @@ function getCategoryColor(category) {
           </div>
           <div class="flex items-end">
             <button
-              @click="filters = { category: 'all', status: 'all', location: '' }"
+              @click="clearFilters"
               class="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
             >
               Clear Filters
@@ -472,6 +481,50 @@ function getCategoryColor(category) {
         </svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">No projects found</h3>
         <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or check back later for new opportunities.</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="props.projects?.data && props.projects.data.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div class="flex justify-center">
+        <div class="flex items-center space-x-2">
+          <!-- Previous Page -->
+          <Link
+            v-if="props.projects.prev_page_url"
+            :href="props.projects.prev_page_url"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            &lt;
+          </Link>
+          <span v-else class="text-gray-300">&lt;</span>
+
+          <!-- Page Numbers -->
+          <template v-for="(link, index) in props.projects.links" :key="index">
+            <Link
+              v-if="link.url && !link.active && !isNavigationLink(link.label)"
+              :href="link.url"
+              class="text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              {{ link.label }}
+            </Link>
+            <span
+              v-else-if="link.active"
+              class="text-gray-900 underline"
+            >
+              {{ link.label }}
+            </span>
+          </template>
+
+          <!-- Next Page -->
+          <Link
+            v-if="props.projects.next_page_url"
+            :href="props.projects.next_page_url"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            &gt;
+          </Link>
+          <span v-else class="text-gray-300">&gt;</span>
+        </div>
       </div>
     </div>
 
@@ -667,6 +720,23 @@ function getCategoryColor(category) {
       </div>
     </div>
   </div>
+
+  <!-- 👉 Add: 顶部居中 Flash（3 秒自动消失 + 动画；支持后端 flash 与本地 toast） -->
+  <teleport to="body">
+    <transition name="fade-down">
+      <div v-if="showFlash"
+           class="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex justify-center px-4">
+        <div class="pointer-events-auto max-w-md w-full">
+          <div
+            role="alert"
+            class="rounded-xl px-4 py-3 text-white text-center shadow-lg"
+            :class="displayType === 'error' ? 'bg-red-600/90' : 'bg-green-600/90'">
+            {{ displayMsg }}
+          </div>
+        </div>
+      </div>
+    </transition>
+  </teleport>
 </template>
 
 <style scoped>
@@ -676,6 +746,12 @@ function getCategoryColor(category) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* 👉 Add: 顶部提示：淡入向下动画 */
+.fade-down-enter-active,
+.fade-down-leave-active { transition: all .18s ease; }
+.fade-down-enter-from,
+.fade-down-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>
 
 

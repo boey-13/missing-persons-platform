@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     // Volunteer application & home
     Route::get('/volunteer/apply', [VolunteerApplicationController::class, 'create'])->name('volunteer.apply');
     Route::post('/volunteer/apply', [VolunteerApplicationController::class, 'store'])->name('volunteer.apply.store');
+    Route::get('/volunteer/application-pending', [VolunteerApplicationController::class, 'create'])->name('volunteer.application-pending');
     Route::get('/volunteer', [VolunteerApplicationController::class, 'home'])->name('volunteer.home');
 
     // Volunteer community projects (only approved volunteers)
@@ -61,7 +62,7 @@ Route::middleware('auth')->group(function () {
         if (!$hasApproved) {
             return redirect()->route('volunteer.apply')->with('status', 'Only approved volunteers can access Community Projects.');
         }
-        return app(\App\Http\Controllers\VolunteerProjectController::class)->index();
+        return app(\App\Http\Controllers\VolunteerProjectController::class)->index(request());
     })->name('volunteer.projects');
     
     // Volunteer project applications

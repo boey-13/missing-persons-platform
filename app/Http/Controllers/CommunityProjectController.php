@@ -231,7 +231,7 @@ class CommunityProjectController extends Controller
             auth()->user()->id
         );
 
-        return response()->json(['success' => true, 'message' => 'Project status updated successfully!']);
+        return back()->with('success', 'Project status updated successfully!');
     }
 
     /**

@@ -82,8 +82,8 @@ class MissingReportController extends Controller
             ['report_id' => $report->id, 'reporter_name' => $validated['reporter_name']]
         );
 
-        return redirect()->route('missing-persons.index')
-            ->with('success', 'Report submitted!');
+        return redirect()->route('home')
+            ->with('success', 'Report submitted successfully!');
     }
 
     public function show($id)

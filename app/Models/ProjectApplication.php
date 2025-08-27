@@ -49,4 +49,9 @@ class ProjectApplication extends Model
     {
         return $query->where('status', 'rejected');
     }
+
+    public function scopeWithdrawn($query)
+    {
+        return $query->where('status', 'withdrawn');
+    }
 }

@@ -4,8 +4,7 @@
     <header class="bg-[#6B4C3B] text-white px-8 py-3 flex items-center justify-between font-normal">
       <!-- Logo -->
       <div class="flex items-center">
-        <img src="/logo-brown.png" alt="FindMe Logo" class="h-8 mr-2" />
-        <span class="italic text-2xl">FindMe</span>
+        <img src="../assets/white.png" alt="FindMe Logo" class="h-8 mr-2" />
       </div>
       <!-- Navigation Bar -->
       <nav class="flex gap-8 text-lg font-normal items-center">
@@ -173,4 +172,5 @@ const currentUser = computed(() => page.props.auth?.user)
 :deep(body) {
   font-family: 'Poppins', Arial, sans-serif !important;
 }
+
 </style>

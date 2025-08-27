@@ -14,11 +14,11 @@ class SocialShare extends Model
         'missing_report_id',
         'platform',
         'share_url',
-        'points_awarded',
+        'points_awarded'
     ];
 
     protected $casts = [
-        'points_awarded' => 'boolean',
+        'points_awarded' => 'boolean'
     ];
 
     public function user()

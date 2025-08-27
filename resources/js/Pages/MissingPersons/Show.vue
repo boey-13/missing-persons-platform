@@ -155,21 +155,22 @@ function getStatusColor(status) {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-[#fcfbf7] font-['Poppins'] text-[#333]">
-
-    <!-- Share Modal -->
+  <div class="min-h-screen bg-white font-['Poppins'] text-[#222]">
+    <!-- Photo Modal -->
     <teleport to="body">
-      <div v-if="showPhotoModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center">
+      <div v-if="showPhotoModal" class="fixed inset-0 z-50 grid place-items-center bg-black/80">
         <div class="relative">
           <img :src="modalPhotoUrl" alt="Full Size Photo"
-            class="max-h-[90vh] max-w-[95vw] rounded-2xl shadow-xl border-4 border-white bg-white"
-            @click="closePhotoModal" style="cursor:zoom-out;" />
+               class="max-h-[90vh] max-w-[95vw] rounded-2xl shadow-2xl border-4 border-white bg-white"
+               @click="closePhotoModal" style="cursor:zoom-out;" />
           <button @click="closePhotoModal"
-            class="absolute top-2 right-2 text-white bg-black/70 rounded-full px-3 py-1 text-lg font-bold shadow hover:bg-black/90">×</button>
+                  class="absolute top-2 right-2 text-white bg-black/70 rounded-full px-3 py-1 text-lg font-bold shadow hover:bg-black/90">×</button>
         </div>
       </div>
-      <div v-if="showShareModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-sm text-center">
+
+      <!-- Share Modal -->
+      <div v-if="showShareModal" class="fixed inset-0 z-50 grid place-items-center bg-black/50">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-sm text-center">
           <h2 class="text-lg font-semibold mb-4">Share to Social Media</h2>
           <div class="flex justify-around mb-4 text-3xl">
             <button @click="shareToSocial('instagram')" class="hover:scale-110 transition">
@@ -190,121 +191,195 @@ function getStatusColor(status) {
       </div>
     </teleport>
 
-    <!-- Main Content Area-->
-    <main>
-      <div class="bg-white rounded-2xl shadow-xl border-2 border-[#ebebeb] p-10">
-        <h1 class="text-3xl font-bold text-center mb-2 tracking-tight">Missing Person Details</h1>
-        <p class="text-center text-gray-600 mb-10">
-          Help us reunite families by sharing or reporting any information you may have.
-        </p>
-
-        <div class="flex flex-col lg:flex-row gap-8">
-          <!-- Photo Carousel Area -->
-          <div
-            class="w-full lg:w-[330px] rounded-xl shadow p-4 flex flex-col items-center justify-center border border-[#f2e5d5] bg-[#fffaf6]">
-            <template v-if="photos.length > 0">
-              <div class="flex items-center justify-center gap-2 mb-3">
-                <!-- Left Arrow (outside photo) -->
-                <button @click="prevPhoto" :disabled="currentPhotoIndex === 0"
-                  class="bg-white hover:bg-orange-100 rounded-full p-2 shadow transition disabled:opacity-30"
-                  aria-label="Previous photo">
-                  <i class="fas fa-chevron-left text-2xl"></i>
-                </button>
-                <!-- Main Photo, even bigger -->
-                <div
-                  class="w-[270px] h-[340px] rounded-2xl overflow-hidden flex items-center justify-center bg-gray-100 shadow">
-                  <img :src="photoUrl(photos[currentPhotoIndex])" alt="Missing Person Photo"
-                    class="object-contain w-full h-full max-h-[330px] max-w-[255px] transition-all duration-300 bg-white cursor-zoom-in"
-                    style="user-select: none; border-radius: 14px;" @click="openPhotoModal">
-                </div>
-                <!-- Right Arrow (outside photo) -->
-                <button @click="nextPhoto" :disabled="currentPhotoIndex === photos.length - 1"
-                  class="bg-white hover:bg-orange-100 rounded-full p-2 shadow transition disabled:opacity-30"
-                  aria-label="Next photo">
-                  <i class="fas fa-chevron-right text-2xl"></i>
-                </button>
-              </div>
-              <!-- Index -->
-              <div class="text-gray-600 text-sm mb-1">{{ currentPhotoIndex + 1 }} / {{ photos.length }}</div>
-              <!-- Thumbnails -->
-              <div class="flex gap-2 justify-center mt-1">
-                <img v-for="(p, i) in photos" :key="i" :src="photoUrl(p)" @click="goPhoto(i)" :class="[
-                  'rounded-md cursor-pointer object-cover border-2 transition-all duration-200',
-                  i === currentPhotoIndex ? 'border-orange-400 ring-2 ring-orange-300 scale-105' : 'border-gray-300 hover:border-sky-400'
-                ]" style="width:56px;height:56px; background:#f8fafb;" :alt="'Thumbnail ' + (i + 1)" />
-              </div>
-            </template>
-            <div v-else class="text-gray-400 text-sm text-center mt-10">No photo available</div>
+    <!-- Hero / Header -->
+    <header class="border-b border-[#ebebeb] bg-white/70 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-5 py-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="space-y-1">
+            <h1 class="text-2xl font-extrabold tracking-tight">Missing Person Details</h1>
+            <p class="text-sm text-gray-600">Help us reunite families by sharing or reporting any information you may have.</p>
           </div>
+          <div class="flex items-center gap-2">
+            <span v-if="report.status"
+                  :class="`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium capitalize ${getStatusColor(report.status)}`">
+              <span class="inline-block h-2 w-2 rounded-full bg-current/70"></span>
+              {{ report.status }}
+            </span>
+            <button @click="showShareModal = true"
+                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">
+              <i class="fas fa-share-alt text-orange-500"></i>
+              Share
+            </button>
+          </div>
+        </div>
 
+        <!-- Meta line -->
+        <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div class="inline-flex items-center gap-2">
+            <i class="far fa-calendar"></i>
+            <span>Last seen: {{ formatDate(report.last_seen_date) }}</span>
+          </div>
+          <div class="inline-flex items-center gap-2">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ report.last_seen_location }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
 
+    <!-- Content -->
+    <main class="max-w-6xl mx-auto px-5 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Carousel -->
+        <section class="lg:col-span-4">
+          <div class="relative group">
+            <div class="aspect-[3/4] w-full overflow-hidden rounded-2xl border border-[#f2e5d5] bg-[#fffaf6] shadow">
+              <template v-if="photos.length">
+                <img
+                  :src="photoUrl(photos[currentPhotoIndex])"
+                  alt="Missing Person Photo"
+                  class="h-full w-full object-contain bg-white transition"
+                  @click="openPhotoModal"
+                  style="cursor:zoom-in;"
+                />
 
-          <!-- Person Info Area -->
-          <div class="flex-1 bg-white rounded-xl shadow p-8 border border-[#eee]">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Name:</span> {{ report.full_name }}</p>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Gender:</span> {{ report.gender }}</p>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Age:</span> {{ report.age }}</p>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Height:</span> {{ report.height_cm }} cm</p>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Weight:</span> {{ report.weight_kg }} kg</p>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Last Seen Location:</span> {{
-                  report.last_seen_location
-                }}</p>
-                <p class="mb-2"><span class="font-semibold text-gray-800">Last Seen Date:</span>
-                  {{ new Date(report.last_seen_date).toLocaleDateString('en-GB', {
-                    day: 'numeric', month: 'long', year:
-                      'numeric'
-                  }) }}
-                </p>
-              </div>
-              <!-- Share Icon -->
-              <button @click="showShareModal = true" class="text-orange-400 hover:text-orange-600 text-2xl mt-2">
-                <i class="fas fa-share-alt"></i>
-              </button>
+                <!-- arrows -->
+                <button @click="prevPhoto"
+                        :disabled="currentPhotoIndex === 0"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white disabled:opacity-40"
+                        aria-label="Previous photo">
+                  <i class="fas fa-chevron-left text-lg"></i>
+                </button>
+                <button @click="nextPhoto"
+                        :disabled="currentPhotoIndex === photos.length - 1"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white disabled:opacity-40"
+                        aria-label="Next photo">
+                  <i class="fas fa-chevron-right text-lg"></i>
+                </button>
+
+                <!-- index -->
+                <div class="absolute bottom-2 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                  {{ currentPhotoIndex + 1 }} / {{ photos.length }}
+                </div>
+              </template>
+
+                             <div v-else class="h-full grid place-items-center">
+                 <img src="../../assets/default-avatar.jpg" alt="Default Avatar" class="max-h-full max-w-full object-contain" />
+               </div>
+            </div>
+
+            <!-- thumbs -->
+            <div v-if="photos.length" class="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <img v-for="(p, i) in photos" :key="i" :src="photoUrl(p)" @click="goPhoto(i)"
+                   :alt="'Thumbnail ' + (i+1)"
+                   class="h-14 w-14 flex-none rounded-md object-cover border transition"
+                   :class="i === currentPhotoIndex ? 'border-orange-400 ring-2 ring-orange-300' : 'border-gray-300 hover:border-sky-400'"/>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Case Info Section -->
-        <div class="mt-8 bg-white rounded-xl shadow p-8 border border-[#eee]">
-          <h2 class="text-xl font-semibold mb-3">Case Information</h2>
-          <ul class="list-disc pl-7 space-y-1 text-gray-700">
-            <li><strong>Physical Description:</strong> {{ report.physical_description || '—' }}</li>
-            <li><strong>Clothing Description:</strong> {{ report.last_seen_clothing || '—' }}</li>
-            <li><strong>Other Notes:</strong> {{ report.additional_notes || '—' }}</li>
-          </ul>
-        </div>
+        <!-- Info -->
+        <section class="lg:col-span-8">
+          <div class="rounded-2xl border border-[#eee] bg-white shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Person Information</h2>
 
-        <!-- Actions -->
-        <div class="mt-8 flex gap-5 justify-center">
-          <Link :href="`/missing-persons/${report.id}/preview-poster`"
-            class="px-7 py-2 rounded bg-sky-500 text-white hover:bg-sky-600 text-base font-semibold shadow transition">
-          Download Poster
-          </Link>
-          <Link :href="`/missing-persons/${report.id}/report-sighting`"
-            class="px-7 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 text-base font-semibold shadow transition">
-            Submit Sighting
-          </Link>
-        </div>
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+              <div class="flex items-start gap-3">
+                <i class="far fa-id-badge mt-1 text-gray-500"></i>
+                <div>
+                  <dt class="text-sm text-gray-500">Name</dt>
+                  <dd class="font-medium text-gray-900">{{ report.full_name }}</dd>
+                </div>
+              </div>
 
-        <!-- Map Section -->
-        <div class="mt-12">
-          <h2 class="text-xl font-semibold mb-3">Last Seen Location</h2>
-          <div ref="mapDiv" class="w-full h-64 rounded shadow border"></div>
-        </div>
+              <div class="flex items-start gap-3">
+                <i class="fas fa-venus-mars mt-1 text-gray-500"></i>
+                <div>
+                  <dt class="text-sm text-gray-500">Gender</dt>
+                  <dd class="font-medium text-gray-900">{{ report.gender }}</dd>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="far fa-clock mt-1 text-gray-500"></i>
+                <div>
+                  <dt class="text-sm text-gray-500">Age</dt>
+                  <dd class="font-medium text-gray-900">{{ report.age }}</dd>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="fas fa-ruler-vertical mt-1 text-gray-500"></i>
+                <div>
+                  <dt class="text-sm text-gray-500">Height</dt>
+                  <dd class="font-medium text-gray-900">{{ report.height_cm }} cm</dd>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="fas fa-weight mt-1 text-gray-500"></i>
+                <div>
+                  <dt class="text-sm text-gray-500">Weight</dt>
+                  <dd class="font-medium text-gray-900">{{ report.weight_kg }} kg</dd>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <i class="fas fa-tshirt mt-1 text-gray-500"></i>
+                <div>
+                  <dt class="text-sm text-gray-500">Clothing (Last Seen)</dt>
+                  <dd class="font-medium text-gray-900">{{ report.last_seen_clothing || '—' }}</dd>
+                </div>
+              </div>
+            </dl>
+          </div>
+
+          <div class="rounded-2xl border border-[#eee] bg-white shadow p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-3">Case Information</h2>
+            <dl class="space-y-3">
+              <div class="flex gap-3">
+                <dt class="w-48 text-sm text-gray-500">Physical Description</dt>
+                <dd class="flex-1 text-gray-800">{{ report.physical_description || '—' }}</dd>
+              </div>
+              <div class="flex gap-3">
+                <dt class="w-48 text-sm text-gray-500">Other Notes</dt>
+                <dd class="flex-1 text-gray-800">{{ report.additional_notes || '—' }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- Actions -->
+          <div class="mt-6 flex flex-wrap gap-4">
+            <Link :href="`/missing-persons/${report.id}/preview-poster`"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 text-white hover:bg-sky-700 font-medium shadow">
+              <i class="fas fa-file-download"></i>
+              Download Poster
+            </Link>
+            <Link :href="`/missing-persons/${report.id}/report-sighting`"
+                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium shadow">
+              <i class="fas fa-binoculars"></i>
+              Submit Sighting
+            </Link>
+            <button @click="showShareModal = true"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 font-medium shadow-sm">
+              <i class="fas fa-share-alt text-orange-500"></i>
+              Share
+            </button>
+          </div>
+
+          <!-- Map -->
+          <div class="mt-8">
+            <h2 class="text-xl font-semibold mb-3">Last Seen Location</h2>
+            <div ref="mapDiv" class="w-full h-64 rounded-xl border shadow-inner ring-1 ring-gray-100"></div>
+          </div>
+        </section>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: #333;
-}
+::-webkit-scrollbar { height: 6px; }
+::-webkit-scrollbar-thumb { background: #d7d7d7; border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
 </style>

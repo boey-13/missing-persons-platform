@@ -1,52 +1,69 @@
 {
   "mainMenu": [
-    {"label": "Report Missing Person", "action": "reportMissing"},
-    {"label": "Search/Filter Missing Person", "action": "searchFilter"},
-    {"label": "Become Volunteer / Community Projects", "action": "volunteer"},
-    {"label": "FAQ / Help", "action": "faq"},
-    {"label": "Contact Support / Others", "action": "contactSupport"},
-    {"label": "Back to Main Menu", "action": "mainMenu"}
+    {"label": "🔍 Search Missing Persons", "action": "searchFilter"},
+    {"label": "📝 Report Missing Person", "action": "reportMissing"},
+    {"label": "🤝 Become Volunteer", "action": "volunteer"},
+    {"label": "❓ FAQ / Help", "action": "faq"},
+    {"label": "📞 Contact Support", "action": "contactSupport"},
+    {"label": "🏠 Back to Main Menu", "action": "mainMenu"}
   ],
   "faq": [
     {
       "question": "How do I report a missing person?",
-      "answer": "You need to log in to your account, then click 'Report Missing Person' and fill in the required details. You can also use this chatbot to access the reporting form."
+      "answer": "You need to log in to your account, then click 'Report Missing Person' and fill in the required details. The form is divided into 5 steps for easy completion. You can also use this chatbot to access the reporting form."
     },
     {
       "question": "How do I report a sighting?",
-      "answer": "First, search and select the missing person case. On the case detail page, click the 'Report Sighting' button to submit your information. Please provide as much detail as possible."
+      "answer": "First, search and select the missing person case. On the case detail page, click the 'Report Sighting' button to submit your information. Please provide as much detail as possible including location, time, and description."
     },
     {
       "question": "How do I search for a missing person?",
-      "answer": "You can search by name or filter by age, gender, or last seen location using this chatbot or from the platform’s main search page."
+      "answer": "You can search by name, age, gender, or last seen location. Use the search bar on the main page or type 'search [name]' in this chatbot. Advanced filtering options are available on the search page."
     },
     {
       "question": "How do I become a volunteer?",
-      "answer": "Log in to your account, then click 'Become a Volunteer' and fill out the application. You can also browse current community projects to join."
+      "answer": "Log in to your account, then click 'Become a Volunteer' and fill out the application form. You can also browse current community projects to join. The application process includes multiple steps with validation."
     },
     {
       "question": "How do I earn points?",
-      "answer": "You can earn points by reporting missing persons, submitting sighting reports, sharing cases on social media, and participating in community projects."
+      "answer": "You can earn points by: reporting missing persons (50 points), submitting sighting reports (20 points), sharing cases on social media (10 points per share), and participating in community projects (varies by project)."
     },
     {
       "question": "How do I redeem rewards?",
-      "answer": "After earning enough points, go to the 'My Rewards' page and select the reward you want to redeem. Points will be deducted upon successful redemption."
+      "answer": "After earning enough points, go to the 'My Rewards' page and select the reward you want to redeem. Points will be deducted upon successful redemption. Available rewards include vouchers and discounts."
     },
     {
       "question": "Is my personal information safe?",
-      "answer": "Yes, your information is protected with strong encryption and strict access controls. Only authorized administrators can access your data."
+      "answer": "Yes, your information is protected with strong encryption and strict access controls. Only authorized administrators can access your data. We follow strict privacy policies and never share personal information publicly."
     },
     {
       "question": "Can I report anonymously?",
-      "answer": "You must register and log in to submit a report, but your identity will only be shared with authorized personnel and not made public."
+      "answer": "You must register and log in to submit a report for verification purposes, but your identity will only be shared with authorized personnel and not made public. Your privacy is our priority."
     },
     {
       "question": "How do I contact support?",
-      "answer": "You can leave a message here in the chatbot under 'Contact Support,' or email us at support@email.com. Our team will assist you as soon as possible."
+      "answer": "You can contact us at support@findme.com or call us at 011-11223344. Our support team is available 24/7. You can also leave a message here in the chatbot and we'll get back to you."
+    },
+    {
+      "question": "What are community projects?",
+      "answer": "Community projects are volunteer initiatives to help find missing persons. They include search operations, awareness campaigns, and support activities. Volunteers can apply to join these projects and earn points for participation."
+    },
+    {
+      "question": "How do I download a missing person poster?",
+      "answer": "On any missing person's detail page, click the 'Download Poster' button. This will generate a PDF poster with all the relevant information that you can print and share in your community."
     },
     {
       "question": "Others",
-      "answer": "For any other questions, please use 'Contact Support' in this chatbot or check our website for more information."
+      "answer": "For any other questions, please use 'Contact Support' in this chatbot or check our website for more information. Our team is here to help you 24/7."
     }
-  ]
+  ],
+  "quickCommands": {
+    "search": "Search for missing persons",
+    "report": "Report a missing person",
+    "volunteer": "Become a volunteer",
+    "help": "Get help and FAQ",
+    "contact": "Contact support",
+    "menu": "Show main menu",
+    "home": "Go to main menu"
+  }
 }

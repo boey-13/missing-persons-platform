@@ -41,7 +41,7 @@ function getDisplayStatus(status) {
     <!-- 更大的头像区域 -->
     <div class="w-32 h-32 bg-[#B3D4FC] rounded-xl flex items-center justify-center mb-3 overflow-hidden">
       <img v-if="person.photo_url" :src="person.photo_url" alt="Photo" class="w-full h-full rounded object-cover" />
-      <div v-else class="w-20 h-20 bg-[#87CEEB] rounded-full"></div>
+      <img v-else src="../../assets/default-avatar.jpg" alt="Default Avatar" class="w-full h-full rounded object-cover" />
     </div>
     
     <!-- Status Badge -->

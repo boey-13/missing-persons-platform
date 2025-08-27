@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { router, useForm, usePage, Link } from '@inertiajs/vue3'
 
 defineOptions({ layout: AdminLayout })
 
@@ -20,7 +20,54 @@ const selectedProject = ref(null)
 const applications = ref([])
 const applicationStatusFilter = ref('all')
 
-// Form for new project
+// ===== Flash（顶部居中 + 3秒自动消失）=====
+const page = usePage()
+// 来自后端（Inertia redirect + session flash）
+const successMsg = computed(() => page.props.flash?.success || '')
+const errorMsg   = computed(() => page.props.flash?.error || '')
+// 本地（给 fetch JSON 用）
+const localMsg   = ref('')
+const localType  = ref('success') // 'success' | 'error'
+
+// 统一用于模板展示的消息 & 类型（优先后端的 error/success，再退回本地）
+const displayMsg  = computed(() => errorMsg.value || successMsg.value || localMsg.value)
+const displayType = computed(() =>
+  errorMsg.value ? 'error'
+  : (successMsg.value ? 'success' : (localType.value || 'success'))
+)
+
+const showFlash = ref(false)
+let hideTimer = null
+
+function showToast(msg, type = 'success') {
+  localMsg.value  = msg
+  localType.value = type
+  showFlash.value = true
+  clearTimeout(hideTimer)
+  hideTimer = setTimeout(() => {
+    showFlash.value = false
+    // 只清本地消息，不影响后端 flash
+    localMsg.value = ''
+  }, 3000)
+}
+
+// 监听后端 flash 或本地消息，有就显示 3 秒
+watch([successMsg, errorMsg, localMsg], ([s, e, l]) => {
+  clearTimeout(hideTimer)
+  showFlash.value = !!(s || e || l)
+  if (showFlash.value) {
+    hideTimer = setTimeout(() => {
+      showFlash.value = false
+      localMsg.value = ''
+    }, 3000)
+  }
+}, { immediate: true })
+
+onBeforeUnmount(() => {
+  clearTimeout(hideTimer)
+})
+
+// ===== Forms =====
 const newProjectForm = useForm({
   title: '',
   location: '',
@@ -36,7 +83,6 @@ const newProjectForm = useForm({
   photos: []
 })
 
-// Form for editing project
 const editProjectForm = useForm({
   title: '',
   location: '',
@@ -58,7 +104,7 @@ const categories = [
   { value: 'training', label: 'Training & Workshops' }
 ]
 
-// Computed
+// ===== Computed =====
 const pendingApplications = computed(() => {
   return applications.value.filter(app => app.status === 'pending')
 })
@@ -70,26 +116,29 @@ const filteredApplications = computed(() => {
   return applications.value.filter(app => app.status === applicationStatusFilter.value)
 })
 
-// Functions
+// ===== Actions =====
 function addProject() {
   newProjectForm.post('/admin/community-projects', {
     forceFormData: true,
     onSuccess: () => {
       showAddProjectModal.value = false
       newProjectForm.reset()
-      router.reload()
+      // 成功提示来自后端 flash，这里不额外本地 toast，避免重复
     }
   })
 }
 
 function updateProjectStatus(projectId, newStatus) {
-  router.post(`/admin/community-projects/${projectId}/status`, {
-    status: newStatus
-  }, {
-    onSuccess: () => {
-      router.reload()
+  router.post(
+    `/admin/community-projects/${projectId}/status`,
+    { status: newStatus },
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        // 提示来自后端 flash
+      },
     }
-  })
+  )
 }
 
 function editProject(project) {
@@ -98,17 +147,15 @@ function editProject(project) {
   editProjectForm.location = project.location
   // Handle date format: convert ISO date to YYYY-MM-DD
   editProjectForm.date = project.date ? project.date.split('T')[0] : ''
-  // Handle time format: extract HH:MM from datetime
+  // Handle time format
   if (project.time && project.time.includes('T')) {
-    // Handle ISO format: 2025-08-14T08:07:00.000000Z
     const timePart = project.time.split('T')[1]
     editProjectForm.time = timePart.substring(0, 5)
   } else if (project.time && project.time.includes(' ')) {
-    // Handle space format: 2025-08-14 06:22:00
     const timePart = project.time.split(' ')[1]
     editProjectForm.time = timePart.substring(0, 5)
   } else {
-    editProjectForm.time = project.time
+    editProjectForm.time = project.time || ''
   }
   editProjectForm.duration = project.duration
   editProjectForm.volunteers_needed = project.volunteers_needed
@@ -122,23 +169,30 @@ function editProject(project) {
 }
 
 function updateProject() {
+  if (!selectedProject.value) return
   editProjectForm.put(`/admin/community-projects/${selectedProject.value.id}`, {
     forceFormData: true,
     onSuccess: () => {
       showEditProjectModal.value = false
       editProjectForm.reset()
       selectedProject.value = null
-      router.reload()
+      // 提示来自后端 flash
     }
   })
 }
 
 function deleteProject(projectId) {
   if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-    router.delete(`/admin/community-projects/${projectId}`)
+    router.delete(`/admin/community-projects/${projectId}`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        // 提示来自后端 flash（控制器里记得 ->with('success', '...')）
+      }
+    })
   }
 }
 
+// ===== Applications（JSON 接口）=====
 function fetchApplications() {
   fetch('/admin/community-projects/applications', {
     headers: {
@@ -156,10 +210,10 @@ function fetchApplications() {
     })
     .then(data => {
       applications.value = data
-      console.log('Fetched applications:', data)
     })
     .catch(error => {
       console.error('Error fetching applications:', error)
+      showToast('Failed to load applications', 'error')
     })
 }
 
@@ -176,14 +230,17 @@ function approveApplication(applicationId) {
       'Content-Type': 'application/json'
     }
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      showApplicationModal.value = false
-      fetchApplications()
-      router.reload()
-    }
-  })
+    .then(response => response.json())
+    .then(data => {
+      if (data?.success) {
+        showApplicationModal.value = false
+        fetchApplications()
+        showToast(data?.message || 'Application approved successfully')
+      } else {
+        showToast(data?.message || 'Approve failed', 'error')
+      }
+    })
+    .catch(() => showToast('Approve failed', 'error'))
 }
 
 function rejectApplication(applicationId) {
@@ -194,28 +251,33 @@ function rejectApplication(applicationId) {
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ rejection_reason: reason })
+    body: JSON.stringify({ rejection_reason: reason || '' })
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      showApplicationModal.value = false
-      fetchApplications()
-    }
-  })
+    .then(response => response.json())
+    .then(data => {
+      if (data?.success) {
+        showApplicationModal.value = false
+        fetchApplications()
+        showToast(data?.message || 'Application rejected')
+      } else {
+        showToast(data?.message || 'Reject failed', 'error')
+      }
+    })
+    .catch(() => showToast('Reject failed', 'error'))
 }
 
 function handlePhotoUpload(event) {
-  const files = Array.from(event.target.files)
+  const files = Array.from(event.target.files || [])
   newProjectForm.photos = files
 }
 
 function handleEditPhotoUpload(event) {
-  const files = Array.from(event.target.files)
+  const files = Array.from(event.target.files || [])
   editProjectForm.photos = files
 }
 
 function formatDate(dateString) {
+  if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -225,22 +287,17 @@ function formatDate(dateString) {
 
 function formatTime(timeString) {
   if (!timeString) return ''
-  
   let timePart = ''
   if (timeString.includes('T')) {
-    // Handle ISO format: 2025-08-14T08:07:00.000000Z
     timePart = timeString.split('T')[1].substring(0, 5)
   } else if (timeString.includes(' ')) {
-    // Handle space format: 2025-08-14 06:22:00
     timePart = timeString.split(' ')[1].substring(0, 5)
   } else {
-    // Handle simple format: 06:22
     timePart = timeString.substring(0, 5)
   }
-  
-  // Convert to 12-hour format with AM/PM
   const [hours, minutes] = timePart.split(':')
-  const hour = parseInt(hours)
+  const hour = parseInt(hours, 10)
+  if (Number.isNaN(hour)) return timePart
   const ampm = hour >= 12 ? 'PM' : 'AM'
   const displayHour = hour % 12 || 12
   return `${displayHour}:${minutes} ${ampm}`
@@ -250,7 +307,11 @@ function getStatusColor(status) {
   const colors = {
     pending: 'bg-yellow-100 text-yellow-800',
     approved: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800'
+    rejected: 'bg-red-100 text-red-800',
+    upcoming: 'bg-indigo-100 text-indigo-800',
+    active: 'bg-green-100 text-green-800',
+    completed: 'bg-gray-200 text-gray-700',
+    cancelled: 'bg-red-100 text-red-800'
   }
   return colors[status] || 'bg-gray-100 text-gray-800'
 }
@@ -265,25 +326,28 @@ function getCategoryColor(category) {
 }
 
 onMounted(() => {
-  console.log('Admin panel mounted, fetching applications...')
   fetchApplications()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Flash Messages -->
-    <div v-if="$page.props.flash?.success" class="fixed top-4 right-4 z-50">
-      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-        {{ $page.props.flash.success }}
-      </div>
-    </div>
-    
-    <div v-if="$page.props.flash?.error" class="fixed top-4 right-4 z-50">
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        {{ $page.props.flash.error }}
-      </div>
-    </div>
+    <!-- 顶部居中 Flash（3 秒自动消失 + 动画；支持后端 flash 与本地 toast） -->
+    <teleport to="body">
+      <transition name="fade-down">
+        <div v-if="showFlash"
+             class="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex justify-center px-4">
+          <div class="pointer-events-auto max-w-md w-full">
+            <div
+              role="alert"
+              class="rounded-xl px-4 py-3 text-white text-center shadow-lg"
+              :class="displayType === 'error' ? 'bg-red-600/90' : 'bg-green-600/90'">
+              {{ displayMsg }}
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
 
     <!-- Header -->
     <div class="bg-white shadow-sm border-b border-gray-200">
@@ -297,26 +361,20 @@ onMounted(() => {
     <div class="bg-white border-b border-gray-200">
       <div class="px-6">
         <nav class="flex space-x-8">
-          <button
-            @click="activeTab = 'projects'"
-            :class="[
-              'py-4 px-1 border-b-2 font-medium text-sm',
-              activeTab === 'projects'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
-          >
-            Projects ({{ projects.length }})
+          <button @click="activeTab = 'projects'" :class="[
+            'py-4 px-1 border-b-2 font-medium text-sm',
+            activeTab === 'projects'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          ]">
+            Projects ({{ props.projects.length }})
           </button>
-          <button
-            @click="activeTab = 'applications'"
-            :class="[
-              'py-4 px-1 border-b-2 font-medium text-sm',
-              activeTab === 'applications'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
-          >
+          <button @click="activeTab = 'applications'" :class="[
+            'py-4 px-1 border-b-2 font-medium text-sm',
+            activeTab === 'applications'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          ]">
             Applications ({{ pendingApplications.length }} pending)
           </button>
         </nav>
@@ -335,10 +393,9 @@ onMounted(() => {
           </div>
           <button
             @click="showAddProjectModal = true"
-            class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-          >
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
             Add New Project
           </button>
@@ -347,19 +404,13 @@ onMounted(() => {
         <!-- Projects Grid -->
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div
-            v-for="project in projects"
+            v-for="project in props.projects"
             :key="project.id"
-            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-          >
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
             <!-- Project Image -->
             <div class="h-48 relative">
               <div v-if="!project.photo_url" class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500"></div>
-              <img 
-                v-if="project.photo_url" 
-                :src="project.photo_url" 
-                :alt="project.title"
-                class="w-full h-full object-cover"
-              />
+              <img v-if="project.photo_url" :src="project.photo_url" :alt="project.title" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black bg-opacity-20"></div>
               <div class="absolute top-4 left-4">
                 <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`">
@@ -381,7 +432,7 @@ onMounted(() => {
             <div class="p-4 flex flex-col flex-1">
               <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ project.title }}</h3>
               <p class="text-sm text-gray-600 mb-4">{{ project.location }}</p>
-              
+
               <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Date:</span>
@@ -399,30 +450,22 @@ onMounted(() => {
 
               <div class="flex flex-col space-y-2 mt-auto">
                 <div class="flex space-x-2">
-                  <Link
-                    :href="`/community-projects/${project.id}`"
-                    class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors text-center"
-                  >
+                  <Link :href="`/community-projects/${project.id}`"
+                        class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors text-center">
                     View Details
                   </Link>
-                  <Link
-                    :href="`/community-projects/${project.id}`"
-                    class="flex-1 bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors text-center"
-                  >
+                  <Link :href="`/community-projects/${project.id}`"
+                        class="flex-1 bg-green-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors text-center">
                     Add News
                   </Link>
                 </div>
                 <div class="flex space-x-2">
-                  <button
-                    @click="editProject(project)"
-                    class="flex-1 bg-yellow-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors"
-                  >
+                  <button @click="editProject(project)"
+                          class="flex-1 bg-yellow-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors">
                     Edit
                   </button>
-                  <button
-                    @click="deleteProject(project.id)"
-                    class="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-                  >
+                  <button @click="deleteProject(project.id)"
+                          class="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
                     Delete
                   </button>
                 </div>
@@ -432,8 +475,7 @@ onMounted(() => {
                   <select
                     :value="project.status"
                     @change="updateProjectStatus(project.id, $event.target.value)"
-                    class="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  >
+                    class="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:border-transparent">
                     <option value="upcoming">Upcoming</option>
                     <option value="active">Active</option>
                     <option value="completed">Completed</option>
@@ -444,7 +486,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
-      </div>
+      </div> <!-- /projects -->
 
       <!-- Applications Tab -->
       <div v-if="activeTab === 'applications'">
@@ -457,10 +499,8 @@ onMounted(() => {
         <div class="mb-4">
           <div class="flex items-center space-x-4">
             <label class="text-sm font-medium text-gray-700">Filter by status:</label>
-            <select
-              v-model="applicationStatusFilter"
-              class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
+            <select v-model="applicationStatusFilter"
+                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option value="all">All Applications ({{ applications.length }})</option>
               <option value="pending">Pending ({{ pendingApplications.length }})</option>
               <option value="approved">Approved ({{ applications.filter(app => app.status === 'approved').length }})</option>
@@ -502,24 +542,17 @@ onMounted(() => {
                     {{ formatDate(application.created_at) }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      @click="viewApplication(application)"
-                      class="text-blue-600 hover:text-blue-900 mr-3"
-                    >
+                    <button @click="viewApplication(application)" class="text-blue-600 hover:text-blue-900 mr-3">
                       View
                     </button>
-                    <button
-                      v-if="application.status === 'pending'"
-                      @click="approveApplication(application.id)"
-                      class="text-green-600 hover:text-green-900 mr-3"
-                    >
+                    <button v-if="application.status === 'pending'"
+                            @click="approveApplication(application.id)"
+                            class="text-green-600 hover:text-green-900 mr-3">
                       Approve
                     </button>
-                    <button
-                      v-if="application.status === 'pending'"
-                      @click="rejectApplication(application.id)"
-                      class="text-red-600 hover:text-red-900"
-                    >
+                    <button v-if="application.status === 'pending'"
+                            @click="rejectApplication(application.id)"
+                            class="text-red-600 hover:text-red-900">
                       Reject
                     </button>
                   </td>
@@ -527,19 +560,19 @@ onMounted(() => {
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-    </div>
+        </div> <!-- /table -->
+      </div> <!-- /applications -->
+    </div> <!-- /content -->
 
     <!-- Add Project Modal -->
-    <div v-if="showAddProjectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div v-if="showAddProjectModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Add New Project</h2>
             <button @click="showAddProjectModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
@@ -548,20 +581,13 @@ onMounted(() => {
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Project Title</label>
-                <input
-                  v-model="newProjectForm.title"
-                  type="text"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="newProjectForm.title" type="text" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select
-                  v-model="newProjectForm.category"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
+                <select v-model="newProjectForm.category" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option v-for="category in categories" :key="category.value" :value="category.value">
                     {{ category.label }}
                   </option>
@@ -571,114 +597,69 @@ onMounted(() => {
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <input
-                v-model="newProjectForm.location"
-                type="text"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <input v-model="newProjectForm.location" type="text" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
 
             <div class="grid grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input
-                  v-model="newProjectForm.date"
-                  type="date"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="newProjectForm.date" type="date" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                <input
-                  v-model="newProjectForm.time"
-                  type="time"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="newProjectForm.time" type="time" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                <input
-                  v-model="newProjectForm.duration"
-                  type="text"
-                  placeholder="e.g., 4 hours"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="newProjectForm.duration" type="text" placeholder="e.g., 4 hours" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Volunteers Needed</label>
-                <input
-                  v-model="newProjectForm.volunteers_needed"
-                  type="number"
-                  min="1"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="newProjectForm.volunteers_needed" type="number" min="1" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Points Reward</label>
-                <input
-                  v-model="newProjectForm.points_reward"
-                  type="number"
-                  min="0"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="newProjectForm.points_reward" type="number" min="0" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
-              <input
-                @change="handlePhotoUpload"
-                type="file"
-                multiple
-                accept="image/*"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <input @change="handlePhotoUpload" type="file" multiple accept="image/*"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               <p class="text-xs text-gray-500 mt-1">You can select multiple photos (JPEG, PNG, JPG, GIF up to 2MB each)</p>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                v-model="newProjectForm.description"
-                rows="4"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              ></textarea>
+              <textarea v-model="newProjectForm.description" rows="4" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Latest News & Updates</label>
-              <textarea
-                v-model="newProjectForm.latest_news"
-                rows="3"
-                placeholder="Enter latest news, meeting point updates, or important announcements..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              ></textarea>
+              <textarea v-model="newProjectForm.latest_news" rows="3"
+                        placeholder="Enter latest news, meeting point updates, or important announcements..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
               <p class="text-xs text-gray-500 mt-1">This will be visible to approved volunteers</p>
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                type="submit"
-                :disabled="newProjectForm.processing"
-                class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-              >
+              <button type="submit" :disabled="newProjectForm.processing"
+                      class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
                 {{ newProjectForm.processing ? 'Creating...' : 'Create Project' }}
               </button>
-              <button
-                type="button"
-                @click="showAddProjectModal = false"
-                class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
+              <button type="button" @click="showAddProjectModal = false"
+                      class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
                 Cancel
               </button>
             </div>
@@ -688,14 +669,14 @@ onMounted(() => {
     </div>
 
     <!-- Edit Project Modal -->
-    <div v-if="showEditProjectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div v-if="showEditProjectModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Edit Project</h2>
             <button @click="showEditProjectModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
@@ -704,20 +685,13 @@ onMounted(() => {
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Project Title</label>
-                <input
-                  v-model="editProjectForm.title"
-                  type="text"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="editProjectForm.title" type="text" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select
-                  v-model="editProjectForm.category"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
+                <select v-model="editProjectForm.category" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   <option v-for="category in categories" :key="category.value" :value="category.value">
                     {{ category.label }}
                   </option>
@@ -727,65 +701,38 @@ onMounted(() => {
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <input
-                v-model="editProjectForm.location"
-                type="text"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <input v-model="editProjectForm.location" type="text" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
 
             <div class="grid grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input
-                  v-model="editProjectForm.date"
-                  type="date"
-                  required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="editProjectForm.date" type="date" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                <input
-                  v-model="editProjectForm.time"
-                  type="time"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="editProjectForm.time" type="time" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                <input
-                  v-model="editProjectForm.duration"
-                  type="text"
-                  placeholder="e.g., 4 hours"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="editProjectForm.duration" type="text" placeholder="e.g., 4 hours" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Volunteers Needed</label>
-                <input
-                  v-model="editProjectForm.volunteers_needed"
-                  type="number"
-                  min="1"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="editProjectForm.volunteers_needed" type="number" min="1" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Points Reward</label>
-                <input
-                  v-model="editProjectForm.points_reward"
-                  type="number"
-                  min="0"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <input v-model="editProjectForm.points_reward" type="number" min="0" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
               </div>
             </div>
 
@@ -793,52 +740,37 @@ onMounted(() => {
               <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
               <div v-if="selectedProject && selectedProject.photo_url" class="mb-3">
                 <p class="text-sm text-gray-600 mb-2">Current photo:</p>
-                <img :src="selectedProject.photo_url" :alt="selectedProject.title" class="w-32 h-32 object-cover rounded-lg border">
+                <img :src="selectedProject.photo_url" :alt="selectedProject.title"
+                     class="w-32 h-32 object-cover rounded-lg border">
               </div>
-              <input
-                @change="handleEditPhotoUpload"
-                type="file"
-                multiple
-                accept="image/*"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <p class="text-xs text-gray-500 mt-1">You can select multiple photos (JPEG, PNG, JPG, GIF up to 2MB each). Leave empty to keep current photos.</p>
+              <input @change="handleEditPhotoUpload" type="file" multiple accept="image/*"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <p class="text-xs text-gray-500 mt-1">
+                You can select multiple photos (JPEG, PNG, JPG, GIF up to 2MB each). Leave empty to keep current photos.
+              </p>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                v-model="editProjectForm.description"
-                rows="4"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              ></textarea>
+              <textarea v-model="editProjectForm.description" rows="4" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Latest News & Updates</label>
-              <textarea
-                v-model="editProjectForm.latest_news"
-                rows="3"
-                placeholder="Enter latest news, meeting point updates, or important announcements..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              ></textarea>
+              <textarea v-model="editProjectForm.latest_news" rows="3"
+                        placeholder="Enter latest news, meeting point updates, or important announcements..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
               <p class="text-xs text-gray-500 mt-1">This will be visible to approved volunteers</p>
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                type="submit"
-                :disabled="editProjectForm.processing"
-                class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
-              >
+              <button type="submit" :disabled="editProjectForm.processing"
+                      class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
                 {{ editProjectForm.processing ? 'Saving...' : 'Save Changes' }}
               </button>
-              <button
-                type="button"
-                @click="showEditProjectModal = false"
-                class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-              >
+              <button type="button" @click="showEditProjectModal = false"
+                      class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
                 Cancel
               </button>
             </div>
@@ -848,14 +780,14 @@ onMounted(() => {
     </div>
 
     <!-- Application Detail Modal -->
-    <div v-if="showApplicationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div v-if="showApplicationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Application Details</h2>
             <button @click="showApplicationModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
@@ -952,7 +884,9 @@ onMounted(() => {
               </div>
               <div v-if="selectedApplication.rejection_reason">
                 <label class="block text-sm font-medium text-gray-600">Rejection Reason</label>
-                <p class="text-sm text-gray-900 bg-red-50 p-3 rounded-lg border border-red-200">{{ selectedApplication.rejection_reason }}</p>
+                <p class="text-sm text-gray-900 bg-red-50 p-3 rounded-lg border border-red-200">
+                  {{ selectedApplication.rejection_reason }}
+                </p>
               </div>
             </div>
 
@@ -960,26 +894,26 @@ onMounted(() => {
             <div class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Previous Experience</label>
-                <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">{{ selectedApplication.experience }}</p>
+                <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  {{ selectedApplication.experience }}
+                </p>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Motivation</label>
-                <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">{{ selectedApplication.motivation }}</p>
+                <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  {{ selectedApplication.motivation }}
+                </p>
               </div>
             </div>
 
             <!-- Actions -->
             <div v-if="selectedApplication.status === 'pending'" class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                @click="approveApplication(selectedApplication.id)"
-                class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-              >
+              <button @click="approveApplication(selectedApplication.id)"
+                      class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
                 Approve Application
               </button>
-              <button
-                @click="rejectApplication(selectedApplication.id)"
-                class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-              >
+              <button @click="rejectApplication(selectedApplication.id)"
+                      class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
                 Reject Application
               </button>
             </div>
@@ -991,7 +925,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-    </div>
+    </div> <!-- /Application Modal -->
   </div>
 </template>
 
@@ -1002,6 +936,10 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* 顶部提示：淡入向下动画 */
+.fade-down-enter-active,
+.fade-down-leave-active { transition: all .18s ease; }
+.fade-down-enter-from,
+.fade-down-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>
-
-
