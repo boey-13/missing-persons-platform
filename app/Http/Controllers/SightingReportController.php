@@ -99,6 +99,15 @@ class SightingReportController extends Controller
             'reporter_email' => $sighting->reporter_email,
             'status' => $sighting->status,
             'photos' => $sighting->photo_paths ?? [],
+            'missing_person' => [
+                'full_name' => $sighting->missingReport->full_name,
+                'age' => $sighting->missingReport->age,
+                'gender' => $sighting->missingReport->gender,
+                'last_seen_location' => $sighting->missingReport->last_seen_location,
+                'last_seen_date' => optional($sighting->missingReport->last_seen_date)->toDateTimeString(),
+                'physical_description' => $sighting->missingReport->physical_description,
+                'additional_notes' => $sighting->missingReport->additional_notes,
+            ]
         ]);
     }
     public function create($id)
