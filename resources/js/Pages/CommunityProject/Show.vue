@@ -284,7 +284,7 @@ function goBack() {
     
 
     <!-- Main Content -->
-    <div class="flex-1 max-w-[1400px] mx-auto p-6">
+    <div class="flex-1 w-full max-w-[1400px] mx-auto p-6" style="max-width: 1400px;">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Main Column -->
         <div class="lg:col-span-2 space-y-6">
