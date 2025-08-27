@@ -324,6 +324,10 @@ async function handleInput() {
     const input = userInput.value.trim().toLowerCase();
     messages.value.push({ role: "user", text: userInput.value.trim() });
     
+    // Update activity and save session
+    updateActivity();
+    saveSession();
+    
     await simulateTyping(() => {
         // Check for search queries FIRST (highest priority)
         if (input.startsWith('search ')) {
