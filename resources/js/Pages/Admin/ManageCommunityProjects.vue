@@ -7,7 +7,8 @@ defineOptions({ layout: AdminLayout })
 
 // Props from backend
 const props = defineProps({
-  projects: Array
+  projects: Object, // Now it's a paginated object
+  filters: Object
 })
 
 // UI State
@@ -19,6 +20,13 @@ const selectedApplication = ref(null)
 const selectedProject = ref(null)
 const applications = ref([])
 const applicationStatusFilter = ref('all')
+
+// Search and Filter State
+const search = ref(props.filters?.search || '')
+const categoryFilter = ref(props.filters?.category || 'all')
+const statusFilter = ref(props.filters?.status || 'all')
+const sortBy = ref(props.filters?.sort_by || 'created_at')
+const sortOrder = ref(props.filters?.sort_order || 'desc')
 
 // ===== Flash（顶部居中 + 3秒自动消失）=====
 const page = usePage()
@@ -74,8 +82,8 @@ const newProjectForm = useForm({
   date: '',
   time: '',
   duration: '',
-  volunteers_needed: '',
-  points_reward: '',
+  volunteers_needed: 1,
+  points_reward: 0,
   description: '',
   category: 'search',
   status: 'active',
@@ -89,11 +97,11 @@ const editProjectForm = useForm({
   date: '',
   time: '',
   duration: '',
-  volunteers_needed: '',
-  points_reward: '',
+  volunteers_needed: 1,
+  points_reward: 0,
   description: '',
-  category: '',
-  status: '',
+  category: 'search',
+  status: 'active',
   latest_news: '',
   photos: []
 })
@@ -102,6 +110,20 @@ const categories = [
   { value: 'search', label: 'Search Operations' },
   { value: 'awareness', label: 'Awareness Campaigns' },
   { value: 'training', label: 'Training & Workshops' }
+]
+
+const statuses = [
+  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' }
+]
+
+const sortOptions = [
+  { value: 'created_at', label: 'Date Created' },
+  { value: 'title', label: 'Title' },
+  { value: 'date', label: 'Project Date' },
+  { value: 'points_reward', label: 'Points Reward' }
 ]
 
 // ===== Computed =====
@@ -117,13 +139,47 @@ const filteredApplications = computed(() => {
 })
 
 // ===== Actions =====
+function applyFilters() {
+  router.get('/admin/community-projects', {
+    search: search.value,
+    category: categoryFilter.value,
+    status: statusFilter.value,
+    sort_by: sortBy.value,
+    sort_order: sortOrder.value
+  }, {
+    preserveState: true,
+    preserveScroll: true
+  })
+}
+
+function clearFilters() {
+  search.value = ''
+  categoryFilter.value = 'all'
+  statusFilter.value = 'all'
+  sortBy.value = 'created_at'
+  sortOrder.value = 'desc'
+  applyFilters()
+}
+
+function handleSearch() {
+  applyFilters()
+}
+
+function handleSort() {
+  applyFilters()
+}
+
 function addProject() {
   newProjectForm.post('/admin/community-projects', {
-    forceFormData: true,
+    preserveScroll: true,
     onSuccess: () => {
       showAddProjectModal.value = false
       newProjectForm.reset()
       // 成功提示来自后端 flash，这里不额外本地 toast，避免重复
+    },
+    onError: (errors) => {
+      console.error('Create failed:', errors)
+      showToast('Failed to create project. Please check the form and try again.', 'error')
     }
   })
 }
@@ -147,22 +203,34 @@ function editProject(project) {
   editProjectForm.location = project.location
   // Handle date format: convert ISO date to YYYY-MM-DD
   editProjectForm.date = project.date ? project.date.split('T')[0] : ''
-  // Handle time format
-  if (project.time && project.time.includes('T')) {
-    const timePart = project.time.split('T')[1]
-    editProjectForm.time = timePart.substring(0, 5)
-  } else if (project.time && project.time.includes(' ')) {
-    const timePart = project.time.split(' ')[1]
-    editProjectForm.time = timePart.substring(0, 5)
-  } else {
-    editProjectForm.time = project.time || ''
+  
+  // Handle time format - ensure it's in HH:MM format
+  let timeValue = ''
+  if (project.time) {
+    if (project.time.includes('T')) {
+      // ISO format: "2025-01-25T09:00:00.000000Z"
+      const timePart = project.time.split('T')[1]
+      timeValue = timePart.substring(0, 5)
+    } else if (project.time.includes(' ')) {
+      // MySQL format: "2025-01-25 09:00:00"
+      const timePart = project.time.split(' ')[1]
+      timeValue = timePart.substring(0, 5)
+    } else if (project.time.includes(':')) {
+      // Already in HH:MM format
+      timeValue = project.time.substring(0, 5)
+    } else {
+      // Fallback
+      timeValue = project.time
+    }
   }
+  editProjectForm.time = timeValue
+  
   editProjectForm.duration = project.duration
-  editProjectForm.volunteers_needed = project.volunteers_needed
-  editProjectForm.points_reward = project.points_reward
+  editProjectForm.volunteers_needed = parseInt(project.volunteers_needed) || 1
+  editProjectForm.points_reward = parseInt(project.points_reward) || 0
   editProjectForm.description = project.description
-  editProjectForm.category = project.category
-  editProjectForm.status = project.status
+  editProjectForm.category = project.category || 'search'
+  editProjectForm.status = project.status || 'active'
   editProjectForm.latest_news = project.latest_news || ''
   editProjectForm.photos = []
   showEditProjectModal.value = true
@@ -170,13 +238,26 @@ function editProject(project) {
 
 function updateProject() {
   if (!selectedProject.value) return
+
+  
   editProjectForm.put(`/admin/community-projects/${selectedProject.value.id}`, {
-    forceFormData: true,
+    preserveScroll: true,
     onSuccess: () => {
       showEditProjectModal.value = false
       editProjectForm.reset()
       selectedProject.value = null
       // 提示来自后端 flash
+    },
+    onError: (errors) => {
+      console.error('Update failed:', errors)
+      console.error('Validation errors:', errors)
+      // Show specific validation errors if available
+      if (errors && typeof errors === 'object') {
+        const errorMessages = Object.values(errors).flat()
+        showToast(`Validation failed: ${errorMessages.join(', ')}`, 'error')
+      } else {
+        showToast('Failed to update project. Please check the form and try again.', 'error')
+      }
     }
   })
 }
@@ -187,6 +268,10 @@ function deleteProject(projectId) {
       preserveScroll: true,
       onSuccess: () => {
         // 提示来自后端 flash（控制器里记得 ->with('success', '...')）
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors)
+        showToast('Failed to delete project. Please try again.', 'error')
       }
     })
   }
@@ -367,7 +452,7 @@ onMounted(() => {
               ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]">
-            Projects ({{ props.projects.length }})
+            Projects ({{ props.projects.total || 0 }})
           </button>
           <button @click="activeTab = 'applications'" :class="[
             'py-4 px-1 border-b-2 font-medium text-sm',
@@ -401,10 +486,110 @@ onMounted(() => {
           </button>
         </div>
 
+        <!-- Search and Filter Bar -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Search -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <div class="relative">
+                <input
+                  v-model="search"
+                  @keyup.enter="handleSearch"
+                  type="text"
+                  placeholder="Search projects..."
+                  class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                v-model="categoryFilter"
+                @change="applyFilters"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Categories</option>
+                <option v-for="category in categories" :key="category.value" :value="category.value">
+                  {{ category.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                v-model="statusFilter"
+                @change="applyFilters"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">All Statuses</option>
+                <option v-for="status in statuses" :key="status.value" :value="status.value">
+                  {{ status.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Sort By -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+              <select
+                v-model="sortBy"
+                @change="handleSort"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Sort Order -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Order</label>
+              <select
+                v-model="sortOrder"
+                @change="handleSort"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Filter Actions -->
+          <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+            <div class="text-sm text-gray-600">
+              Showing {{ props.projects.from || 0 }} to {{ props.projects.to || 0 }} of {{ props.projects.total || 0 }} projects
+            </div>
+            <div class="flex space-x-2">
+              <button
+                @click="handleSearch"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Apply Filters
+              </button>
+              <button
+                @click="clearFilters"
+                class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Projects Grid -->
-        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div v-if="props.projects.data && props.projects.data.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div
-            v-for="project in props.projects"
+            v-for="project in props.projects.data"
             :key="project.id"
             class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
             <!-- Project Image -->
@@ -484,6 +669,81 @@ onMounted(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="props.projects.data && props.projects.data.length > 0" class="mt-8">
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+              Showing {{ props.projects.from || 0 }} to {{ props.projects.to || 0 }} of {{ props.projects.total || 0 }} results
+            </div>
+            <div class="flex items-center space-x-2">
+              <!-- Previous Page -->
+              <Link
+                v-if="props.projects.prev_page_url"
+                :href="props.projects.prev_page_url"
+                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                preserve-scroll
+              >
+                Previous
+              </Link>
+              <span
+                v-else
+                class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+              >
+                Previous
+              </span>
+
+              <!-- Page Numbers -->
+              <template v-for="(link, index) in props.projects.links" :key="index">
+                <Link
+                  v-if="link.url && !link.active && link.label !== '...'"
+                  :href="link.url"
+                  class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                  preserve-scroll
+                >
+                  {{ link.label }}
+                </Link>
+                <span
+                  v-else-if="link.active"
+                  class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-lg"
+                >
+                  {{ link.label }}
+                </span>
+                <span
+                  v-else-if="link.label === '...'"
+                  class="px-3 py-2 text-sm font-medium text-gray-500"
+                >
+                  {{ link.label }}
+                </span>
+              </template>
+
+              <!-- Next Page -->
+              <Link
+                v-if="props.projects.next_page_url"
+                :href="props.projects.next_page_url"
+                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                preserve-scroll
+              >
+                Next
+              </Link>
+              <span
+                v-else
+                class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+              >
+                Next
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No projects found</h3>
+          <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
         </div>
       </div> <!-- /projects -->
 

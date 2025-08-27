@@ -20,37 +20,63 @@ class CommunityProjectController extends Controller
         $this->pointsService = $pointsService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $projects = CommunityProject::withCount(['applications as total_applications'])
-            ->withCount(['pendingApplications as pending_count'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($project) {
-                return [
-                    'id' => $project->id,
-                    'title' => $project->title,
-                    'description' => $project->description,
-                    'location' => $project->location,
-                    'date' => $project->date,
-                    'time' => $project->time,
-                    'duration' => $project->duration,
-                    'volunteers_needed' => $project->volunteers_needed,
-                    'volunteers_joined' => $project->volunteers_joined,
-                    'points_reward' => $project->points_reward,
-                    'category' => $project->category,
-                    'status' => $project->status,
-                    'photo_paths' => $project->photo_paths,
-                    'photo_url' => $project->photo_url,
-                    'total_applications' => $project->total_applications,
-                    'pending_count' => $project->pending_count,
-                    'created_at' => $project->created_at,
-                    'updated_at' => $project->updated_at,
-                ];
+        $query = CommunityProject::withCount(['applications as total_applications'])
+            ->withCount(['pendingApplications as pending_count']);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
             });
+        }
+
+        // Filter by category
+        if ($request->filled('category') && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
+
+        // Filter by status
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Sort functionality
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Pagination - 6 items per page
+        $projects = $query->paginate(6)->through(function ($project) {
+            return [
+                'id' => $project->id,
+                'title' => $project->title,
+                'description' => $project->description,
+                'location' => $project->location,
+                'date' => $project->date,
+                'time' => $project->time,
+                'duration' => $project->duration,
+                'volunteers_needed' => $project->volunteers_needed,
+                'volunteers_joined' => $project->volunteers_joined,
+                'points_reward' => $project->points_reward,
+                'category' => $project->category,
+                'status' => $project->status,
+                'photo_paths' => $project->photo_paths,
+                'photo_url' => $project->photo_url,
+                'total_applications' => $project->total_applications,
+                'pending_count' => $project->pending_count,
+                'created_at' => $project->created_at,
+                'updated_at' => $project->updated_at,
+            ];
+        });
 
         return Inertia::render('Admin/ManageCommunityProjects', [
-            'projects' => $projects
+            'projects' => $projects,
+            'filters' => $request->only(['search', 'category', 'status', 'sort_by', 'sort_order'])
         ]);
     }
 
