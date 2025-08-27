@@ -409,7 +409,7 @@ onMounted(() => {
             class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
             <!-- Project Image -->
             <div class="h-48 relative">
-              <img :src="project.photo_url || '/default-avatar.jpg'" :alt="project.title" class="w-full h-full object-cover" />
+              <img :src="project.photo_url || '/signup.png'" :alt="project.title" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black bg-opacity-20"></div>
               <div class="absolute top-4 left-4">
                 <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`">

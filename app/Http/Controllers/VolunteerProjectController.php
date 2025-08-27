@@ -31,7 +31,7 @@ class VolunteerProjectController extends Controller
             $query->where('location', 'like', '%' . $request->location . '%');
         }
         
-        $projects = $query->orderBy('date', 'asc')->paginate(6)
+        $projects = $query->orderBy('date', 'asc')->paginate(8)
             ->through(function ($project) use ($user) {
                 // 为每个项目添加用户的申请状态
                 if ($user) {

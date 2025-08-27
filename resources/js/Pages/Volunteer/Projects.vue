@@ -133,18 +133,18 @@ function getApplicationButtonText(project) {
 
 function getApplicationButtonClass(project) {
   if (!project.user_application_status) {
-    return 'w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors'
+    return 'w-full bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors'
   }
   
   switch (project.user_application_status) {
     case 'pending':
-      return 'w-full bg-yellow-500 text-white py-3 px-4 rounded-lg font-semibold cursor-not-allowed opacity-75'
+      return 'w-full bg-yellow-500 text-white rounded-lg font-medium cursor-not-allowed opacity-75'
     case 'approved':
-      return 'w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold cursor-not-allowed opacity-75'
+      return 'w-full bg-green-600 text-white rounded-lg font-medium cursor-not-allowed opacity-75'
     case 'rejected':
-      return 'w-full bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors'
+      return 'w-full bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors'
     default:
-      return 'w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors'
+      return 'w-full bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors'
   }
 }
 
@@ -317,23 +317,24 @@ function getCategoryColor(category) {
 
     <!-- Header Section -->
     <div class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center">
-          <h1 class="text-4xl font-bold text-gray-900 mb-4">Community Projects</h1>
-          <p class="text-xl text-gray-600 mb-2">Join our community initiatives and make a difference</p>
-                      <div class="inline-flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
-              <svg class="w-4 h-12 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-              </svg>
-              Points Available: {{ filteredProjects.reduce((total, project) => total + project.points_reward, 0) }}
-            </div>
+          <h1 class="text-4xl font-bold text-gray-900 mb-3">Community Projects</h1>
+          <p class="text-xl text-gray-600 mb-4">Join our community initiatives and make a difference</p>
+          <div class="inline-flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 px-6 py-3 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+            </svg>
+            <span class="font-semibold">Total Points Available:</span>
+            <span class="ml-1 font-bold text-lg">{{ filteredProjects.reduce((total, project) => total + project.points_reward, 0) }}</span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Filters Section -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
@@ -379,17 +380,17 @@ function getCategoryColor(category) {
     </div>
 
     <!-- Projects Grid -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-      <div v-if="filteredProjects.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div v-if="filteredProjects.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <div
           v-for="project in filteredProjects"
           :key="project.id"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col"
         >
           <!-- Project Image -->
           <div class="h-48 relative">
             <img 
-              :src="project.photo_url || '/default-avatar.jpg'" 
+              :src="project.photo_url || '/signup.png'" 
               :alt="project.title"
               class="w-full h-full object-cover"
             />
@@ -411,11 +412,11 @@ function getCategoryColor(category) {
           </div>
 
           <!-- Project Content -->
-          <div class="p-6 flex flex-col flex-1">
-            <h3 class="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">{{ project.title }}</h3>
-            <p class="text-gray-600 mb-4 line-clamp-2">{{ project.description }}</p>
+          <div class="p-5 flex flex-col flex-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{{ project.title }}</h3>
+            <p class="text-gray-600 mb-3 line-clamp-2 text-sm">{{ project.description }}</p>
             
-            <div class="space-y-3 mb-6">
+            <div class="space-y-2 mb-4">
               <div class="flex items-center text-sm text-gray-600">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
@@ -438,14 +439,14 @@ function getCategoryColor(category) {
             </div>
 
             <!-- Volunteer Progress -->
-            <div class="mb-6">
-              <div class="flex justify-between text-sm text-gray-600 mb-2">
+            <div class="mb-4">
+              <div class="flex justify-between text-sm text-gray-600 mb-1">
                 <span>Volunteers: {{ project.volunteers_joined }}/{{ project.volunteers_needed }}</span>
                 <span>{{ Math.round((project.volunteers_joined / project.volunteers_needed) * 100) }}%</span>
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="w-full bg-gray-200 rounded-full h-1.5">
                 <div
-                  class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                   :style="{ width: `${(project.volunteers_joined / project.volunteers_needed) * 100}%` }"
                 ></div>
               </div>
@@ -455,7 +456,7 @@ function getCategoryColor(category) {
             <div class="flex space-x-2 mt-auto">
               <Link
                 :href="`/community-projects/${project.id}`"
-                class="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center"
+                class="flex-1 bg-gray-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center text-sm"
               >
                 View Details
               </Link>
@@ -463,7 +464,7 @@ function getCategoryColor(category) {
                 @click="applyToProject(project)"
                 :class="getApplicationButtonClass(project)"
                 :disabled="!canApplyToProject(project)"
-                class="flex-1"
+                class="flex-1 text-sm py-2.5 px-3"
               >
                 {{ getApplicationButtonText(project) }}
               </button>
@@ -483,7 +484,7 @@ function getCategoryColor(category) {
     </div>
 
     <!-- Pagination -->
-    <div v-if="props.projects?.data && props.projects.data.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <div v-if="props.projects?.data && props.projects.data.length > 0" class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       <div class="flex justify-center">
         <div class="flex items-center space-x-2">
           <!-- Previous Page -->

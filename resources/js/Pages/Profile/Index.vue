@@ -442,7 +442,7 @@ function shareToSocial(reportId) {
               <div v-for="project in props.communityProjects" :key="project.id"
                 class="rounded-2xl overflow-hidden bg-white border border-gray-200 shadow-sm hover:shadow-md transition">
                 <div class="h-44 relative bg-gray-100">
-                  <img :src="project.photo_url || '/default-avatar.jpg'" :alt="project.title"
+                  <img :src="project.photo_url || '/signup.png'" :alt="project.title"
                     class="w-full h-full object-cover" />
                   <div class="absolute top-3 left-3">
                     <span
