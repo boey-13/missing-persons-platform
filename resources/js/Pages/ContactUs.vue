@@ -2,6 +2,7 @@
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
+import ToastMessage from '@/Components/ToastMessage.vue'
 
 defineOptions({ layout: MainLayout })
 
@@ -12,20 +13,34 @@ const form = useForm({
   message: ''
 })
 
+const showToast = ref(false)
+const toastMessage = ref('')
+const toastType = ref('success')
+
 const submitForm = () => {
   form.post('/contact', {
-    onSuccess: () => {
+    onSuccess: (response) => {
       form.reset()
-      alert('Thank you for your message. We will get back to you soon!')
+      showToastMessage(response.message || 'Thank you for your message. We will get back to you soon!', 'success')
     },
     onError: (errors) => {
       console.error('Form submission failed:', errors)
+      showToastMessage('Failed to send message. Please try again.', 'error')
     }
   })
+}
+
+function showToastMessage(message, type = 'success') {
+  toastMessage.value = message
+  toastType.value = type
+  showToast.value = true
 }
 </script>
 
 <template>
+  <!-- Toast Message -->
+  <ToastMessage v-if="showToast" :message="toastMessage" :type="toastType" />
+
   <div class="min-h-screen bg-white">
     <!-- Hero Section -->
     <section class="relative min-h-[30vh] bg-cover bg-center bg-no-repeat"

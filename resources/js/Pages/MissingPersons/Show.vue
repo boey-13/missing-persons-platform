@@ -2,6 +2,7 @@
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import ToastMessage from '@/Components/ToastMessage.vue'
 
 defineOptions({ layout: MainLayout })
 
@@ -24,6 +25,8 @@ const mapZoom = ref(14)
 
 const showShareModal = ref(false)
 const currentUrl = window.location.href
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
 
 function showMap() {
   if (!mapDiv.value || !window.google || !window.google.maps) return
@@ -57,6 +60,12 @@ onMounted(() => {
       }
     })
     setTimeout(showMap, 1200)
+  }
+
+  // Show success message if exists
+  if (props.flash?.success) {
+    successMessage.value = props.flash.success
+    showSuccessMessage.value = true
   }
 })
 watch([mapLat, mapLng], showMap)
@@ -195,6 +204,9 @@ function getStatusColor(status) {
         </div>
       </div>
     </teleport>
+
+    <!-- Success Message -->
+    <ToastMessage v-if="showSuccessMessage" :message="successMessage" type="success" />
 
     <!-- Hero / Header -->
     <header class="border-b border-[#ebebeb] bg-white/70 backdrop-blur">

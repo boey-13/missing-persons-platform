@@ -68,7 +68,7 @@
     ></div>
 
     <!--  MAIN CONTENT -->
-    <main>
+    <main class="bg-white">
       <slot />
     </main>
 

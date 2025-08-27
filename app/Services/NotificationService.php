@@ -95,17 +95,20 @@ class NotificationService
      */
     public static function sightingReportSubmitted($sighting)
     {
-        self::send(
-            $sighting->user_id,
-            'sighting_report_submitted',
-            'Sighting Report Submitted',
-            "Your sighting report has been submitted and is under review.",
-            [
-                'action' => 'view_sighting',
-                'sighting_id' => $sighting->id,
-                'location' => $sighting->location
-            ]
-        );
+        // Only send notification if user is logged in
+        if ($sighting->user_id) {
+            self::send(
+                $sighting->user_id,
+                'sighting_report_submitted',
+                'Sighting Report Submitted',
+                "Your sighting report has been submitted and is under review.",
+                [
+                    'action' => 'view_sighting',
+                    'sighting_id' => $sighting->id,
+                    'location' => $sighting->location
+                ]
+            );
+        }
     }
 
     public static function sightingReportApproved($sighting)
@@ -392,7 +395,7 @@ class NotificationService
                     'action' => 'review_sighting',
                     'sighting_id' => $sighting->id,
                     'location' => $sighting->location,
-                    'reporter' => $sighting->user->name
+                    'reporter' => $sighting->user ? $sighting->user->name : $sighting->reporter_name
                 ]
             );
         }

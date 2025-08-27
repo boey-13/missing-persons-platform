@@ -35,6 +35,24 @@ Route::get('/contact', function () {
     return Inertia::render('ContactUs');
 })->name('contact');
 
+Route::post('/contact', function () {
+    // 简单的联系表单处理
+    $validated = request()->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string|max:1000',
+    ]);
+    
+    // 这里可以添加发送邮件或保存到数据库的逻辑
+    // 暂时只返回成功响应
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Thank you for your message. We will get back to you soon!'
+    ]);
+})->name('contact.store');
+
 Route::get('/missing-persons', function() {
     return Inertia::render('MissingPersons/Index');
 });

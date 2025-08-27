@@ -114,7 +114,11 @@ class MissingReportController extends Controller
 
         return inertia('MissingPersons/Show', [
             'report' => $report,
-            'otherCases' => $otherCases
+            'otherCases' => $otherCases,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error')
+            ]
         ]);
     }
 

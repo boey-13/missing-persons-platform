@@ -111,35 +111,66 @@ class SightingReportController extends Controller
 
     public function store(Request $request, $id)
     {
-        $report = MissingReport::findOrFail($id);
-        $validated = $request->validate([
-            'location' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'sighted_at' => ['nullable', 'date'],
-            'reporter_name' => ['required', 'string', 'max:255'],
-            'reporter_phone' => ['required', 'string', 'max:30'],
-            'reporter_email' => ['nullable', 'email', 'max:255'],
-            'photos.*' => ['image', 'max:2048'],
-        ]);
+        try {
+            \Log::info('Sighting report submission started', [
+                'missing_report_id' => $id,
+                'user_id' => auth()->id(),
+                'request_data' => $request->except(['photos'])
+            ]);
 
-        $validated['user_id'] = auth()->id();
-        $validated['missing_report_id'] = $report->id;
+            $report = MissingReport::findOrFail($id);
+            $validated = $request->validate([
+                'location' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string', 'max:2000'],
+                'sighted_at' => ['nullable', 'date'],
+                'reporter_name' => ['required', 'string', 'max:255'],
+                'reporter_phone' => ['required', 'string', 'max:30'],
+                'reporter_email' => ['nullable', 'email', 'max:255'],
+                'photos.*' => ['image', 'max:2048'],
+            ]);
 
-        $photoPaths = [];
-        if ($request->hasFile('photos')) {
-            foreach ($request->file('photos') as $file) {
-                $photoPaths[] = $file->store('sightings', 'public');
+            $validated['user_id'] = auth()->id(); // This will be null if user is not logged in
+            $validated['missing_report_id'] = $report->id;
+            $validated['status'] = 'Pending';
+
+            $photoPaths = [];
+            if ($request->hasFile('photos')) {
+                foreach ($request->file('photos') as $file) {
+                    $photoPaths[] = $file->store('sightings', 'public');
+                }
             }
+            $validated['photo_paths'] = $photoPaths;
+
+            \Log::info('Creating sighting report', ['validated_data' => $validated]);
+
+            $sighting = SightingReport::create($validated);
+
+            \Log::info('Sighting report created successfully', ['sighting_id' => $sighting->id]);
+
+            // Send notifications
+            try {
+                NotificationService::sightingReportSubmitted($sighting);
+                NotificationService::newSightingReportForAdmin($sighting);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send notifications', [
+                    'sighting_id' => $sighting->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            \Log::info('Sighting report submission completed successfully', ['sighting_id' => $sighting->id]);
+
+            // Redirect to the missing person details page with success message
+            return redirect()->to("/missing-persons/{$report->id}")->with('success', 'Sighting report submitted successfully!');
+        } catch (\Exception $e) {
+            \Log::error('Sighting report submission failed', [
+                'missing_report_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->withErrors(['error' => 'Failed to submit sighting report. Please try again.']);
         }
-        $validated['photo_paths'] = $photoPaths;
-
-        $sighting = SightingReport::create($validated);
-
-        // Send notifications
-        NotificationService::sightingReportSubmitted($sighting);
-        NotificationService::newSightingReportForAdmin($sighting);
-
-        return redirect()->back()->with('success', 'Sighting report submitted successfully!');
     }
 }
 
