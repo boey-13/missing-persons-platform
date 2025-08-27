@@ -24,8 +24,53 @@ async function openDetail(id) {
   showModal.value = true
 }
 
-function changeStatus(id, status) {
-  router.post(`/admin/sighting-reports/${id}/status`, { status })
+// Modal states for confirmations
+const showApproveModal = ref(false)
+const showRejectModal = ref(false)
+const selectedSightingId = ref(null)
+
+function openApproveModal(id) {
+  selectedSightingId.value = id
+  showApproveModal.value = true
+}
+
+function openRejectModal(id) {
+  selectedSightingId.value = id
+  showRejectModal.value = true
+}
+
+function approveSighting() {
+  router.post(`/admin/sighting-reports/${selectedSightingId.value}/status`, { 
+    status: 'Approved' 
+  }, {
+    onSuccess: () => {
+      showApproveModal.value = false
+      selectedSightingId.value = null
+      // Show success message
+      alert('✅ Sighting report approved successfully!')
+    },
+    onError: (errors) => {
+      console.error('Approval failed:', errors)
+      alert('❌ Failed to approve sighting report. Please try again.')
+    }
+  })
+}
+
+function rejectSighting() {
+  router.post(`/admin/sighting-reports/${selectedSightingId.value}/status`, { 
+    status: 'Rejected' 
+  }, {
+    onSuccess: () => {
+      showRejectModal.value = false
+      selectedSightingId.value = null
+      // Show success message
+      alert('✅ Sighting report rejected successfully!')
+    },
+    onError: (errors) => {
+      console.error('Rejection failed:', errors)
+      alert('❌ Failed to reject sighting report. Please try again.')
+    }
+  })
 }
 
 function applyFilters() {
@@ -152,10 +197,10 @@ function formatDate(dateString) {
                 <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(row.id)">
                   View
                 </button>
-                <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="changeStatus(row.id, 'Approved')">
+                <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
                   Approve
                 </button>
-                <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="changeStatus(row.id, 'Rejected')">
+                <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
                   Reject
                 </button>
               </div>
@@ -231,6 +276,68 @@ function formatDate(dateString) {
         </div>
       </div>
     </teleport>
+
+    <!-- Approve Confirmation Modal -->
+    <div v-if="showApproveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Approve Sighting Report</h2>
+            <button @click="showApproveModal = false" class="text-gray-500 hover:text-black">
+              ✕
+            </button>
+          </div>
+          
+          <p class="text-gray-600 mb-6">Are you sure you want to approve this sighting report? This will make it visible to all users and help in the search for the missing person.</p>
+          
+          <div class="flex gap-3">
+            <button 
+              @click="approveSighting"
+              class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              Approve Report
+            </button>
+            <button 
+              @click="showApproveModal = false"
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Confirmation Modal -->
+    <div v-if="showRejectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Reject Sighting Report</h2>
+            <button @click="showRejectModal = false" class="text-gray-500 hover:text-black">
+              ✕
+            </button>
+          </div>
+          
+          <p class="text-gray-600 mb-6">Are you sure you want to reject this sighting report? This will notify the reporter and the report will not be visible to users.</p>
+          
+          <div class="flex gap-3">
+            <button 
+              @click="rejectSighting"
+              class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+            >
+              Reject Report
+            </button>
+            <button 
+              @click="showRejectModal = false"
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
