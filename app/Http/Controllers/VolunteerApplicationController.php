@@ -136,9 +136,34 @@ class VolunteerApplicationController extends Controller
     // Admin index
     public function adminIndex(Request $request)
     {
-        $apps = VolunteerApplication::with('user:id,name,email,role')
+        $apps = VolunteerApplication::with(['user:id,name,email,role'])
             ->orderByDesc('created_at')
             ->paginate(20);
+
+        // Get project applications for each volunteer
+        $apps->getCollection()->transform(function ($app) {
+            if ($app->user) {
+                $projectApplications = \App\Models\ProjectApplication::with('project:id,title,location,date,status,category')
+                    ->where('user_id', $app->user->id)
+                    ->orderByDesc('created_at')
+                    ->get()
+                    ->map(function ($projectApp) {
+                        return [
+                            'id' => $projectApp->id,
+                            'project_title' => $projectApp->project->title,
+                            'project_location' => $projectApp->project->location,
+                            'project_date' => $projectApp->project->date,
+                            'project_status' => $projectApp->project->status,
+                            'project_category' => $projectApp->project->category,
+                            'application_status' => $projectApp->status,
+                            'applied_at' => $projectApp->created_at->format('Y-m-d H:i'),
+                        ];
+                    });
+                
+                $app->project_applications = $projectApplications;
+            }
+            return $app;
+        });
 
         return Inertia::render('Admin/ManageVolunteers', [
             'applications' => $apps,
@@ -189,7 +214,7 @@ class VolunteerApplicationController extends Controller
             'status' => $data['status'],
         ]);
 
-        return back();
+        return back()->with('success', "Volunteer application {$data['status']} successfully!");
     }
 }
 

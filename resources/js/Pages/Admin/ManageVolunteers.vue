@@ -1,13 +1,73 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import { router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { router, usePage } from '@inertiajs/vue3'
+import { ref, watch } from 'vue'
 defineOptions({ layout: AdminLayout })
-const props = defineProps({ applications: Object })
 
-function setStatus(id, status) {
-  const reason = status === 'Rejected' ? prompt('Reason (optional):') : ''
-  router.post(route('admin.volunteers.status', id), { status, reason })
+const props = defineProps({ applications: Object })
+const $page = usePage()
+
+// Success message handling
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
+
+watch(() => $page.props.flash?.success, (newMessage) => {
+  if (newMessage) {
+    successMessage.value = newMessage
+    showSuccessMessage.value = true
+    setTimeout(() => {
+      showSuccessMessage.value = false
+    }, 3000)
+  }
+})
+
+// Modal states for confirmations
+const showApproveModal = ref(false)
+const showRejectModal = ref(false)
+const selectedApplication = ref(null)
+const rejectReason = ref('')
+
+function openApproveModal(app) {
+  selectedApplication.value = app
+  showApproveModal.value = true
+}
+
+function openRejectModal(app) {
+  selectedApplication.value = app
+  rejectReason.value = ''
+  showRejectModal.value = true
+}
+
+function approveApplication() {
+  router.post(route('admin.volunteers.status', selectedApplication.value.id), { 
+    status: 'Approved' 
+  }, {
+    onSuccess: () => {
+      showApproveModal.value = false
+      selectedApplication.value = null
+    },
+    onError: (errors) => {
+      console.error('Approval failed:', errors)
+      alert('❌ Failed to approve volunteer application. Please try again.')
+    }
+  })
+}
+
+function rejectApplication() {
+  router.post(route('admin.volunteers.status', selectedApplication.value.id), { 
+    status: 'Rejected',
+    reason: rejectReason.value
+  }, {
+    onSuccess: () => {
+      showRejectModal.value = false
+      selectedApplication.value = null
+      rejectReason.value = ''
+    },
+    onError: (errors) => {
+      console.error('Rejection failed:', errors)
+      alert('❌ Failed to reject volunteer application. Please try again.')
+    }
+  })
 }
 
 const showModal = ref(false)
@@ -22,11 +82,51 @@ function closeModal() {
   showModal.value = false
   detail.value = null
 }
+
+function getStatusColor(status) {
+  const colors = {
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Approved': 'bg-green-100 text-green-800',
+    'Rejected': 'bg-red-100 text-red-800'
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+function getProjectStatusColor(status) {
+  const colors = {
+    'active': 'bg-blue-100 text-blue-800',
+    'upcoming': 'bg-purple-100 text-purple-800',
+    'completed': 'bg-green-100 text-green-800',
+    'cancelled': 'bg-red-100 text-red-800'
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+function getApplicationStatusColor(status) {
+  const colors = {
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'approved': 'bg-green-100 text-green-800',
+    'rejected': 'bg-red-100 text-red-800',
+    'withdrawn': 'bg-gray-100 text-gray-800'
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
 </script>
 
 <template>
   <div>
-    <h1 class="text-3xl font-extrabold mb-6">Volunteer Applications</h1>
+    <h1 class="text-3xl font-extrabold mb-8">Volunteer Applications</h1>
+    
+    <!-- Success Message -->
+    <div v-if="showSuccessMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        {{ successMessage }}
+      </div>
+    </div>
+
     <div class="bg-white rounded-xl shadow overflow-hidden">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50">
@@ -35,20 +135,77 @@ function closeModal() {
             <th class="px-4 py-3 text-left">User</th>
             <th class="px-4 py-3 text-left">Motivation</th>
             <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">Projects</th>
             <th class="px-4 py-3 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="a in applications.data" :key="a.id" class="border-t">
-            <td class="px-4 py-3">{{ a.id }}</td>
-            <td class="px-4 py-3">{{ a.user?.name }}<br><span class="text-xs text-gray-500">{{ a.user?.email }}</span></td>
-            <td class="px-4 py-3 max-w-md truncate">{{ a.motivation }}</td>
-            <td class="px-4 py-3">{{ a.status }}</td>
+          <tr v-for="a in applications.data" :key="a.id" class="border-t hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium">#{{ a.id }}</td>
             <td class="px-4 py-3">
-              <div class="flex flex-col gap-2">
-                <button class="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" @click="openDetail(a)">View</button>
-                <button class="px-3 py-1 text-white bg-green-600 rounded hover:bg-green-700" @click="setStatus(a.id, 'Approved')">Approve</button>
-                <button class="px-3 py-1 text-white bg-red-600 rounded hover:bg-red-700" @click="setStatus(a.id, 'Rejected')">Reject</button>
+              <div class="font-medium">{{ a.user?.name }}</div>
+              <div class="text-xs text-gray-500">{{ a.user?.email }}</div>
+            </td>
+            <td class="px-4 py-3 max-w-md">
+              <div class="truncate">{{ a.motivation }}</div>
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="getStatusColor(a.status)">
+                {{ a.status }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="text-xs">
+                <div v-if="a.project_applications && a.project_applications.length > 0" class="space-y-1">
+                  <div v-for="project in a.project_applications.slice(0, 2)" :key="project.id" class="flex items-center space-x-1">
+                    <span class="w-2 h-2 rounded-full" :class="getProjectStatusColor(project.project_status)"></span>
+                    <span class="truncate max-w-32">{{ project.project_title }}</span>
+                    <span class="text-xs px-1 py-0.5 rounded" :class="getApplicationStatusColor(project.application_status)">
+                      {{ project.application_status }}
+                    </span>
+                  </div>
+                  <div v-if="a.project_applications.length > 2" class="text-gray-500">
+                    +{{ a.project_applications.length - 2 }} more
+                  </div>
+                </div>
+                <div v-else class="text-gray-400">No projects</div>
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2">
+                <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(a)">
+                  View
+                </button>
+                
+                <!-- Pending Status Actions -->
+                <template v-if="a.status === 'Pending'">
+                  <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(a)">
+                    Approve
+                  </button>
+                  <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
+                    Reject
+                  </button>
+                </template>
+                
+                <!-- Approved Status Actions -->
+                <template v-if="a.status === 'Approved'">
+                  <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(a)">
+                    Approve
+                  </button>
+                  <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
+                    Reject
+                  </button>
+                </template>
+                
+                <!-- Rejected Status Actions -->
+                <template v-if="a.status === 'Rejected'">
+                  <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(a)">
+                    Approve
+                  </button>
+                  <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
+                    Reject
+                  </button>
+                </template>
               </div>
             </td>
           </tr>
@@ -58,96 +215,295 @@ function closeModal() {
 
     <!-- Detail Modal -->
     <teleport to="body">
-      <div v-if="showModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-xl shadow-xl w-[95%] max-w-3xl p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">Volunteer Application #{{ detail?.id }}</h2>
-            <button class="text-gray-500 hover:text-black" @click="closeModal">✕</button>
+      <div v-if="showModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-6xl max-h-[90vh] overflow-y-auto">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <h2 class="text-2xl font-bold">Volunteer Application #{{ detail?.id }}</h2>
+              </div>
+              <button 
+                class="text-white hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-white/10"
+                @click="closeModal"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div v-if="detail" class="space-y-4 text-sm">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div class="text-gray-500">User</div>
-                <div class="font-medium">{{ detail.user?.name }} <span class="text-gray-500 text-xs">({{ detail.user?.email }})</span></div>
-              </div>
-              <div>
-                <div class="text-gray-500">Status</div>
-                <div class="font-medium">{{ detail.status }}</div>
-                <div v-if="detail.status_reason" class="text-xs text-gray-500 mt-1">Reason: {{ detail.status_reason }}</div>
-              </div>
-            </div>
-
-            <div>
-              <div class="text-gray-500 mb-1">Motivation</div>
-              <div class="whitespace-pre-wrap">{{ detail.motivation }}</div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div class="text-gray-500 mb-1">Skills</div>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="s in (detail.skills || [])" :key="s" class="px-2 py-0.5 rounded-full text-xs bg-gray-100">{{ s }}</span>
+          <div v-if="detail" class="p-6 space-y-6">
+            <!-- Basic Information Card -->
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+              <h3 class="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                Basic Information
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                  <div class="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">User</div>
+                  <div class="text-gray-900 font-medium">{{ detail.user?.name }}</div>
+                  <div class="text-sm text-gray-500">{{ detail.user?.email }}</div>
                 </div>
-              </div>
-              <div>
-                <div class="text-gray-500 mb-1">Languages</div>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="l in (detail.languages || [])" :key="l" class="px-2 py-0.5 rounded-full text-xs bg-gray-100">{{ l }}</span>
+                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                  <div class="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">Status</div>
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusColor(detail.status)">
+                    {{ detail.status }}
+                  </span>
+                  <div v-if="detail.status_reason" class="text-xs text-gray-500 mt-2">Reason: {{ detail.status_reason }}</div>
                 </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div class="text-gray-500 mb-1">Availability</div>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="d in (detail.availability || [])" :key="d" class="px-2 py-0.5 rounded-full text-xs bg-gray-100">{{ d }}</span>
+            <!-- Motivation Card -->
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+              <h3 class="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Motivation
+              </h3>
+              <div class="bg-white rounded-lg p-4 border border-purple-200">
+                <div class="text-gray-900 leading-relaxed whitespace-pre-wrap">{{ detail.motivation }}</div>
+              </div>
+            </div>
+
+            <!-- Skills & Languages Card -->
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+              <h3 class="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                Skills & Languages
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4 border border-green-200">
+                  <div class="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">Skills</div>
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="s in (detail.skills || [])" :key="s" class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">{{ s }}</span>
+                  </div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-green-200">
+                  <div class="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">Languages</div>
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="l in (detail.languages || [])" :key="l" class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">{{ l }}</span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <div class="text-gray-500 mb-1">Preferred Roles</div>
-                <div class="flex flex-wrap gap-2">
-                  <span v-for="r in (detail.preferred_roles || [])" :key="r" class="px-2 py-0.5 rounded-full text-xs bg-gray-100">{{ r }}</span>
+            </div>
+
+            <!-- Availability & Roles Card -->
+            <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
+              <h3 class="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Availability & Roles
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4 border border-orange-200">
+                  <div class="text-xs font-medium text-orange-600 uppercase tracking-wide mb-2">Availability</div>
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="d in (detail.availability || [])" :key="d" class="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">{{ d }}</span>
+                  </div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-orange-200">
+                  <div class="text-xs font-medium text-orange-600 uppercase tracking-wide mb-2">Preferred Roles</div>
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="r in (detail.preferred_roles || [])" :key="r" class="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">{{ r }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div class="text-gray-500">Areas Willing to Help</div>
-                <div class="font-medium">{{ detail.areas || '-' }}</div>
-              </div>
-              <div>
-                <div class="text-gray-500">Transport Mode</div>
-                <div class="font-medium">{{ detail.transport_mode || '-' }}</div>
+            <!-- Additional Information Card -->
+            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border border-red-200">
+              <h3 class="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Additional Information
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg p-4 border border-red-200">
+                  <div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Areas Willing to Help</div>
+                  <div class="text-gray-900 font-medium">{{ detail.areas || '-' }}</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-red-200">
+                  <div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Transport Mode</div>
+                  <div class="text-gray-900 font-medium">{{ detail.transport_mode || '-' }}</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-red-200">
+                  <div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Emergency Contact</div>
+                  <div class="text-gray-900 font-medium">{{ detail.emergency_contact_name }}</div>
+                  <div class="text-sm text-gray-500">{{ detail.emergency_contact_phone }}</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-red-200">
+                  <div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Prior Experience</div>
+                  <div class="text-gray-900">{{ detail.prior_experience || '-' }}</div>
+                </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div class="text-gray-500">Emergency Contact</div>
-                <div class="font-medium">{{ detail.emergency_contact_name }} ({{ detail.emergency_contact_phone }})</div>
-              </div>
-              <div>
-                <div class="text-gray-500">Prior Experience</div>
-                <div class="font-medium">{{ detail.prior_experience || '-' }}</div>
+            <!-- Projects Participation Card -->
+            <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-6 border border-indigo-200">
+              <h3 class="text-lg font-semibold text-indigo-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                Projects Participation
+              </h3>
+              <div class="bg-white rounded-lg p-4 border border-indigo-200">
+                <div v-if="detail.project_applications && detail.project_applications.length > 0" class="space-y-3">
+                  <div v-for="project in detail.project_applications" :key="project.id" class="border border-gray-200 rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-2">
+                      <h4 class="font-medium text-gray-900">{{ project.project_title }}</h4>
+                      <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getProjectStatusColor(project.project_status)">
+                          {{ project.project_status }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getApplicationStatusColor(project.application_status)">
+                          {{ project.application_status }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <span class="text-gray-500">Location:</span>
+                        <span class="text-gray-900">{{ project.project_location }}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-500">Date:</span>
+                        <span class="text-gray-900">{{ project.project_date }}</span>
+                      </div>
+                      <div>
+                        <span class="text-gray-500">Applied:</span>
+                        <span class="text-gray-900">{{ project.applied_at }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-center py-8 text-gray-500">
+                  <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                  <p>No projects participated yet</p>
+                </div>
               </div>
             </div>
 
-            <div>
-              <div class="text-gray-500 mb-1">Supporting Documents</div>
-              <div v-if="detail.supporting_documents && detail.supporting_documents.length" class="flex flex-wrap gap-2">
-                <a v-for="(p,i) in detail.supporting_documents" :key="i" :href="'/storage/' + p" target="_blank" class="text-blue-600 underline">Document {{ i+1 }}</a>
+            <!-- Supporting Documents Card -->
+            <div v-if="detail.supporting_documents && detail.supporting_documents.length" class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 border border-yellow-200">
+              <h3 class="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Supporting Documents
+              </h3>
+              <div class="bg-white rounded-lg p-4 border border-yellow-200">
+                <div class="flex flex-wrap gap-2">
+                  <a v-for="(doc, i) in detail.supporting_documents" :key="i" :href="'/storage/' + doc" target="_blank" class="inline-flex items-center px-3 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Document {{ i + 1 }}
+                  </a>
+                </div>
               </div>
-              <div v-else class="text-gray-500 text-sm">No documents</div>
             </div>
 
-            <div class="text-xs text-gray-500">Created: {{ detail.created_at }}</div>
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                @click="closeModal"
+                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </teleport>
+
+    <!-- Approve Confirmation Modal -->
+    <div v-if="showApproveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Approve Volunteer Application</h2>
+            <button @click="showApproveModal = false" class="text-gray-500 hover:text-black">
+              ✕
+            </button>
+          </div>
+          
+          <p class="text-gray-600 mb-6">Are you sure you want to approve this volunteer application? This will grant the user access to volunteer projects and activities.</p>
+          
+          <div class="flex gap-3">
+            <button 
+              @click="approveApplication"
+              class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              Approve Application
+            </button>
+            <button 
+              @click="showApproveModal = false"
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Confirmation Modal -->
+    <div v-if="showRejectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-md">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Reject Volunteer Application</h2>
+            <button @click="showRejectModal = false" class="text-gray-500 hover:text-black">
+              ✕
+            </button>
+          </div>
+          
+          <p class="text-gray-600 mb-4">Are you sure you want to reject this volunteer application? Please provide a reason for the rejection.</p>
+          
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason (Optional)</label>
+            <textarea
+              v-model="rejectReason"
+              rows="3"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="Enter reason for rejection..."
+            ></textarea>
+          </div>
+          
+          <div class="flex gap-3">
+            <button 
+              @click="rejectApplication"
+              class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+            >
+              Reject Application
+            </button>
+            <button 
+              @click="showRejectModal = false"
+              class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
