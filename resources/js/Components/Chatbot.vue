@@ -172,17 +172,17 @@ function updateActivity() {
     warningTimeout.value = null;
   }
   
-  // 设置1分钟警告
+  // 设置30秒警告
   warningTimeout.value = setTimeout(() => {
     messages.value.push({
       role: "system",
-      text: "⚠️ You've been inactive for 1 minute. The chat will end in 2 minutes if you don't respond.",
+      text: "⚠️ You've been inactive for 30 seconds. The chat will end in 1 minute if you don't respond.",
       isWarning: true
     });
     scrollToBottom();
-  }, 60 * 1000); // 1分钟
+  }, 30 * 1000); // 30秒
   
-  // 设置3分钟自动结束
+  // 设置1分30秒自动结束
   autoEndTimeout.value = setTimeout(() => {
     messages.value.push({
       role: "system",
@@ -196,7 +196,7 @@ function updateActivity() {
       isOpen.value = false;
       clearSession();
     }, 2000);
-  }, 3 * 60 * 1000); // 3分钟
+  }, 90 * 1000); // 1分30秒
 }
 
 function toggleChat() {
