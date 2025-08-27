@@ -182,13 +182,13 @@ function updateStatus() {
         selectedReportId.value = null
         statusUpdateForm.reset()
         // Show success message
-        alert(`✅ Report status updated to "${statusUpdateForm.new_status}" successfully!`)
+        alert(`Report status updated to "${statusUpdateForm.new_status}" successfully!`)
         // Refresh the page to show updated data
         window.location.reload()
       },
       onError: (errors) => {
         console.error('Status update failed:', errors)
-        alert('❌ Failed to update status. Please try again.')
+        alert('Failed to update status. Please try again.')
       }
     })
   } else if (selectedReports.value.length > 0) {
@@ -209,12 +209,12 @@ function updateStatus() {
       selectedReports.value = []
       statusUpdateForm.reset()
       // Show success message
-      alert(`✅ ${selectedReports.value.length} report(s) status updated to "${statusUpdateForm.new_status}" successfully!`)
+      alert(`${selectedReports.value.length} report(s) status updated to "${statusUpdateForm.new_status}" successfully!`)
       // Refresh the page to show updated data
       window.location.reload()
     }).catch(error => {
       console.error('Bulk status update failed:', error)
-      alert('❌ Failed to update status. Please try again.')
+      alert('Failed to update status. Please try again.')
     })
   } else {
     alert('Please select at least one report to update.')
@@ -230,11 +230,11 @@ function rejectReport() {
       selectedReportId.value = null
       rejectForm.reset()
       // Show success message
-      alert('✅ Report rejected successfully!')
+      alert('Report rejected successfully!')
     },
     onError: (errors) => {
       console.error('Rejection failed:', errors)
-      alert('❌ Failed to reject report. Please try again.')
+      alert('Failed to reject report. Please try again.')
     }
   })
 }
@@ -250,7 +250,7 @@ function updateReport() {
     },
     onError: (errors) => {
       console.error('Update failed:', errors)
-      alert('❌ Failed to update report. Please try again.')
+      alert('Failed to update report. Please try again.')
     }
   })
 }
@@ -596,149 +596,231 @@ function handleImageLoad(event) {
     </div>
 
     <!-- View Modal -->
-    <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-xl shadow-xl w-[90%] max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">Missing Person Report Details</h2>
-            <button @click="showViewModal = false" class="text-gray-500 hover:text-black text-2xl">
-              ✕
+    <div v-if="showViewModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-6xl max-h-[95vh] overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold">Missing Person Report</h2>
+                <p class="text-blue-100 text-sm">Case #{{ currentReport?.id }}</p>
+              </div>
+            </div>
+            <button @click="showViewModal = false" class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
             </button>
           </div>
-          
-          <div v-if="currentReport" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Basic Information -->
-            <div class="space-y-4">
-              <h3 class="text-lg font-semibold text-gray-900">Basic Information</h3>
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Full Name</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.full_name }}</p>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
+          <div v-if="currentReport" class="space-y-8">
+            <!-- Basic Information Card -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div class="flex items-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">IC Number</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.ic_number }}</p>
-                </div>
-                <div v-if="currentReport.nickname">
-                  <label class="block text-sm font-medium text-gray-700">Nickname</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.nickname }}</p>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Age</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ currentReport.age }}</p>
+                <h3 class="text-xl font-bold text-gray-900">Basic Information</h3>
+              </div>
+              
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                  <div class="bg-white rounded-lg p-4 border border-blue-200">
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Full Name</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.full_name }}</p>
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Gender</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ currentReport.gender }}</p>
+                  
+                  <div class="bg-white rounded-lg p-4 border border-blue-200">
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">IC Number</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.ic_number }}</p>
+                  </div>
+                  
+                  <div v-if="currentReport.nickname" class="bg-white rounded-lg p-4 border border-blue-200">
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Nickname</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.nickname }}</p>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 border border-blue-200">
+                      <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Age</label>
+                      <p class="text-lg font-semibold text-gray-900">{{ currentReport.age }}</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-blue-200">
+                      <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Gender</label>
+                      <p class="text-lg font-semibold text-gray-900">{{ currentReport.gender }}</p>
+                    </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Height (cm)</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ currentReport.height_cm || 'Not specified' }}</p>
+                
+                <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 border border-blue-200">
+                      <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Height (cm)</label>
+                      <p class="text-lg font-semibold text-gray-900">{{ currentReport.height_cm || 'Not specified' }}</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 border border-blue-200">
+                      <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Weight (kg)</label>
+                      <p class="text-lg font-semibold text-gray-900">{{ currentReport.weight_kg || 'Not specified' }}</p>
+                    </div>
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700">Weight (kg)</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ currentReport.weight_kg || 'Not specified' }}</p>
+                  
+                  <div class="bg-white rounded-lg p-4 border border-blue-200">
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Last Seen Date</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ formatDate(currentReport.last_seen_date) }}</p>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg p-4 border border-blue-200">
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Last Seen Location</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.last_seen_location }}</p>
+                  </div>
+                  
+                  <div v-if="currentReport.last_seen_clothing" class="bg-white rounded-lg p-4 border border-blue-200">
+                    <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Last Seen Clothing</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.last_seen_clothing }}</p>
                   </div>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Last Seen Date</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ formatDate(currentReport.last_seen_date) }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Last Seen Location</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.last_seen_location }}</p>
-                </div>
-                <div v-if="currentReport.last_seen_clothing">
-                  <label class="block text-sm font-medium text-gray-700">Last Seen Clothing</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.last_seen_clothing }}</p>
-                </div>
-                <div v-if="currentReport.physical_description">
-                  <label class="block text-sm font-medium text-gray-700">Physical Description</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.physical_description }}</p>
+              </div>
+              
+              <div v-if="currentReport.physical_description" class="mt-6">
+                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                  <label class="block text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">Physical Description</label>
+                  <p class="text-gray-900 leading-relaxed">{{ currentReport.physical_description }}</p>
                 </div>
               </div>
             </div>
 
-            <!-- Reporter Information -->
-            <div class="space-y-4">
-              <h3 class="text-lg font-semibold text-gray-900">Reporter Information</h3>
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Reporter Name</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_name }}</p>
+            <!-- Reporter Information Card -->
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
+              <div class="flex items-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Reporter IC Number</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_ic_number }}</p>
+                <h3 class="text-xl font-bold text-gray-900">Reporter Information</h3>
+              </div>
+              
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                  <div class="bg-white rounded-lg p-4 border border-green-200">
+                    <label class="block text-xs font-semibold text-green-600 uppercase tracking-wide mb-1">Reporter Name</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.reporter_name }}</p>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg p-4 border border-green-200">
+                    <label class="block text-xs font-semibold text-green-600 uppercase tracking-wide mb-1">Reporter IC Number</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.reporter_ic_number }}</p>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg p-4 border border-green-200">
+                    <label class="block text-xs font-semibold text-green-600 uppercase tracking-wide mb-1">Relationship</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.reporter_relationship }}</p>
+                  </div>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Relationship</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_relationship }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Phone</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_phone }}</p>
-                </div>
-                <div v-if="currentReport.reporter_email">
-                  <label class="block text-sm font-medium text-gray-700">Email</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_email }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Report Date</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ formatDate(currentReport.created_at) }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Status</label>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1" :class="getStatusColor(currentReport.status)">
-                    {{ currentReport.status }}
-                  </span>
+                
+                <div class="space-y-4">
+                  <div class="bg-white rounded-lg p-4 border border-green-200">
+                    <label class="block text-xs font-semibold text-green-600 uppercase tracking-wide mb-1">Phone</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.reporter_phone }}</p>
+                  </div>
+                  
+                  <div v-if="currentReport.reporter_email" class="bg-white rounded-lg p-4 border border-green-200">
+                    <label class="block text-xs font-semibold text-green-600 uppercase tracking-wide mb-1">Email</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ currentReport.reporter_email }}</p>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg p-4 border border-green-200">
+                    <label class="block text-xs font-semibold text-green-600 uppercase tracking-wide mb-1">Report Date</label>
+                    <p class="text-lg font-semibold text-gray-900">{{ formatDate(currentReport.created_at) }}</p>
+                  </div>
+                  
                 </div>
               </div>
             </div>
 
             <!-- Additional Information -->
-            <div v-if="currentReport.additional_notes" class="md:col-span-2">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
-              <p class="text-sm text-gray-900">{{ currentReport.additional_notes }}</p>
+            <div v-if="currentReport.additional_notes" class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-100">
+              <div class="flex items-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">Additional Notes</h3>
+              </div>
+              <div class="bg-white rounded-lg p-4 border border-yellow-200">
+                <p class="text-gray-900 leading-relaxed">{{ currentReport.additional_notes }}</p>
+              </div>
             </div>
 
             <!-- Police Report -->
-            <div v-if="currentReport.police_report_path" class="md:col-span-2">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Police Report</h3>
-              <div class="flex items-center gap-2">
-                <i class="fas fa-file-pdf text-red-500"></i>
-                <a :href="`/storage/${currentReport.police_report_path}`" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
-                  View Police Report
+            <div v-if="currentReport.police_report_path" class="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border border-red-100">
+              <div class="flex items-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">Police Report</h3>
+              </div>
+              <div class="bg-white rounded-lg p-4 border border-red-200">
+                <a :href="`/storage/${currentReport.police_report_path}`" target="_blank" class="inline-flex items-center space-x-2 text-red-600 hover:text-red-800 font-medium transition-colors">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V8z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span>View Police Report</span>
                 </a>
               </div>
             </div>
 
             <!-- Photos -->
-            <div v-if="currentReport.photo_paths && currentReport.photo_paths.length > 0" class="md:col-span-2">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Photos</h3>
-              <div class="flex gap-4 flex-wrap">
+            <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-100">
+              <div class="flex items-center space-x-3 mb-4">
+                <div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">Photos</h3>
+              </div>
+              
+              <div v-if="currentReport.photo_paths && currentReport.photo_paths.length > 0" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div 
                   v-for="(photo, index) in currentReport.photo_paths" 
                   :key="index"
-                  class="relative"
+                  class="relative group"
                 >
-                  <img 
-                    :src="photo"
-                    :alt="`Photo ${index + 1}`"
-                    class="w-32 h-32 object-cover rounded-lg border"
-                    @error="handleImageError"
-                    @load="handleImageLoad"
-                  />
-                  <div class="text-xs text-gray-500 mt-1">Photo {{ index + 1 }}</div>
+                  <div class="bg-white rounded-lg p-2 border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                    <img 
+                      :src="photo"
+                      :alt="`Photo ${index + 1}`"
+                      class="w-full h-32 object-cover rounded-lg border border-gray-200"
+                      @error="handleImageError"
+                      @load="handleImageLoad"
+                    />
+                    <div class="mt-2 text-center">
+                      <span class="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">Photo {{ index + 1 }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div v-else class="md:col-span-2">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Photos</h3>
-              <div class="text-gray-500">No photos available</div>
+              <div v-else class="bg-white rounded-lg p-8 border border-purple-200 text-center">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <p class="text-gray-500 font-medium">No photos available</p>
+              </div>
             </div>
           </div>
         </div>
