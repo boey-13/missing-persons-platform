@@ -12,17 +12,25 @@ const props = defineProps({
 <template>
   <div>
     <!-- Hero -->
-    <section class="bg-[#5C4033] text-white">
-      <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div>
+    <section class="relative bg-cover bg-center bg-no-repeat" style="background-image: url('/hero.jpg');">
+      <!-- Overlay for better text readability -->
+      <div class="absolute inset-0 bg-black/40"></div>
+      
+      <div class="relative max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div class="text-white">
           <h1 class="text-3xl md:text-4xl font-extrabold leading-tight">Helping Families Reunite, One Step at a Time.</h1>
           <p class="mt-4 text-white/90">Report, search, and share missing persons with the community.</p>
           <div class="mt-6 flex gap-3">
-            <Link href="/missing-persons" class="px-5 py-2 rounded bg-white text-[#5C4033] font-semibold">View Case</Link>
-            <Link :href="route('missing-persons.report')" class="px-5 py-2 rounded bg-[#E67E22] text-white font-semibold">Report Case</Link>
+            <Link href="/missing-persons" class="px-5 py-2 rounded bg-white text-[#5C4033] font-semibold hover:bg-gray-100 transition-colors">View Case</Link>
+            <Link :href="route('missing-persons.report')" class="px-5 py-2 rounded bg-[#E67E22] text-white font-semibold hover:bg-[#D35400] transition-colors">Report Case</Link>
           </div>
         </div>
-        <div class="aspect-video rounded-xl overflow-hidden bg-[url('/hero.jpg')] bg-cover bg-center min-h-[220px]"></div>
+        <div class="aspect-video rounded-xl overflow-hidden bg-white/10 backdrop-blur-sm min-h-[220px] flex items-center justify-center">
+          <div class="text-white text-center">
+            <div class="text-4xl mb-2">🤝</div>
+            <div class="text-lg font-semibold">Community Support</div>
+          </div>
+        </div>
       </div>
     </section>
 
