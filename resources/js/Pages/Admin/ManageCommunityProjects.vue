@@ -409,8 +409,7 @@ onMounted(() => {
             class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
             <!-- Project Image -->
             <div class="h-48 relative">
-              <div v-if="!project.photo_url" class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500"></div>
-              <img v-if="project.photo_url" :src="project.photo_url" :alt="project.title" class="w-full h-full object-cover" />
+              <img :src="project.photo_url || '/default-avatar.jpg'" :alt="project.title" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black bg-opacity-20"></div>
               <div class="absolute top-4 left-4">
                 <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`">

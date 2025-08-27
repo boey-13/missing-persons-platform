@@ -388,10 +388,8 @@ function getCategoryColor(category) {
         >
           <!-- Project Image -->
           <div class="h-48 relative">
-            <div v-if="!project.photo_url" class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500"></div>
             <img 
-              v-if="project.photo_url" 
-              :src="project.photo_url" 
+              :src="project.photo_url || '/default-avatar.jpg'" 
               :alt="project.title"
               class="w-full h-full object-cover"
             />
@@ -544,10 +542,8 @@ function getCategoryColor(category) {
           <div v-if="selectedProject" class="space-y-6">
             <!-- Project Image -->
             <div class="h-64 rounded-lg relative overflow-hidden">
-              <div v-if="!selectedProject.photo_url" class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500"></div>
               <img 
-                v-if="selectedProject.photo_url" 
-                :src="selectedProject.photo_url" 
+                :src="selectedProject.photo_url || '/signup.png'" 
                 :alt="selectedProject.title"
                 class="w-full h-full object-cover"
               />

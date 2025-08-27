@@ -13,9 +13,9 @@ class VolunteerApplicationController extends Controller
     {
         $user = auth()->user();
 
-        // Redirect if already a volunteer
-        if ($user && $user->role === 'volunteer') {
-            return redirect()->route('volunteer.home')->with('status', 'You are already a volunteer.');
+        // Check if user is already an approved volunteer
+        if ($user && $user->isApprovedVolunteer()) {
+            return redirect()->route('volunteer.projects')->with('status', 'You are already an approved volunteer.');
         }
 
         // If there is a pending application, show info page
@@ -26,6 +26,19 @@ class VolunteerApplicationController extends Controller
         if ($existing && $existing->status === 'Pending') {
             return Inertia::render('Volunteer/ApplicationPending', [
                 'application' => $existing,
+            ]);
+        }
+
+        // If there is a rejected application, allow them to apply again
+        if ($existing && $existing->status === 'Rejected') {
+            return Inertia::render('Volunteer/BecomeVolunteer', [
+                'profile' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone ?? null,
+                    'region' => $user->region ?? null,
+                ],
+                'previousApplication' => $existing,
             ]);
         }
 
@@ -146,10 +159,7 @@ class VolunteerApplicationController extends Controller
         $user = $application->user;
         if ($user) {
             if ($data['status'] === 'Approved') {
-                // Promote to volunteer on approval
-                $user->role = 'volunteer';
-                $user->save();
-                // notify
+                // Notify approval - no need to change user role as we use volunteer_application status
                 \App\Models\Notification::create([
                     'user_id' => $user->id,
                     'type' => 'volunteer_application',
@@ -158,15 +168,7 @@ class VolunteerApplicationController extends Controller
                     'data' => ['application_id' => $application->id, 'action' => 'open_projects'],
                 ]);
             } elseif ($data['status'] === 'Rejected') {
-                // If there is no other approved application for this user, demote back to user
-                $hasOtherApproved = VolunteerApplication::where('user_id', $user->id)
-                    ->where('id', '!=', $application->id)
-                    ->where('status', 'Approved')
-                    ->exists();
-                if (!$hasOtherApproved && $user->role === 'volunteer') {
-                    $user->role = 'user';
-                    $user->save();
-                }
+                // Notify rejection - no need to change user role as we use volunteer_application status
                 // notify rejection
                 \App\Models\Notification::create([
                     'user_id' => $user->id,

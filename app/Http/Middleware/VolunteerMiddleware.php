@@ -27,9 +27,21 @@ class VolunteerMiddleware
             return $next($request);
         }
 
-        // If user has no volunteer application, redirect to apply
+        // If user has no volunteer application, show access denied page
         if (!$user->hasVolunteerApplication()) {
-            return redirect()->route('volunteer.apply')->with('status', 'You need to become a volunteer first to access this feature.');
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'error' => 'Volunteer access required',
+                    'message' => 'You need to become a volunteer first to access this feature.'
+                ], 403);
+            }
+
+            return Inertia::render('Volunteer/AccessDenied', [
+                'userRole' => $user->role,
+                'requestedUrl' => $request->url(),
+                'userName' => $user->name,
+                'volunteerStatus' => 'No Application'
+            ])->toResponse($request);
         }
 
         // If user has pending/rejected application, show access denied page with details

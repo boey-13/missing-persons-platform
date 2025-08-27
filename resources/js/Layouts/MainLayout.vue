@@ -115,8 +115,9 @@
             <a href="/missing-persons" class="hover:text-[#A67B5B]">View Cases</a>
             <!-- Show Report Case only for logged in users -->
             <a v-if="currentUser" href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
-            <!-- Show volunteer-related help for logged in users -->
-            <a v-if="currentUser" href="/volunteer/apply" class="hover:text-[#A67B5B]">Become Volunteer</a>
+            <!-- Show Become Volunteer only for users without approved application -->
+            <a v-if="currentUser && !hasApprovedVolunteerApplication" href="/volunteer/apply" class="hover:text-[#A67B5B]">Become Volunteer</a>
+            <!-- Show Community Projects for approved volunteers and admins -->
             <a v-if="canAccessVolunteerProjects" href="/volunteer/projects" class="hover:text-[#A67B5B]">Community Projects</a>
           </nav>
         </div>
