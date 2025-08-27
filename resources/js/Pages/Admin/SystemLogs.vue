@@ -39,12 +39,23 @@ function getActionColor(action) {
     'user_login': 'bg-green-100 text-green-800',
     'user_logout': 'bg-blue-100 text-blue-800',
     'login_failed': 'bg-red-100 text-red-800',
+    'user_registered': 'bg-indigo-100 text-indigo-800',
+    'password_reset_requested': 'bg-yellow-100 text-yellow-800',
+    'password_reset': 'bg-purple-100 text-purple-800',
     'report_created': 'bg-purple-100 text-purple-800',
     'sighting_submitted': 'bg-orange-100 text-orange-800',
     'sighting_approved': 'bg-green-100 text-green-800',
     'sighting_rejected': 'bg-red-100 text-red-800',
     'user_role_changed': 'bg-yellow-100 text-yellow-800',
     'user_deleted': 'bg-red-100 text-red-800',
+    'volunteer_application_pending': 'bg-blue-100 text-blue-800',
+    'volunteer_application_approved': 'bg-green-100 text-green-800',
+    'volunteer_application_rejected': 'bg-red-100 text-red-800',
+    'project_created': 'bg-green-100 text-green-800',
+    'project_updated': 'bg-blue-100 text-blue-800',
+    'project_deleted': 'bg-red-100 text-red-800',
+    'application_approved': 'bg-green-100 text-green-800',
+    'application_rejected': 'bg-red-100 text-red-800',
   }
   return colors[action] || 'bg-gray-100 text-gray-800'
 }

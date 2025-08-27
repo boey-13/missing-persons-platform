@@ -8,6 +8,7 @@ defineOptions({ layout: MainLayout })
 
 const props = defineProps({
   vouchers: Array,
+  pagination: Object,
   currentPoints: Number,
   selectedStatus: String,
 })
@@ -46,6 +47,14 @@ function filterByStatus(status) {
 function clearFilter() {
   selectedStatusFilter.value = ''
   router.get('/rewards/my-vouchers', {}, { preserveState: true, replace: true })
+}
+
+function goToPage(page) {
+  const params = { 
+    status: selectedStatusFilter.value,
+    page
+  }
+  router.get('/rewards/my-vouchers', params, { preserveState: true, replace: true })
 }
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -220,6 +229,44 @@ function goBack() {
         >
           Browse rewards
         </Link>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="pagination && pagination.last_page > 1" class="mt-10 flex justify-center">
+        <nav class="inline-flex items-center gap-1">
+          <button
+            @click="goToPage(pagination.current_page - 1)"
+            :disabled="pagination.current_page <= 1"
+            class="px-3 py-2 border border-gray-300 rounded-l-md text-sm hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
+          >
+            Prev
+          </button>
+
+          <template v-for="page in pagination.last_page" :key="page">
+            <button
+              v-if="page === 1 || page === pagination.last_page || (page >= pagination.current_page - 1 && page <= pagination.current_page + 1)"
+              @click="goToPage(page)"
+              :class="[
+                'px-3 py-2 border border-gray-300 text-sm',
+                page === pagination.current_page ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50'
+              ]"
+            >
+              {{ page }}
+            </button>
+            <span
+              v-else-if="page === pagination.current_page - 2 || page === pagination.current_page + 2"
+              class="px-2 text-gray-400"
+            >…</span>
+          </template>
+
+          <button
+            @click="goToPage(pagination.current_page + 1)"
+            :disabled="pagination.current_page >= pagination.last_page"
+            class="px-3 py-2 border border-gray-300 rounded-r-md text-sm hover:bg-gray-50 disabled:hover:bg-white"
+          >
+            Next
+          </button>
+        </nav>
       </div>
     </main>
 

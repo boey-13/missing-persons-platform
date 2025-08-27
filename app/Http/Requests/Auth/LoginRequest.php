@@ -55,12 +55,26 @@ class LoginRequest extends FormRequest
             if ($user) {
                 $user->incrementFailedLoginAttempts();
                 
+                // Log failed login attempt
+                \App\Models\SystemLog::log(
+                    'login_failed',
+                    "Failed login attempt for user: {$this->email}",
+                    ['email' => $this->email, 'ip' => $this->ip()]
+                );
+                
                 // Check if account should be locked
                 if ($user->isAccountLocked()) {
                     throw ValidationException::withMessages([
                         'account_locked' => 'Your account has been locked for 5 minutes due to too many failed login attempts. Please try again later or reset your password.',
                     ]);
                 }
+            } else {
+                // Log failed login attempt for non-existent user
+                \App\Models\SystemLog::log(
+                    'login_failed',
+                    "Failed login attempt for non-existent user: {$this->email}",
+                    ['email' => $this->email, 'ip' => $this->ip()]
+                );
             }
 
             RateLimiter::hit($this->throttleKey(), 300); // 5 minutes = 300 seconds

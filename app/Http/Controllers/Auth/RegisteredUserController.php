@@ -70,6 +70,13 @@ class RegisteredUserController extends Controller
             \Log::error('Failed to send welcome email: ' . $e->getMessage());
         }
 
+        // Log user registration
+        \App\Models\SystemLog::log(
+            'user_registered',
+            "New user registered: {$user->email}",
+            ['user_id' => $user->id, 'email' => $user->email, 'ip' => $request->ip()]
+        );
+
         // Don't auto-login, let user login manually
         return redirect('/login')->with('status', 'Registration successful! Please log in with your new account.');
 

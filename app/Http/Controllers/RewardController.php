@@ -56,12 +56,20 @@ class RewardController extends Controller
     {
         $user = $request->user();
         $status = $request->get('status');
+        $page = $request->get('page', 1);
         
-        $vouchers = $this->rewardService->getUserRewards($user, $status);
+        $vouchersData = $this->rewardService->getUserRewards($user, $status, $page);
         $currentPoints = $this->pointsService->getCurrentPoints($user);
 
         return Inertia::render('Rewards/MyVouchers', [
-            'vouchers' => $vouchers,
+            'vouchers' => $vouchersData->items(),
+            'pagination' => [
+                'total' => $vouchersData->total(),
+                'per_page' => $vouchersData->perPage(),
+                'current_page' => $vouchersData->currentPage(),
+                'last_page' => $vouchersData->lastPage(),
+                'has_more_pages' => $vouchersData->hasMorePages(),
+            ],
             'currentPoints' => $currentPoints,
             'selectedStatus' => $status,
         ]);

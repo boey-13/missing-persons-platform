@@ -51,8 +51,8 @@ class RewardService
             });
         }
 
-        // Paginate results (6 per page)
-        $perPage = 6;
+        // Paginate results (8 per page)
+        $perPage = 8;
         $offset = ($page - 1) * $perPage;
         
         $paginatedRewards = $rewardsWithFlags->slice($offset, $perPage);
@@ -192,7 +192,7 @@ class RewardService
     /**
      * Get user's redeemed rewards
      */
-    public function getUserRewards(User $user, $status = null)
+    public function getUserRewards(User $user, $status = null, $page = 1)
     {
         $query = UserReward::with('reward.category')
             ->where('user_id', $user->id);
@@ -201,15 +201,19 @@ class RewardService
             $query->where('status', $status);
         }
 
-        $vouchers = $query->orderBy('redeemed_at', 'desc')->get();
+        // Paginate results (8 per page)
+        $perPage = 8;
+        $vouchers = $query->orderBy('redeemed_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
 
         // Ensure reward image_url is included
-        return $vouchers->map(function ($voucher) {
+        $vouchers->getCollection()->transform(function ($voucher) {
             if ($voucher->reward) {
                 $voucher->reward->image_url = $voucher->reward->image_url;
             }
             return $voucher;
         });
+
+        return $vouchers;
     }
 
     /**
