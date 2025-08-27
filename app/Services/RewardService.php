@@ -88,6 +88,46 @@ class RewardService
     }
 
     /**
+     * Get all rewards with filters and pagination (for admin)
+     */
+    public function getAllRewardsWithFilters($categoryId = null, $search = null, $status = null, $sortBy = 'created_at', $sortOrder = 'desc')
+    {
+        $query = Reward::with('category');
+
+        // Filter by category
+        if ($categoryId && $categoryId !== 'all') {
+            $query->where('category_id', $categoryId);
+        }
+
+        // Search functionality
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($status && $status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        // Sort functionality
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Pagination - 6 items per page
+        $rewards = $query->paginate(6);
+
+        // Ensure image_url is included in the response
+        $rewards->getCollection()->transform(function ($reward) {
+            $reward->image_url = $reward->image_url;
+            return $reward;
+        });
+
+        return $rewards;
+    }
+
+    /**
      * Redeem a reward
      */
     public function redeemReward(User $user, Reward $reward)

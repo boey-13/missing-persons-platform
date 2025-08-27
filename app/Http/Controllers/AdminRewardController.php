@@ -27,7 +27,12 @@ class AdminRewardController extends Controller
         // Check admin permissions
         if (auth()->check() && auth()->user()->role === 'admin') {
             $categoryId = $request->get('category');
-            $rewards = $this->rewardService->getAllRewards($categoryId);
+            $search = $request->get('search');
+            $status = $request->get('status');
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            
+            $rewards = $this->rewardService->getAllRewardsWithFilters($categoryId, $search, $status, $sortBy, $sortOrder);
             $categories = $this->rewardService->getCategories();
             $stats = $this->rewardService->getRewardStats();
 
@@ -35,7 +40,7 @@ class AdminRewardController extends Controller
                 'rewards' => $rewards,
                 'categories' => $categories,
                 'stats' => $stats,
-                'selectedCategory' => $categoryId,
+                'filters' => $request->only(['category', 'search', 'status', 'sort_by', 'sort_order']),
             ]);
         }
         
