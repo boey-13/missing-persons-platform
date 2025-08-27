@@ -491,24 +491,32 @@ function getCategoryColor(category) {
           <Link
             v-if="props.projects.prev_page_url"
             :href="props.projects.prev_page_url"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
+            class="text-gray-400 hover:text-gray-600 transition-colors flex items-center"
           >
-            &lt;
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Previous
           </Link>
-          <span v-else class="text-gray-300">&lt;</span>
+          <span v-else class="text-gray-300 flex items-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Previous
+          </span>
 
           <!-- Page Numbers -->
           <template v-for="(link, index) in props.projects.links" :key="index">
             <Link
               v-if="link.url && !link.active && !isNavigationLink(link.label)"
               :href="link.url"
-              class="text-gray-600 hover:text-gray-900 transition-colors"
+              class="text-gray-600 hover:text-gray-900 transition-colors px-3 py-1 rounded hover:bg-gray-100"
             >
               {{ link.label }}
             </Link>
             <span
               v-else-if="link.active"
-              class="text-gray-900 underline"
+              class="text-gray-900 bg-gray-200 px-3 py-1 rounded font-medium"
             >
               {{ link.label }}
             </span>
@@ -518,11 +526,19 @@ function getCategoryColor(category) {
           <Link
             v-if="props.projects.next_page_url"
             :href="props.projects.next_page_url"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
+            class="text-gray-400 hover:text-gray-600 transition-colors flex items-center"
           >
-            &gt;
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
           </Link>
-          <span v-else class="text-gray-300">&gt;</span>
+          <span v-else class="text-gray-300 flex items-center">
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </span>
         </div>
       </div>
     </div>

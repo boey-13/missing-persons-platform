@@ -228,9 +228,30 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::post('/volunteers/{application}/status', [\App\Http\Controllers\VolunteerApplicationController::class, 'updateStatus'])
         ->name('volunteers.status');
 
-    Route::get('/users', function () {
-        $users = User::orderBy('created_at', 'desc')->limit(50)->get(['id','name','email','role','created_at','updated_at']);
-        return Inertia::render('Admin/ManageUsers', [ 'users' => $users ]);
+    Route::get('/users', function (\Illuminate\Http\Request $request) {
+        $query = User::query();
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by role
+        if ($request->filled('role') && $request->role !== 'all') {
+            $query->where('role', $request->role);
+        }
+        
+        $users = $query->orderBy('created_at', 'desc')
+                      ->paginate(10);
+        
+        return Inertia::render('Admin/ManageUsers', [ 
+            'users' => $users,
+            'filters' => $request->only(['search', 'role'])
+        ]);
     })->name('users');
 
     // Test route for applications
@@ -256,7 +277,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
             ['user_id' => $user->id, 'user_email' => $user->email, 'old_role' => $oldRole, 'new_role' => $request->role]
         );
 
-        return back();
+        return back()->with('success', "User role updated successfully from {$oldRole} to {$request->role}");
     })->name('users.role');
 
     Route::delete('/users/{user}', function (User $user) {
@@ -273,7 +294,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
         );
 
         $user->delete();
-        return back();
+        return back()->with('success', 'User deleted successfully');
     })->name('users.delete');
     
     Route::get('/logs', [App\Http\Controllers\SystemLogController::class, 'index'])

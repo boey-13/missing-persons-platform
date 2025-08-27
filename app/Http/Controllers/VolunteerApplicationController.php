@@ -174,6 +174,9 @@ class VolunteerApplicationController extends Controller
                     ->where('user_id', $app->user->id)
                     ->orderByDesc('created_at')
                     ->get()
+                    ->filter(function ($projectApp) {
+                        return $projectApp->project !== null;
+                    })
                     ->map(function ($projectApp) {
                         return [
                             'id' => $projectApp->id,

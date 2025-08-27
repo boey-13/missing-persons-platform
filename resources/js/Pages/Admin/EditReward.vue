@@ -57,7 +57,7 @@ function submit() {
       forceFormData: true,
       preserveScroll: true,
       onSuccess: () => {
-        // 使用 Inertia router 进行跳转，这样能正确处理 flash 消息
+        alert('✅ Reward updated successfully!')
         router.visit('/admin/rewards', {
           method: 'get',
           preserveState: false,
@@ -65,7 +65,8 @@ function submit() {
         })
       },
       onError: (errors) => {
-        console.error('Form errors:', errors)
+        console.error('Update failed:', errors)
+        alert('Failed to update reward. Please try again.')
       },
     })
 }

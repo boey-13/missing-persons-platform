@@ -123,19 +123,22 @@ onMounted(fetchCases)
           <button
             :disabled="page <= 1"
             @click="onPageChange(page - 1)"
-            class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
           >
-            &lt;
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Previous
           </button>
           
           <button
             v-for="n in Math.ceil(total / perPage)"
             :key="n"
             :class="[
-              'text-sm transition-colors',
+              'text-sm px-3 py-1 rounded transition-colors',
               page === n 
-                ? 'text-gray-900 underline font-medium' 
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gray-800 text-white' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             ]"
             @click="onPageChange(n)"
           >
@@ -145,9 +148,12 @@ onMounted(fetchCases)
           <button
             :disabled="page >= Math.ceil(total / perPage)"
             @click="onPageChange(page + 1)"
-            class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
           >
-            &gt;
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
           </button>
         </nav>
       </div>

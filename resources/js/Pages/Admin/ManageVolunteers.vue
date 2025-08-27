@@ -312,9 +312,12 @@ function clearFilters() {
         <button
           :disabled="props.applications.current_page <= 1"
           @click="router.get('/admin/volunteers', { page: props.applications.current_page - 1, status: statusFilter, search: searchFilter, skills: skillsFilter, languages: languagesFilter })"
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &lt;
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Previous
         </button>
         
         <button
@@ -322,10 +325,10 @@ function clearFilters() {
           :key="page"
           @click="router.get('/admin/volunteers', { page, status: statusFilter, search: searchFilter, skills: skillsFilter, languages: languagesFilter })"
           :class="[
-            'text-sm',
+            'text-sm px-3 py-1 rounded',
             page === props.applications.current_page
-              ? 'underline font-medium'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           ]"
         >
           {{ page }}
@@ -334,9 +337,12 @@ function clearFilters() {
         <button
           :disabled="props.applications.current_page >= Math.ceil(props.applications.total / props.applications.per_page)"
           @click="router.get('/admin/volunteers', { page: props.applications.current_page + 1, status: statusFilter, search: searchFilter, skills: skillsFilter, languages: languagesFilter })"
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &gt;
+          Next
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
         </button>
       </div>
     </div>
@@ -374,7 +380,7 @@ function clearFilters() {
                 </svg>
                 Basic Information
               </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white rounded-lg p-4 border border-blue-200">
                   <div class="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">User</div>
                   <div class="text-gray-900 font-medium">{{ detail.user?.name }}</div>
@@ -386,7 +392,7 @@ function clearFilters() {
                     {{ detail.status }}
                   </span>
                   <div v-if="detail.status_reason" class="text-xs text-gray-500 mt-2">Reason: {{ detail.status_reason }}</div>
-                </div>
+              </div>
               </div>
             </div>
 
@@ -411,10 +417,10 @@ function clearFilters() {
                 </svg>
                 Skills & Languages
               </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white rounded-lg p-4 border border-green-200">
                   <div class="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">Skills</div>
-                  <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2">
                     <span v-for="s in (detail.skills || [])" :key="s" class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">{{ s }}</span>
                   </div>
                 </div>
@@ -422,7 +428,7 @@ function clearFilters() {
                   <div class="text-xs font-medium text-green-600 uppercase tracking-wide mb-2">Languages</div>
                   <div class="flex flex-wrap gap-2">
                     <span v-for="l in (detail.languages || [])" :key="l" class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">{{ l }}</span>
-                  </div>
+              </div>
                 </div>
               </div>
             </div>
@@ -435,10 +441,10 @@ function clearFilters() {
                 </svg>
                 Availability & Roles
               </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white rounded-lg p-4 border border-orange-200">
                   <div class="text-xs font-medium text-orange-600 uppercase tracking-wide mb-2">Availability</div>
-                  <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2">
                     <span v-for="d in (detail.availability || [])" :key="d" class="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">{{ d }}</span>
                   </div>
                 </div>
@@ -446,7 +452,7 @@ function clearFilters() {
                   <div class="text-xs font-medium text-orange-600 uppercase tracking-wide mb-2">Preferred Roles</div>
                   <div class="flex flex-wrap gap-2">
                     <span v-for="r in (detail.preferred_roles || [])" :key="r" class="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">{{ r }}</span>
-                  </div>
+              </div>
                 </div>
               </div>
             </div>
@@ -459,7 +465,7 @@ function clearFilters() {
                 </svg>
                 Additional Information
               </h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white rounded-lg p-4 border border-red-200">
                   <div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Areas Willing to Help</div>
                   <div class="text-gray-900 font-medium">{{ detail.areas || '-' }}</div>
@@ -476,7 +482,7 @@ function clearFilters() {
                 <div class="bg-white rounded-lg p-4 border border-red-200">
                   <div class="text-xs font-medium text-red-600 uppercase tracking-wide mb-1">Prior Experience</div>
                   <div class="text-gray-900">{{ detail.prior_experience || '-' }}</div>
-                </div>
+              </div>
               </div>
             </div>
 
@@ -507,11 +513,11 @@ function clearFilters() {
                         <span class="text-gray-500">Location:</span>
                         <span class="text-gray-900">{{ project.project_location }}</span>
                       </div>
-                      <div>
+              <div>
                         <span class="text-gray-500">Date:</span>
                         <span class="text-gray-900">{{ project.project_date }}</span>
-                      </div>
-                      <div>
+              </div>
+              <div>
                         <span class="text-gray-500">Applied:</span>
                         <span class="text-gray-900">{{ project.applied_at }}</span>
                       </div>

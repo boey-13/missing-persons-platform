@@ -137,9 +137,12 @@ function getActionColor(action) {
         <button 
           :disabled="pagination.current_page <= 1" 
           @click="router.get('/admin/logs', { ...filters, page: pagination.current_page - 1 }, { preserveState: true })" 
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &lt;
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Previous
         </button>
         
         <span class="text-sm text-gray-600">
@@ -149,9 +152,12 @@ function getActionColor(action) {
         <button 
           :disabled="pagination.current_page >= pagination.last_page" 
           @click="router.get('/admin/logs', { ...filters, page: pagination.current_page + 1 }, { preserveState: true })" 
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &gt;
+          Next
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
         </button>
       </div>
     </div>

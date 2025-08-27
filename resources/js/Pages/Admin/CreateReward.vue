@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { router, useForm, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 defineOptions({ layout: AdminLayout })
@@ -25,8 +25,13 @@ function submit() {
   form.post('/admin/rewards', {
     forceFormData: true,
     onSuccess: () => {
+      alert('✅ Reward created successfully!')
       router.visit('/admin/rewards')
     },
+    onError: (errors) => {
+      console.error('Create failed:', errors)
+      alert('Failed to create reward. Please try again.')
+    }
   })
 }
 
@@ -47,12 +52,12 @@ function handleImageUpload(event) {
           <h1 class="text-3xl font-bold text-gray-900">Create New Reward</h1>
           <p class="text-gray-600 mt-2">Add a new reward to the system</p>
         </div>
-        <router-link
+        <Link
           href="/admin/rewards"
           class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
         >
           ← Back to Rewards
-        </router-link>
+        </Link>
       </div>
     </div>
 
@@ -239,12 +244,12 @@ function handleImageUpload(event) {
           >
             {{ form.processing ? 'Creating...' : 'Create Reward' }}
           </button>
-          <router-link
+          <Link
             href="/admin/rewards"
             class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center"
           >
             Cancel
-          </router-link>
+          </Link>
         </div>
       </form>
     </div>

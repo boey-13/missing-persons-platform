@@ -44,7 +44,7 @@ class AdminController extends Controller
             $query->where('full_name', 'like', '%' . $request->search . '%');
         }
 
-        $cases = $query->paginate(15);
+        $cases = $query->paginate(10);
         
         $data = $cases->getCollection()->transform(function ($item) {
             return [

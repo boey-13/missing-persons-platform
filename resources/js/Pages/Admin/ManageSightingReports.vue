@@ -196,11 +196,11 @@ function formatDate(dateString) {
                 {{ row.status }}
               </span>
             </td>
-                         <td class="px-4 py-3">
-               <div class="flex flex-wrap gap-2">
-                 <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(row.id)">
-                   View
-                 </button>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2">
+                <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(row.id)">
+                  View
+                </button>
                  
                  <!-- Pending Status Actions -->
                  <template v-if="row.status === 'Pending'">
@@ -231,14 +231,14 @@ function formatDate(dateString) {
                  <!-- Rejected Status Actions -->
                  <template v-if="row.status === 'Rejected'">
                    <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
-                     Approve
-                   </button>
+                  Approve
+                </button>
                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
-                     Reject
-                   </button>
+                  Reject
+                </button>
                  </template>
-               </div>
-             </td>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -259,9 +259,12 @@ function formatDate(dateString) {
         <button
           :disabled="props.pagination.current_page <= 1"
           @click="router.get('/admin/sighting-reports', { page: props.pagination.current_page - 1, ...filters })"
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &lt;
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Previous
         </button>
         
         <button
@@ -269,10 +272,10 @@ function formatDate(dateString) {
           :key="page"
           @click="router.get('/admin/sighting-reports', { page, ...filters })"
           :class="[
-            'text-sm',
+            'text-sm px-3 py-1 rounded',
             page === props.pagination.current_page
-              ? 'underline font-medium'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           ]"
         >
           {{ page }}
@@ -281,15 +284,18 @@ function formatDate(dateString) {
         <button
           :disabled="props.pagination.current_page >= Math.ceil(props.pagination.total / props.pagination.per_page)"
           @click="router.get('/admin/sighting-reports', { page: props.pagination.current_page + 1, ...filters })"
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &gt;
+          Next
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
         </button>
       </div>
     </div>
 
-         <!-- Detail Modal -->
-     <teleport to="body">
+    <!-- Detail Modal -->
+    <teleport to="body">
        <div v-if="showModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
          <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-6xl max-h-[90vh] overflow-y-auto">
            <!-- Header -->
@@ -434,7 +440,7 @@ function formatDate(dateString) {
                    <div class="text-gray-900 font-medium">{{ formatDate(modalData.missing_person.last_seen_date) }}</div>
                  </div>
                </div>
-             </div>
+          </div>
 
              <!-- Action Buttons -->
              <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -444,11 +450,11 @@ function formatDate(dateString) {
                >
                  Close
                </button>
-             </div>
-           </div>
-         </div>
-       </div>
-     </teleport>
+            </div>
+          </div>
+        </div>
+      </div>
+    </teleport>
 
     <!-- Approve Confirmation Modal -->
     <div v-if="showApproveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

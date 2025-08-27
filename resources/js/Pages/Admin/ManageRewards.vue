@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import ToastMessage from '@/Components/ToastMessage.vue'
 
 defineOptions({ layout: AdminLayout })
 
@@ -70,16 +69,21 @@ const sortOptions = [
 
 function deleteReward(rewardId) {
   if (confirm('Are you sure you want to delete this reward?')) {
-    router.delete(`/admin/rewards/${rewardId}`)
+    router.delete(`/admin/rewards/${rewardId}`, {
+      onSuccess: () => {
+        alert('✅ Reward deleted successfully!')
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors)
+        alert('Failed to delete reward. Please try again.')
+      }
+    })
   }
 }
 </script>
 
 <template>
   <div>
-    <!-- Success Message -->
-    <ToastMessage v-if="$page.props.flash?.success" :message="$page.props.flash.success" type="success" />
-
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-extrabold">Manage Rewards</h1>
       <Link
@@ -306,8 +310,24 @@ function deleteReward(rewardId) {
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="rewards.data && rewards.data.length > 0" class="mt-8">
+      
+
+      <!-- Empty State -->
+      <div v-if="!rewards.data || rewards.data.length === 0" class="text-center py-12">
+        <div class="text-gray-400 text-6xl mb-4">🎁</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No rewards found</h3>
+        <p class="text-gray-600 mb-6">Get started by creating your first reward.</p>
+        <Link
+          href="/admin/rewards/create"
+          class="inline-block bg-[#5C4033] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#4A3329] transition-colors"
+        >
+          Create Reward
+        </Link>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="rewards.data && rewards.data.length > 0" class="mt-8">
         <div class="flex items-center justify-between">
           <div class="text-sm text-gray-700">
             Showing {{ rewards.from || 0 }} to {{ rewards.to || 0 }} of {{ rewards.total || 0 }} results
@@ -317,22 +337,28 @@ function deleteReward(rewardId) {
             <Link
               v-if="rewards.prev_page_url"
               :href="rewards.prev_page_url"
-              class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+              class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors flex items-center"
               preserve-scroll
             >
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
               Previous
             </Link>
             <span
               v-else
-              class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+              class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed flex items-center"
             >
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
               Previous
             </span>
 
             <!-- Page Numbers -->
             <template v-for="(link, index) in rewards.links" :key="index">
               <Link
-                v-if="link.url && !link.active && link.label !== '...'"
+                v-if="link.url && !link.active && link.label !== '...' && !link.label.includes('&')"
                 :href="link.url"
                 class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
                 preserve-scroll
@@ -357,50 +383,27 @@ function deleteReward(rewardId) {
             <Link
               v-if="rewards.next_page_url"
               :href="rewards.next_page_url"
-              class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+              class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors flex items-center"
               preserve-scroll
             >
               Next
+              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
             </Link>
             <span
               v-else
-              class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+              class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed flex items-center"
             >
               Next
+              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div v-if="!rewards.data || rewards.data.length === 0" class="text-center py-12">
-        <div class="text-gray-400 text-6xl mb-4">🎁</div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No rewards found</h3>
-        <p class="text-gray-600 mb-6">Get started by creating your first reward.</p>
-        <Link
-          href="/admin/rewards/create"
-          class="inline-block bg-[#5C4033] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#4A3329] transition-colors"
-        >
-          Create Reward
-        </Link>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="mt-8 flex space-x-4">
-      <Link
-        href="/admin/rewards/categories"
-        class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-      >
-        Manage Categories
-      </Link>
-      <Link
-        href="/admin/rewards/stats"
-        class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
-      >
-        View Statistics
-      </Link>
-    </div>
   </div>
 </template>
 

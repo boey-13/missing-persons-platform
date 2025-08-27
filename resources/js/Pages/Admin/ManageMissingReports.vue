@@ -566,9 +566,12 @@ function handleImageLoad(event) {
         <button 
           :disabled="props.pagination.current_page <= 1"
           @click="router.get('/admin/missing-reports', { page: props.pagination.current_page - 1, ...$page.props.filters })"
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &lt;
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Previous
         </button>
         
         <button 
@@ -576,10 +579,10 @@ function handleImageLoad(event) {
           :key="page"
           @click="router.get('/admin/missing-reports', { page, ...$page.props.filters })"
           :class="[
-            'text-sm',
+            'text-sm px-3 py-1 rounded',
             page === props.pagination.current_page 
-              ? 'underline font-medium' 
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-blue-600 text-white' 
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
           ]"
         >
           {{ page }}
@@ -588,9 +591,12 @@ function handleImageLoad(event) {
         <button 
           :disabled="props.pagination.current_page >= Math.ceil(props.pagination.total / props.pagination.per_page)"
           @click="router.get('/admin/missing-reports', { page: props.pagination.current_page + 1, ...$page.props.filters })"
-          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
         >
-          &gt;
+          Next
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
         </button>
       </div>
     </div>

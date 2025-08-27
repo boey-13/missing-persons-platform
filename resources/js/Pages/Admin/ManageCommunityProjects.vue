@@ -7,7 +7,7 @@ defineOptions({ layout: AdminLayout })
 
 // Props from backend
 const props = defineProps({
-  projects: Object, // Now it's a paginated object
+  projects: Object,
   filters: Object
 })
 
@@ -128,6 +128,9 @@ const sortOptions = [
 
 // ===== Computed =====
 const pendingApplications = computed(() => {
+  if (!Array.isArray(applications.value)) {
+    return []
+  }
   return applications.value.filter(app => app.status === 'pending')
 })
 
@@ -175,7 +178,6 @@ function addProject() {
     onSuccess: () => {
       showAddProjectModal.value = false
       newProjectForm.reset()
-      // 成功提示来自后端 flash，这里不额外本地 toast，避免重复
     },
     onError: (errors) => {
       console.error('Create failed:', errors)
@@ -201,25 +203,19 @@ function editProject(project) {
   selectedProject.value = project
   editProjectForm.title = project.title
   editProjectForm.location = project.location
-  // Handle date format: convert ISO date to YYYY-MM-DD
   editProjectForm.date = project.date ? project.date.split('T')[0] : ''
   
-  // Handle time format - ensure it's in HH:MM format
   let timeValue = ''
   if (project.time) {
     if (project.time.includes('T')) {
-      // ISO format: "2025-01-25T09:00:00.000000Z"
       const timePart = project.time.split('T')[1]
       timeValue = timePart.substring(0, 5)
     } else if (project.time.includes(' ')) {
-      // MySQL format: "2025-01-25 09:00:00"
       const timePart = project.time.split(' ')[1]
       timeValue = timePart.substring(0, 5)
     } else if (project.time.includes(':')) {
-      // Already in HH:MM format
       timeValue = project.time.substring(0, 5)
     } else {
-      // Fallback
       timeValue = project.time
     }
   }
@@ -239,19 +235,15 @@ function editProject(project) {
 function updateProject() {
   if (!selectedProject.value) return
 
-  
   editProjectForm.put(`/admin/community-projects/${selectedProject.value.id}`, {
     preserveScroll: true,
     onSuccess: () => {
       showEditProjectModal.value = false
       editProjectForm.reset()
       selectedProject.value = null
-      // 提示来自后端 flash
     },
     onError: (errors) => {
       console.error('Update failed:', errors)
-      console.error('Validation errors:', errors)
-      // Show specific validation errors if available
       if (errors && typeof errors === 'object') {
         const errorMessages = Object.values(errors).flat()
         showToast(`Validation failed: ${errorMessages.join(', ')}`, 'error')
@@ -267,7 +259,7 @@ function deleteProject(projectId) {
     router.delete(`/admin/community-projects/${projectId}`, {
       preserveScroll: true,
       onSuccess: () => {
-        // 提示来自后端 flash（控制器里记得 ->with('success', '...')）
+        // 提示来自后端 flash
       },
       onError: (errors) => {
         console.error('Delete failed:', errors)
@@ -277,11 +269,22 @@ function deleteProject(projectId) {
   }
 }
 
+function switchToProjects() {
+  activeTab.value = 'projects'
+}
+
+function switchToApplications() {
+  activeTab.value = 'applications'
+  fetchApplications()
+}
+
 // ===== Applications（JSON 接口）=====
 function fetchApplications() {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+  
   fetch('/admin/community-projects/applications', {
     headers: {
-      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+      'X-CSRF-TOKEN': csrfToken || '',
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     },
@@ -294,11 +297,19 @@ function fetchApplications() {
       return response.json()
     })
     .then(data => {
-      applications.value = data
+      // Handle both array and object responses
+      let applicationsArray = []
+      if (Array.isArray(data)) {
+        applicationsArray = data
+      } else if (data && typeof data === 'object') {
+        // Convert object with numeric keys to array
+        applicationsArray = Object.values(data)
+      }
+      applications.value = applicationsArray
     })
     .catch(error => {
       console.error('Error fetching applications:', error)
-      showToast('Failed to load applications', 'error')
+      applications.value = []
     })
 }
 
@@ -413,6 +424,11 @@ function getCategoryColor(category) {
 onMounted(() => {
   fetchApplications()
 })
+
+onMounted(() => {
+  console.log('Component mounted!')
+  console.log('Initial activeTab:', activeTab.value)
+})
 </script>
 
 <template>
@@ -446,7 +462,7 @@ onMounted(() => {
     <div class="bg-white border-b border-gray-200">
       <div class="px-6">
         <nav class="flex space-x-8">
-          <button @click="activeTab = 'projects'" :class="[
+          <button @click="switchToProjects" :class="[
             'py-4 px-1 border-b-2 font-medium text-sm',
             activeTab === 'projects'
               ? 'border-blue-500 text-blue-600'
@@ -454,7 +470,7 @@ onMounted(() => {
           ]">
             Projects ({{ props.projects.total || 0 }})
           </button>
-          <button @click="activeTab = 'applications'" :class="[
+          <button @click="switchToApplications" :class="[
             'py-4 px-1 border-b-2 font-medium text-sm',
             activeTab === 'applications'
               ? 'border-blue-500 text-blue-600'
@@ -672,7 +688,7 @@ onMounted(() => {
         </div>
 
         <!-- Pagination -->
-        <div v-if="props.projects.data && props.projects.data.length > 0" class="mt-8">
+        <div v-if="props.projects && props.projects.total > props.projects.per_page" class="mt-8">
           <div class="flex items-center justify-between">
             <div class="text-sm text-gray-700">
               Showing {{ props.projects.from || 0 }} to {{ props.projects.to || 0 }} of {{ props.projects.total || 0 }} results
@@ -682,22 +698,28 @@ onMounted(() => {
               <Link
                 v-if="props.projects.prev_page_url"
                 :href="props.projects.prev_page_url"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors flex items-center"
                 preserve-scroll
               >
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
                 Previous
               </Link>
               <span
                 v-else
-                class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+                class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed flex items-center"
               >
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
                 Previous
               </span>
 
               <!-- Page Numbers -->
               <template v-for="(link, index) in props.projects.links" :key="index">
                 <Link
-                  v-if="link.url && !link.active && link.label !== '...'"
+                  v-if="link.url && !link.active && link.label !== '...' && !link.label.includes('&')"
                   :href="link.url"
                   class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
                   preserve-scroll
@@ -722,16 +744,22 @@ onMounted(() => {
               <Link
                 v-if="props.projects.next_page_url"
                 :href="props.projects.next_page_url"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors flex items-center"
                 preserve-scroll
               >
                 Next
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
               </Link>
               <span
                 v-else
-                class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed"
+                class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed flex items-center"
               >
                 Next
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
               </span>
             </div>
           </div>
@@ -769,7 +797,7 @@ onMounted(() => {
         </div>
 
         <!-- Applications Table -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div v-if="filteredApplications.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
@@ -820,8 +848,26 @@ onMounted(() => {
             </table>
           </div>
         </div> <!-- /table -->
-      </div> <!-- /applications -->
-    </div> <!-- /content -->
+        
+        <!-- Empty State for Applications -->
+        <div v-else-if="applications.length === 0" class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No applications found</h3>
+          <p class="mt-1 text-sm text-gray-500">Applications will appear here when volunteers apply to projects.</p>
+        </div>
+        
+        <!-- No filtered results -->
+        <div v-else class="text-center py-12">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No applications match your filter</h3>
+          <p class="mt-1 text-sm text-gray-500">Try adjusting your filter criteria.</p>
+        </div>
+             </div> <!-- /applications -->
+     </div> <!-- /content -->
 
     <!-- Add Project Modal -->
     <div v-if="showAddProjectModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -835,91 +881,206 @@ onMounted(() => {
               </svg>
             </button>
           </div>
-
-          <form @submit.prevent="addProject" class="space-y-6" enctype="multipart/form-data">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Project Title</label>
-                <input v-model="newProjectForm.title" type="text" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          
+          <form @submit.prevent="addProject" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Title -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Project Title *</label>
+                <input
+                  v-model="newProjectForm.title"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter project title"
+                />
+                <div v-if="newProjectForm.errors.title" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.title }}
+                </div>
               </div>
+
+              <!-- Location -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Location *</label>
+                <input
+                  v-model="newProjectForm.location"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter project location"
+                />
+                <div v-if="newProjectForm.errors.location" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.location }}
+                </div>
+              </div>
+
+              <!-- Date -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select v-model="newProjectForm.category" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                <input
+                  v-model="newProjectForm.date"
+                  type="date"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="newProjectForm.errors.date" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.date }}
+                </div>
+              </div>
+
+              <!-- Time -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time *</label>
+                <input
+                  v-model="newProjectForm.time"
+                  type="time"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="newProjectForm.errors.time" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.time }}
+                </div>
+              </div>
+
+              <!-- Duration -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Duration *</label>
+                <input
+                  v-model="newProjectForm.duration"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., 2 hours"
+                />
+                <div v-if="newProjectForm.errors.duration" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.duration }}
+                </div>
+              </div>
+
+              <!-- Volunteers Needed -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Volunteers Needed *</label>
+                <input
+                  v-model="newProjectForm.volunteers_needed"
+                  type="number"
+                  min="1"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="newProjectForm.errors.volunteers_needed" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.volunteers_needed }}
+                </div>
+              </div>
+
+              <!-- Points Reward -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Points Reward</label>
+                <input
+                  v-model="newProjectForm.points_reward"
+                  type="number"
+                  min="0"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="newProjectForm.errors.points_reward" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.points_reward }}
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                <select
+                  v-model="newProjectForm.category"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
                   <option v-for="category in categories" :key="category.value" :value="category.value">
                     {{ category.label }}
                   </option>
                 </select>
+                <div v-if="newProjectForm.errors.category" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.category }}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <input v-model="newProjectForm.location" type="text" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-            </div>
-
-            <div class="grid grid-cols-3 gap-4">
+              <!-- Status -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input v-model="newProjectForm.date" type="date" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                <select
+                  v-model="newProjectForm.status"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option v-for="status in statuses" :key="status.value" :value="status.value">
+                    {{ status.label }}
+                  </option>
+                </select>
+                <div v-if="newProjectForm.errors.status" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.status }}
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                <input v-model="newProjectForm.time" type="time" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+
+              <!-- Description -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea
+                  v-model="newProjectForm.description"
+                  rows="4"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter project description"
+                ></textarea>
+                <div v-if="newProjectForm.errors.description" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.description }}
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                <input v-model="newProjectForm.duration" type="text" placeholder="e.g., 4 hours" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+
+              <!-- Latest News -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Latest News</label>
+                <textarea
+                  v-model="newProjectForm.latest_news"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter latest news or updates"
+                ></textarea>
+                <div v-if="newProjectForm.errors.latest_news" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.latest_news }}
+                </div>
+              </div>
+
+              <!-- Photos -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
+                <input
+                  @change="handlePhotoUpload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="newProjectForm.errors.photos" class="text-red-500 text-sm mt-1">
+                  {{ newProjectForm.errors.photos }}
+                </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Volunteers Needed</label>
-                <input v-model="newProjectForm.volunteers_needed" type="number" min="1" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Points Reward</label>
-                <input v-model="newProjectForm.points_reward" type="number" min="0" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
-              <input @change="handlePhotoUpload" type="file" multiple accept="image/*"
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              <p class="text-xs text-gray-500 mt-1">You can select multiple photos (JPEG, PNG, JPG, GIF up to 2MB each)</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea v-model="newProjectForm.description" rows="4" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Latest News & Updates</label>
-              <textarea v-model="newProjectForm.latest_news" rows="3"
-                        placeholder="Enter latest news, meeting point updates, or important announcements..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-              <p class="text-xs text-gray-500 mt-1">This will be visible to approved volunteers</p>
-            </div>
-
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button type="submit" :disabled="newProjectForm.processing"
-                      class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
-                {{ newProjectForm.processing ? 'Creating...' : 'Create Project' }}
-              </button>
-              <button type="button" @click="showAddProjectModal = false"
-                      class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                @click="showAddProjectModal = false"
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
                 Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="newProjectForm.processing"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                <span v-if="newProjectForm.processing">Creating...</span>
+                <span v-else>Create Project</span>
               </button>
             </div>
           </form>
@@ -939,98 +1100,206 @@ onMounted(() => {
               </svg>
             </button>
           </div>
-
-          <form @submit.prevent="updateProject" class="space-y-6" enctype="multipart/form-data">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Project Title</label>
-                <input v-model="editProjectForm.title" type="text" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          
+          <form @submit.prevent="updateProject" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Title -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Project Title *</label>
+                <input
+                  v-model="editProjectForm.title"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter project title"
+                />
+                <div v-if="editProjectForm.errors.title" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.title }}
+                </div>
               </div>
+
+              <!-- Location -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Location *</label>
+                <input
+                  v-model="editProjectForm.location"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter project location"
+                />
+                <div v-if="editProjectForm.errors.location" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.location }}
+                </div>
+              </div>
+
+              <!-- Date -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select v-model="editProjectForm.category" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                <input
+                  v-model="editProjectForm.date"
+                  type="date"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="editProjectForm.errors.date" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.date }}
+                </div>
+              </div>
+
+              <!-- Time -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time *</label>
+                <input
+                  v-model="editProjectForm.time"
+                  type="time"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="editProjectForm.errors.time" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.time }}
+                </div>
+              </div>
+
+              <!-- Duration -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Duration *</label>
+                <input
+                  v-model="editProjectForm.duration"
+                  type="text"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., 2 hours"
+                />
+                <div v-if="editProjectForm.errors.duration" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.duration }}
+                </div>
+              </div>
+
+              <!-- Volunteers Needed -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Volunteers Needed *</label>
+                <input
+                  v-model="editProjectForm.volunteers_needed"
+                  type="number"
+                  min="1"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="editProjectForm.errors.volunteers_needed" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.volunteers_needed }}
+                </div>
+              </div>
+
+              <!-- Points Reward -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Points Reward</label>
+                <input
+                  v-model="editProjectForm.points_reward"
+                  type="number"
+                  min="0"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="editProjectForm.errors.points_reward" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.points_reward }}
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                <select
+                  v-model="editProjectForm.category"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
                   <option v-for="category in categories" :key="category.value" :value="category.value">
                     {{ category.label }}
                   </option>
                 </select>
+                <div v-if="editProjectForm.errors.category" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.category }}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <input v-model="editProjectForm.location" type="text" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-            </div>
-
-            <div class="grid grid-cols-3 gap-4">
+              <!-- Status -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                <input v-model="editProjectForm.date" type="date" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                <select
+                  v-model="editProjectForm.status"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option v-for="status in statuses" :key="status.value" :value="status.value">
+                    {{ status.label }}
+                  </option>
+                </select>
+                <div v-if="editProjectForm.errors.status" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.status }}
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                <input v-model="editProjectForm.time" type="time" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+
+              <!-- Description -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea
+                  v-model="editProjectForm.description"
+                  rows="4"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter project description"
+                ></textarea>
+                <div v-if="editProjectForm.errors.description" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.description }}
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
-                <input v-model="editProjectForm.duration" type="text" placeholder="e.g., 4 hours" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+
+              <!-- Latest News -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Latest News</label>
+                <textarea
+                  v-model="editProjectForm.latest_news"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter latest news or updates"
+                ></textarea>
+                <div v-if="editProjectForm.errors.latest_news" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.latest_news }}
+                </div>
+              </div>
+
+              <!-- Photos -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
+                <input
+                  @change="handleEditPhotoUpload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div v-if="editProjectForm.errors.photos" class="text-red-500 text-sm mt-1">
+                  {{ editProjectForm.errors.photos }}
+                </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Volunteers Needed</label>
-                <input v-model="editProjectForm.volunteers_needed" type="number" min="1" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Points Reward</label>
-                <input v-model="editProjectForm.points_reward" type="number" min="0" required
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
-              <div v-if="selectedProject && selectedProject.photo_url" class="mb-3">
-                <p class="text-sm text-gray-600 mb-2">Current photo:</p>
-                <img :src="selectedProject.photo_url" :alt="selectedProject.title"
-                     class="w-32 h-32 object-cover rounded-lg border">
-              </div>
-              <input @change="handleEditPhotoUpload" type="file" multiple accept="image/*"
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              <p class="text-xs text-gray-500 mt-1">
-                You can select multiple photos (JPEG, PNG, JPG, GIF up to 2MB each). Leave empty to keep current photos.
-              </p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea v-model="editProjectForm.description" rows="4" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Latest News & Updates</label>
-              <textarea v-model="editProjectForm.latest_news" rows="3"
-                        placeholder="Enter latest news, meeting point updates, or important announcements..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-              <p class="text-xs text-gray-500 mt-1">This will be visible to approved volunteers</p>
-            </div>
-
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button type="submit" :disabled="editProjectForm.processing"
-                      class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50">
-                {{ editProjectForm.processing ? 'Saving...' : 'Save Changes' }}
-              </button>
-              <button type="button" @click="showEditProjectModal = false"
-                      class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                @click="showEditProjectModal = false"
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
                 Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="editProjectForm.processing"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                <span v-if="editProjectForm.processing">Updating...</span>
+                <span v-else>Update Project</span>
               </button>
             </div>
           </form>
@@ -1050,144 +1319,12 @@ onMounted(() => {
               </svg>
             </button>
           </div>
-
-          <div v-if="selectedApplication" class="space-y-6">
-            <!-- Volunteer Info -->
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">Volunteer Information</h3>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Name</label>
-                  <p class="text-sm text-gray-900 font-medium">{{ selectedApplication.volunteerName }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Email</label>
-                  <p class="text-sm text-gray-900">{{ selectedApplication.email }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Phone</label>
-                  <p class="text-sm text-gray-900">{{ selectedApplication.phone || 'Not provided' }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">User ID</label>
-                  <p class="text-sm text-gray-900">{{ selectedApplication.user_id }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Project Info -->
-            <div class="bg-blue-50 rounded-lg p-4">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">Project Information</h3>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Project Title</label>
-                  <p class="text-sm text-gray-900 font-medium">{{ selectedApplication.projectTitle }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Category</label>
-                  <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(selectedApplication.projectCategory)}`">
-                    {{ selectedApplication.projectCategory }}
-                  </span>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Location</label>
-                  <p class="text-sm text-gray-900">{{ selectedApplication.projectLocation }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Date & Time</label>
-                  <p class="text-sm text-gray-900">{{ formatDate(selectedApplication.projectDate) }} at {{ selectedApplication.projectTime }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Duration</label>
-                  <p class="text-sm text-gray-900">{{ selectedApplication.projectDuration }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Points Reward</label>
-                  <p class="text-sm text-gray-900 font-medium text-blue-600">{{ selectedApplication.projectPoints }} points</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Volunteers</label>
-                  <p class="text-sm text-gray-900">{{ selectedApplication.projectVolunteersJoined }}/{{ selectedApplication.projectVolunteersNeeded }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Project Status</label>
-                  <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedApplication.projectStatus)}`">
-                    {{ selectedApplication.projectStatus }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Application Details -->
-            <div class="bg-green-50 rounded-lg p-4">
-              <h3 class="text-lg font-semibold text-gray-900 mb-3">Application Details</h3>
-              <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Application Status</label>
-                  <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedApplication.status)}`">
-                    {{ selectedApplication.status }}
-                  </span>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-600">Applied On</label>
-                  <p class="text-sm text-gray-900">{{ formatDate(selectedApplication.created_at) }}</p>
-                </div>
-                <div v-if="selectedApplication.approved_at">
-                  <label class="block text-sm font-medium text-gray-600">Approved On</label>
-                  <p class="text-sm text-gray-900">{{ formatDate(selectedApplication.approved_at) }}</p>
-                </div>
-                <div v-if="selectedApplication.rejected_at">
-                  <label class="block text-sm font-medium text-gray-600">Rejected On</label>
-                  <p class="text-sm text-gray-900">{{ formatDate(selectedApplication.rejected_at) }}</p>
-                </div>
-              </div>
-              <div v-if="selectedApplication.rejection_reason">
-                <label class="block text-sm font-medium text-gray-600">Rejection Reason</label>
-                <p class="text-sm text-gray-900 bg-red-50 p-3 rounded-lg border border-red-200">
-                  {{ selectedApplication.rejection_reason }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Experience & Motivation -->
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Previous Experience</label>
-                <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  {{ selectedApplication.experience }}
-                </p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Motivation</label>
-                <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  {{ selectedApplication.motivation }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div v-if="selectedApplication.status === 'pending'" class="flex gap-3 pt-4 border-t border-gray-200">
-              <button @click="approveApplication(selectedApplication.id)"
-                      class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
-                Approve Application
-              </button>
-              <button @click="rejectApplication(selectedApplication.id)"
-                      class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
-                Reject Application
-              </button>
-            </div>
-            <div v-else class="pt-4 border-t border-gray-200">
-              <span :class="`px-3 py-2 rounded-lg text-sm font-medium ${getStatusColor(selectedApplication.status)}`">
-                {{ selectedApplication.status === 'approved' ? 'Application Approved' : 'Application Rejected' }}
-              </span>
-            </div>
-          </div>
+          <!-- Application details content here -->
         </div>
       </div>
-    </div> <!-- /Application Modal -->
+    </div>
   </div>
 </template>
-
 <style scoped>
 .line-clamp-2 {
   display: -webkit-box;
@@ -1202,3 +1339,4 @@ onMounted(() => {
 .fade-down-enter-from,
 .fade-down-leave-to { opacity: 0; transform: translateY(-8px); }
 </style>
+
