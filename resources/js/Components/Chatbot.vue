@@ -114,7 +114,29 @@ function toggleChat() {
     isOpen.value = !isOpen.value;
     if (isOpen.value) {
         unreadCount.value = 0;
-        resetChat();
+        
+        // Try to load existing session, if not start new one
+        if (!loadSession()) {
+            // Start new session
+            sessionId.value = generateSessionId();
+            resetChat();
+        }
+        
+        // Start activity tracking
+        updateActivity();
+    } else {
+        // Save session when closing
+        saveSession();
+        
+        // Clear timeouts when closing
+        if (autoEndTimeout.value) {
+            clearTimeout(autoEndTimeout.value);
+            autoEndTimeout.value = null;
+        }
+        if (warningTimeout.value) {
+            clearTimeout(warningTimeout.value);
+            warningTimeout.value = null;
+        }
     }
 }
 
