@@ -27,6 +27,7 @@ class MissingReport extends Model
         'reporter_relationship',
         'reporter_relationship_other',
         'reporter_name',
+        'reporter_ic_number',
         'reporter_phone',
         'reporter_email',
         'additional_notes',

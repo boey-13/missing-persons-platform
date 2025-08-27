@@ -161,7 +161,15 @@ class RewardService
             $query->where('status', $status);
         }
 
-        return $query->orderBy('redeemed_at', 'desc')->get();
+        $vouchers = $query->orderBy('redeemed_at', 'desc')->get();
+
+        // Ensure reward image_url is included
+        return $vouchers->map(function ($voucher) {
+            if ($voucher->reward) {
+                $voucher->reward->image_url = $voucher->reward->image_url;
+            }
+            return $voucher;
+        });
     }
 
     /**

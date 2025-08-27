@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import axios from 'axios'
@@ -12,349 +12,310 @@ const props = defineProps({
   selectedStatus: String,
 })
 
-// Modal states
+// Modal state
 const showVoucherModal = ref(false)
 const selectedVoucher = ref(null)
 const qrCodeData = ref(null)
 
-// Filter states
+// Filter state
 const selectedStatusFilter = ref(props.selectedStatus || '')
 
-// Functions
+// —— 逻辑保持不变 ——
 function openVoucherModal(voucher) {
   selectedVoucher.value = voucher
   showVoucherModal.value = true
-  
-  // Load QR code data
   loadQrCodeData(voucher.id)
 }
-
 function closeVoucherModal() {
   showVoucherModal.value = false
   selectedVoucher.value = null
   qrCodeData.value = null
 }
-
 async function loadQrCodeData(voucherId) {
   try {
-    const response = await axios.get(`/vouchers/${voucherId}/qr-code`)
-    qrCodeData.value = response.data
-  } catch (error) {
-    console.error('Failed to load QR code data:', error)
+    const res = await axios.get(`/vouchers/${voucherId}/qr-code`)
+    qrCodeData.value = res.data
+  } catch (e) {
+    console.error('Failed to load QR code data:', e)
   }
 }
-
 function filterByStatus(status) {
   selectedStatusFilter.value = status
-  router.get('/rewards/my-vouchers', { status }, { 
-    preserveState: true,
-    replace: true 
-  })
+  router.get('/rewards/my-vouchers', { status }, { preserveState: true, replace: true })
 }
-
 function clearFilter() {
   selectedStatusFilter.value = ''
-  router.get('/rewards/my-vouchers', {}, { 
-    preserveState: true,
-    replace: true 
-  })
+  router.get('/rewards/my-vouchers', {}, { preserveState: true, replace: true })
 }
-
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+  return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
-
+// 改为与新风格一致的徽章样式（细边+浅底）
 function getStatusColor(status) {
-  const colors = {
-    active: 'bg-green-100 text-green-800',
-    used: 'bg-blue-100 text-blue-800',
-    expired: 'bg-red-100 text-red-800',
+  const map = {
+    active:  'border-green-200 text-green-700 bg-green-50',
+    used:    'border-blue-200 text-blue-700 bg-blue-50',
+    expired: 'border-red-200 text-red-700 bg-red-50'
   }
-  return colors[status] || 'bg-gray-100 text-gray-800'
+  return map[status] || 'border-gray-200 text-gray-700 bg-gray-50'
+}
+function getStatusText(status) {
+  const m = { active: 'Active', used: 'Used', expired: 'Expired' }
+  return m[status] || status
 }
 
-function getStatusText(status) {
-  const texts = {
-    active: 'Active',
-    used: 'Used',
-    expired: 'Expired',
+function goBack() {
+  // 如果历史记录只有一页，说明是直接访问的，默认回到Profile
+  if (window.history.length <= 1) {
+    router.visit('/profile')
+  } else {
+    window.history.back()
   }
-  return texts[status] || status
 }
 </script>
 
 <template>
-  <div>
-    <!-- Back Link -->
-    <div class="max-w-7xl mx-auto px-6 py-4">
-      <Link href="/rewards" class="text-[#5C4033] font-medium hover:underline">
-        ← BACK TO REWARDS
-      </Link>
-    </div>
+  <div class="bg-white min-h-screen">
+         <!-- Top bar -->
+     <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+       <button @click="goBack" class="text-gray-700 hover:text-black text-sm font-medium">← Back</button>
+     </div>
 
-    <!-- Header -->
-    <div class="max-w-7xl mx-auto px-6 py-8 text-center">
-      <h1 class="text-4xl font-extrabold text-[#5C4033] mb-2">My Vouchers</h1>
-      <div class="w-24 h-1 bg-[#5C4033] mx-auto mb-4"></div>
-      <p class="text-[#5C4033] text-lg">Your redeemed rewards and vouchers</p>
-      
-      <!-- Points Display -->
-      <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 inline-block px-6 py-3">
-        <div class="text-2xl font-bold text-[#5C4033]">{{ currentPoints }}</div>
-        <div class="text-gray-600 text-sm">Available Points</div>
-      </div>
-    </div>
+     <!-- Header -->
+     <header class="max-w-7xl mx-auto px-6 pb-2 text-center">
+       <h1 class="text-3xl font-extrabold text-gray-900">My Vouchers</h1>
+       <p class="text-gray-600 mt-2">Your redeemed rewards and vouchers</p>
+       
+       <!-- Points Display -->
+       <div class="mt-6 inline-flex items-center gap-3 border border-gray-200 rounded-md px-4 py-2">
+         <div class="w-8 h-8 rounded-md bg-gray-900 text-white flex items-center justify-center text-sm font-bold">
+           P
+         </div>
+         <div class="text-left">
+           <div class="text-2xl font-bold leading-tight text-gray-900">{{ currentPoints }}</div>
+           <div class="text-xs text-gray-500 -mt-0.5">Available points</div>
+         </div>
+       </div>
+     </header>
 
-    <!-- Status Filter -->
-    <div class="max-w-7xl mx-auto px-6 mb-8">
-      <div class="flex flex-wrap gap-3 justify-center">
-        <button
-          @click="clearFilter"
-          :class="[
-            'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-            !selectedStatusFilter 
-              ? 'bg-[#5C4033] text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          ]"
-        >
-          All Vouchers
-        </button>
-        <button
-          @click="filterByStatus('active')"
-          :class="[
-            'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-            selectedStatusFilter === 'active'
-              ? 'bg-[#5C4033] text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          ]"
-        >
-          Active
-        </button>
-        <button
-          @click="filterByStatus('used')"
-          :class="[
-            'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-            selectedStatusFilter === 'used'
-              ? 'bg-[#5C4033] text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          ]"
-        >
-          Used
-        </button>
-        <button
-          @click="filterByStatus('expired')"
-          :class="[
-            'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-            selectedStatusFilter === 'expired'
-              ? 'bg-[#5C4033] text-white' 
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          ]"
-        >
-          Expired
-        </button>
-      </div>
-    </div>
-
-    <!-- Vouchers Grid -->
-    <div class="max-w-7xl mx-auto px-6 pb-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          v-for="voucher in vouchers"
-          :key="voucher.id"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-          @click="openVoucherModal(voucher)"
-        >
-          <!-- Voucher Image -->
-          <div class="h-48 bg-gray-100 flex items-center justify-center">
-            <img
-              v-if="voucher.reward?.image_url"
-              :src="voucher.reward.image_url"
-              :alt="voucher.reward.name"
-              class="w-full h-full object-cover"
-            />
-            <div v-else class="text-gray-400 text-4xl">
-              🎁
-            </div>
-          </div>
-
-          <!-- Voucher Info -->
-          <div class="p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ voucher.reward?.name }}</h3>
-            
-            <!-- Status Badge -->
-            <div class="mb-4">
-              <span :class="`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(voucher.status)}`">
-                {{ getStatusText(voucher.status) }}
-              </span>
-            </div>
-
-            <!-- Voucher Details -->
-            <div class="space-y-2 mb-4 text-sm text-gray-600">
-              <div class="flex justify-between">
-                <span>Redeemed:</span>
-                <span>{{ formatDate(voucher.redeemed_at) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Expires:</span>
-                <span>{{ formatDate(voucher.expires_at) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Points Spent:</span>
-                <span class="font-semibold text-[#5C4033]">{{ voucher.points_spent }}</span>
-              </div>
-            </div>
-
-            <!-- Voucher Code -->
-            <div class="bg-gray-50 rounded-lg p-3 mb-4">
-              <div class="text-xs text-gray-500 mb-1">Voucher Code</div>
-              <div class="font-mono text-sm font-semibold text-gray-900">{{ voucher.voucher_code }}</div>
-            </div>
-
-            <!-- Action Button -->
+    <!-- Filters -->
+    <section class="max-w-7xl mx-auto px-6 pt-6 pb-4">
+      <div class="flex items-center justify-between gap-4 flex-wrap md:flex-nowrap">
+        <!-- Status chips -->
+        <div class="overflow-x-auto hide-scrollbar -mx-1">
+          <div class="flex items-center gap-2 px-1">
             <button
-              class="w-full bg-[#5C4033] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#4A3329] transition-colors"
-              :disabled="voucher.status !== 'active'"
-              :class="{ 'opacity-50 cursor-not-allowed': voucher.status !== 'active' }"
-            >
-              {{ voucher.status === 'active' ? 'VIEW VOUCHER' : voucher.status === 'used' ? 'ALREADY USED' : 'EXPIRED' }}
-            </button>
+              @click="clearFilter"
+              :class="[
+                'px-3 py-1.5 text-sm border rounded-md',
+                selectedStatusFilter === '' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >All</button>
+
+            <button
+              @click="filterByStatus('active')"
+              :class="[
+                'px-3 py-1.5 text-sm border rounded-md',
+                selectedStatusFilter === 'active' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >Active</button>
+
+            <button
+              @click="filterByStatus('used')"
+              :class="[
+                'px-3 py-1.5 text-sm border rounded-md',
+                selectedStatusFilter === 'used' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >Used</button>
+
+            <button
+              @click="filterByStatus('expired')"
+              :class="[
+                'px-3 py-1.5 text-sm border rounded-md',
+                selectedStatusFilter === 'expired' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ]"
+            >Expired</button>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Empty State -->
-      <div v-if="vouchers.length === 0" class="text-center py-12">
-        <div class="text-gray-400 text-6xl mb-4">🎫</div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No vouchers found</h3>
-        <p class="text-gray-600 mb-6">
-          {{ selectedStatusFilter 
-            ? `You don't have any ${selectedStatusFilter} vouchers.` 
-            : "You haven't redeemed any rewards yet." 
-          }}
-        </p>
-        <Link 
-          href="/rewards" 
-          class="inline-block bg-[#5C4033] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#4A3329] transition-colors"
+    <!-- Grid -->
+    <main class="max-w-7xl mx-auto px-6 pb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <article
+          v-for="voucher in vouchers"
+          :key="voucher.id"
+          class="group border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-sm transition-shadow cursor-pointer"
+          @click="openVoucherModal(voucher)"
         >
-          Browse Rewards
+          <!-- Image -->
+          <div class="relative h-48 bg-gray-100 overflow-hidden">
+            <img
+              :src="voucher.reward?.image_url || '/voucher.png'"
+              :alt="voucher.reward?.name"
+              class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+            />
+            <span
+              class="absolute top-3 left-3 text-xs px-2 py-0.5 rounded border"
+              :class="getStatusColor(voucher.status)"
+            >
+              {{ getStatusText(voucher.status) }}
+            </span>
+          </div>
+
+          <!-- Body -->
+          <div class="p-4">
+            <h3 class="text-base font-semibold text-gray-900 line-clamp-2 mb-1">
+              {{ voucher.reward?.name }}
+            </h3>
+
+            <div class="space-y-2 text-sm text-gray-600 my-3">
+              <div class="flex justify-between">
+                <span>Redeemed</span>
+                <span class="font-medium text-gray-900">{{ formatDate(voucher.redeemed_at) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Expires</span>
+                <span class="font-medium" :class="voucher.status === 'expired' ? 'text-red-700' : 'text-gray-900'">
+                  {{ formatDate(voucher.expires_at) }}
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span>Points spent</span>
+                <span class="font-semibold text-gray-900">{{ voucher.points_spent }}</span>
+              </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
+              <div class="text-[11px] text-gray-500 mb-1">Voucher code</div>
+              <div class="font-mono text-sm font-semibold text-gray-900 break-all">
+                {{ voucher.voucher_code }}
+              </div>
+            </div>
+
+            <button
+              class="w-full py-2.5 rounded-md text-sm font-semibold transition-colors"
+              :disabled="voucher.status !== 'active'"
+              :class="voucher.status === 'active'
+                ? 'bg-gray-900 text-white hover:bg-black'
+                : 'bg-gray-100 text-gray-500 cursor-not-allowed'"
+            >
+              {{ voucher.status === 'active' ? 'View voucher' : voucher.status === 'used' ? 'Already used' : 'Expired' }}
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <!-- Empty -->
+      <div v-if="vouchers.length === 0" class="text-center py-16">
+        <div class="text-5xl mb-3">🎫</div>
+        <h3 class="text-lg font-semibold text-gray-900">No vouchers found</h3>
+        <p class="text-gray-600 text-sm mt-1">
+          {{ selectedStatusFilter ? `You don't have any ${selectedStatusFilter} vouchers.` : "You haven't redeemed any rewards yet." }}
+        </p>
+        <Link
+          href="/rewards"
+          class="inline-block mt-6 bg-gray-900 text-white px-6 py-3 rounded-md text-sm font-semibold hover:bg-black"
+        >
+          Browse rewards
         </Link>
       </div>
-    </div>
+    </main>
 
-    <!-- Voucher Detail Modal -->
-    <div v-if="showVoucherModal && selectedVoucher" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <!-- Close Button -->
-          <div class="flex justify-end mb-4">
+    <!-- Modal -->
+    <div v-if="showVoucherModal && selectedVoucher" class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-md max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-5">
+          <div class="flex justify-end mb-2">
             <button @click="closeVoucherModal" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
 
-          <!-- Voucher Image -->
-          <div class="h-48 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
+          <div class="h-48 bg-gray-100 rounded mb-4 overflow-hidden">
             <img
-              v-if="selectedVoucher.reward?.image_url"
-              :src="selectedVoucher.reward.image_url"
-              :alt="selectedVoucher.reward.name"
-              class="w-full h-full object-cover rounded-lg"
+              :src="selectedVoucher.reward?.image_url || '/voucher.png'"
+              :alt="selectedVoucher.reward?.name"
+              class="w-full h-full object-cover"
             />
-            <div v-else class="text-gray-400 text-6xl">
-              🎁
-            </div>
           </div>
 
-          <!-- Voucher Details -->
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">{{ selectedVoucher.reward?.name }}</h2>
-          <p v-if="selectedVoucher.reward?.description" class="text-gray-600 mb-4">
+          <h2 class="text-xl font-bold text-gray-900 mb-1">{{ selectedVoucher.reward?.name }}</h2>
+          <p v-if="selectedVoucher.reward?.description" class="text-gray-700 text-sm mb-3">
             {{ selectedVoucher.reward.description }}
           </p>
 
-          <!-- Status -->
-          <div class="mb-4">
-            <span :class="`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedVoucher.status)}`">
+          <div class="mb-3">
+            <span
+              class="inline-block px-2 py-0.5 text-xs rounded border"
+              :class="getStatusColor(selectedVoucher.status)"
+            >
               {{ getStatusText(selectedVoucher.status) }}
             </span>
           </div>
 
-          <!-- Voucher Information -->
-          <div class="space-y-3 mb-6">
+          <div class="space-y-2 text-sm mb-6">
             <div class="flex justify-between">
-              <span class="text-gray-600">Voucher Code:</span>
+              <span class="text-gray-600">Voucher code</span>
               <span class="font-mono font-semibold text-gray-900">{{ selectedVoucher.voucher_code }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Redeemed:</span>
-              <span class="font-semibold">{{ formatDate(selectedVoucher.redeemed_at) }}</span>
+              <span class="text-gray-600">Redeemed</span>
+              <span class="font-semibold text-gray-900">{{ formatDate(selectedVoucher.redeemed_at) }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Expires:</span>
-              <span class="font-semibold" :class="selectedVoucher.is_expired ? 'text-red-600' : 'text-gray-900'">
+              <span class="text-gray-600">Expires</span>
+              <span class="font-semibold" :class="selectedVoucher.status === 'expired' ? 'text-red-700' : 'text-gray-900'">
                 {{ formatDate(selectedVoucher.expires_at) }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Points Spent:</span>
-              <span class="font-semibold text-[#5C4033]">{{ selectedVoucher.points_spent }}</span>
+              <span class="text-gray-600">Points spent</span>
+              <span class="font-semibold text-gray-900">{{ selectedVoucher.points_spent }}</span>
             </div>
             <div v-if="selectedVoucher.used_at" class="flex justify-between">
-              <span class="text-gray-600">Used On:</span>
-              <span class="font-semibold">{{ formatDate(selectedVoucher.used_at) }}</span>
+              <span class="text-gray-600">Used on</span>
+              <span class="font-semibold text-gray-900">{{ formatDate(selectedVoucher.used_at) }}</span>
             </div>
           </div>
 
-          <!-- QR Code (for active vouchers) -->
+          <!-- QR (active only) -->
           <div v-if="selectedVoucher.status === 'active' && qrCodeData" class="mb-6">
             <div class="text-center">
               <div class="text-sm text-gray-600 mb-2">Scan this QR code to use your voucher</div>
-              <div class="bg-white border border-gray-200 rounded-lg p-4 inline-block">
-                <img 
-                  v-if="qrCodeData.qrCodeImage" 
-                  :src="qrCodeData.qrCodeImage" 
+              <div class="bg-white border border-gray-200 rounded p-4 inline-block">
+                <img
+                  v-if="qrCodeData.qrCodeImage"
+                  :src="qrCodeData.qrCodeImage"
                   alt="Voucher QR Code"
                   class="w-32 h-32"
                 />
                 <div v-else class="w-32 h-32 bg-gray-100 flex items-center justify-center">
-                  <div class="text-gray-400 text-xs text-center">
-                    Loading QR Code...
-                  </div>
+                  <div class="text-gray-400 text-xs">Loading QR Code...</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Expired/Used Notice -->
+          <!-- Notice -->
           <div v-if="selectedVoucher.status !== 'active'" class="mb-6">
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div class="flex">
-                <div class="text-gray-400 mr-3">
-                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                  </svg>
-                </div>
-                <div class="text-sm text-gray-600">
-                  <p v-if="selectedVoucher.status === 'expired'">
-                    This voucher has expired and can no longer be used.
-                  </p>
-                  <p v-else-if="selectedVoucher.status === 'used'">
-                    This voucher has already been used.
-                  </p>
-                </div>
-              </div>
+            <div class="bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700">
+              <template v-if="selectedVoucher.status === 'expired'">
+                This voucher has expired and can no longer be used.
+              </template>
+              <template v-else-if="selectedVoucher.status === 'used'">
+                This voucher has already been used.
+              </template>
             </div>
           </div>
 
-          <!-- Action Button -->
           <button
             @click="closeVoucherModal"
-            class="w-full bg-[#5C4033] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#4A3329] transition-colors"
+            class="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-black"
           >
             Close
           </button>
@@ -363,3 +324,8 @@ function getStatusText(status) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>

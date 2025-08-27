@@ -46,7 +46,28 @@ class ProfileController extends Controller
                 ->get();
             
             $communityProjects = $projectApplications->map(function ($application) {
-                return $application->project;
+                $project = $application->project;
+                if ($project) {
+                    return [
+                        'id' => $project->id,
+                        'title' => $project->title,
+                        'description' => $project->description,
+                        'location' => $project->location,
+                        'date' => $project->date,
+                        'time' => $project->time,
+                        'duration' => $project->duration,
+                        'volunteers_needed' => $project->volunteers_needed,
+                        'volunteers_joined' => $project->volunteers_joined,
+                        'points_reward' => $project->points_reward,
+                        'category' => $project->category,
+                        'status' => $project->status,
+                        'photo_paths' => $project->photo_paths,
+                        'photo_url' => $project->photo_url,
+                        'created_at' => $project->created_at,
+                        'updated_at' => $project->updated_at,
+                    ];
+                }
+                return null;
             })->filter();
         }
 

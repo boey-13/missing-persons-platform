@@ -21,6 +21,7 @@ const form = useForm({
   photos: [], // array of files
   police_report: null,
   reporter_name: '',
+  reporter_ic_number: '',
   reporter_relationship: '',
   reporter_phone: '',
   reporter_email: '',
@@ -171,6 +172,9 @@ function validateForm() {
   if (!/^[A-Za-z\s]+$/.test(form.reporter_name)) {
     errors.value.reporter_name = "Name must only contain alphabets and spaces."
   }
+  if (!/^\d{12}$/.test(form.reporter_ic_number)) {
+    errors.value.reporter_ic_number = "Reporter IC number must be exactly 12 digits."
+  }
   if (!/^\d{10,11}$/.test(form.reporter_phone)) {
     errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
   }
@@ -181,6 +185,7 @@ function validateForm() {
   if (!form.reporter_relationship) errors.value.reporter_relationship = "Please select relationship."
   if (!form.last_seen_date) errors.value.last_seen_date = "Please select last seen date."
   if (!form.last_seen_location) errors.value.last_seen_location = "Please select last seen location."
+  if (!form.photos || form.photos.length === 0) errors.value.photos = "Please upload at least one photo."
   // ...more validation as needed...
 
   return Object.keys(errors.value).length === 0
@@ -317,18 +322,26 @@ function validateCurrentStep() {
       }
       break
       
-    case 3: // Uploads (optional, so no validation needed)
+    case 3: // Uploads
+      if (!form.photos || form.photos.length === 0) {
+        errors.value.photos = "Please upload at least one photo."
+        isValid = false
+      }
       break
       
-    case 4: // Contact Information
-      if (!/^[A-Za-z\s]+$/.test(form.reporter_name)) {
-        errors.value.reporter_name = "Name must only contain alphabets and spaces."
-        isValid = false
-      }
-      if (!/^\d{10,11}$/.test(form.reporter_phone)) {
-        errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
-        isValid = false
-      }
+         case 4: // Contact Information
+       if (!/^[A-Za-z\s]+$/.test(form.reporter_name)) {
+         errors.value.reporter_name = "Name must only contain alphabets and spaces."
+         isValid = false
+       }
+       if (!/^\d{12}$/.test(form.reporter_ic_number)) {
+         errors.value.reporter_ic_number = "Reporter IC number must be exactly 12 digits."
+         isValid = false
+       }
+       if (!/^\d{10,11}$/.test(form.reporter_phone)) {
+         errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
+         isValid = false
+       }
       if (form.reporter_email && !/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/.test(form.reporter_email)) {
         errors.value.reporter_email = "Invalid email address."
         isValid = false
@@ -481,12 +494,23 @@ function validateCurrentStep() {
           <h2 class="font-bold text-lg text-[#b12a1a]">Uploads</h2>
           <!-- Photos -->
           <div>
-            <label class="block mb-1">Upload Photos</label>
-            <input type="file" multiple @change="onPhotosChange" class="w-full" accept="image/*" />
-            <div v-if="photoPreviews.length" class="flex gap-2 mt-2 flex-wrap">
-              <img v-for="(src, idx) in photoPreviews" :key="idx" :src="src" alt="Preview"
-                   class="w-32 h-32 object-cover rounded shadow" />
+            <label class="block mb-1">Upload Photos <span class="text-red-500">*</span></label>
+            <input type="file" multiple @change="onPhotosChange" class="w-full" accept="image/*" required />
+            <div class="mt-2 text-sm text-gray-600">
+              <p class="mb-1">📸 <strong>Important:</strong> Please upload at least one photo.</p>
+              <p class="mb-1">🖼️ <strong>First photo:</strong> Please use a clear front-facing photo of the missing person.</p>
+              <p class="text-xs text-gray-500">Supported formats: JPG, PNG, GIF (Max: 5MB per image)</p>
             </div>
+            <div v-if="photoPreviews.length" class="flex gap-2 mt-3 flex-wrap">
+              <div v-for="(src, idx) in photoPreviews" :key="idx" class="relative">
+                <img :src="src" alt="Preview"
+                     class="w-32 h-32 object-cover rounded shadow" />
+                <div class="absolute top-1 left-1 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  {{ idx === 0 ? 'Front' : `Photo ${idx + 1}` }}
+                </div>
+              </div>
+            </div>
+            <span v-if="errors.photos" class="text-red-500 text-sm">{{ errors.photos }}</span>
           </div>
           <!-- Police report -->
           <div>
@@ -509,13 +533,18 @@ function validateCurrentStep() {
         <!-- STEP 5: Contact & Notes -->
         <section v-show="currentStep === 4" class="space-y-4">
           <h2 class="font-bold text-lg text-[#b12a1a]">Contact Information</h2>
-          <div>
-            <label class="block mb-1">Your Name</label>
-            <input v-model="form.reporter_name" type="text" class="w-full border px-4 py-2 rounded" required />
-            <span v-if="errors.reporter_name" class="text-red-500 text-sm">{{ errors.reporter_name }}</span>
-          </div>
-          <div>
-            <label class="block mb-1">Relationship to Missing Person</label>
+                     <div>
+             <label class="block mb-1">Your Name</label>
+             <input v-model="form.reporter_name" type="text" class="w-full border px-4 py-2 rounded" required />
+             <span v-if="errors.reporter_name" class="text-red-500 text-sm">{{ errors.reporter_name }}</span>
+           </div>
+           <div>
+             <label class="block mb-1">Your IC Number</label>
+             <input v-model="form.reporter_ic_number" type="text" class="w-full border px-4 py-2 rounded" required maxlength="12" />
+             <span v-if="errors.reporter_ic_number" class="text-red-500 text-sm">{{ errors.reporter_ic_number }}</span>
+           </div>
+           <div>
+             <label class="block mb-1">Relationship to Missing Person</label>
             <select v-model="form.reporter_relationship" class="w-full border px-4 py-2 rounded" required>
               <option value="">Select...</option>
               <option>Parent</option>

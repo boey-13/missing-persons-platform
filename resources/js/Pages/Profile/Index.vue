@@ -16,7 +16,7 @@ const props = defineProps({
 
 const page = usePage()
 
-const activeTab = ref('overview')
+const activeTab = ref('reports')
 // Modal states
 const showEditModal = ref(false)
 const showPointsModal = ref(false)
@@ -77,6 +77,52 @@ const roleColor = computed(() => {
     user: 'bg-blue-100 text-blue-800'
   }
   return colors[props.user?.role] || colors.user
+})
+
+// Generate recent activities (last 10)
+const recentActivities = computed(() => {
+  const activities = []
+  
+  // Add missing reports activities
+  if (missingReports.value && missingReports.value.length > 0) {
+    missingReports.value.slice(0, 5).forEach((report, index) => {
+      activities.push({
+        id: `report-${report.id}`,
+        description: `Submitted missing person report for ${report.full_name}`,
+        date: report.created_at,
+        color: 'bg-blue-600'
+      })
+    })
+  }
+  
+  // Add sighting reports activities
+  if (props.sightingReports && props.sightingReports.length > 0) {
+    props.sightingReports.slice(0, 3).forEach((sighting, index) => {
+      activities.push({
+        id: `sighting-${sighting.id}`,
+        description: 'Reported a sighting',
+        date: sighting.created_at,
+        color: 'bg-emerald-600'
+      })
+    })
+  }
+  
+  // Add community projects activities (for non-user roles)
+  if (props.user?.role !== 'user' && props.communityProjects && props.communityProjects.length > 0) {
+    props.communityProjects.slice(0, 2).forEach((project, index) => {
+      activities.push({
+        id: `project-${project.id}`,
+        description: `Applied for project: ${project.title}`,
+        date: project.created_at,
+        color: 'bg-purple-600'
+      })
+    })
+  }
+  
+  // Sort by date (newest first) and take only the last 10
+  return activities
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 10)
 })
 
 function editProfile() {
@@ -260,15 +306,6 @@ function shareToSocial(reportId) {
       <div class="max-w-5xl mx-auto px-4">
         <div class="flex gap-6">
           <button
-            @click="activeTab = 'overview'"
-            :class="['py-3 -mb-px border-b-2 text-sm',
-                     activeTab === 'overview'
-                       ? 'border-blue-600 text-blue-600'
-                       : 'border-transparent text-gray-600 hover:text-gray-900']">
-            Activity
-          </button>
-
-          <button
             @click="activeTab = 'reports'"
             :class="['py-3 -mb-px border-b-2 text-sm',
                      activeTab === 'reports'
@@ -286,179 +323,209 @@ function shareToSocial(reportId) {
                        : 'border-transparent text-gray-600 hover:text-gray-900']">
             Community Projects <span class="ml-1 text-xs text-gray-500">({{ props.communityProjects?.length || 0 }})</span>
           </button>
+
+          <button
+            @click="activeTab = 'overview'"
+            :class="['py-3 -mb-px border-b-2 text-sm',
+                     activeTab === 'overview'
+                       ? 'border-blue-600 text-blue-600'
+                       : 'border-transparent text-gray-600 hover:text-gray-900']">
+            Activity
+          </button>
         </div>
       </div>
     </nav>
 
-    <!-- 主内容：一个容器到底 -->
-    <main class="max-w-5xl mx-auto px-4 py-8">
-      <!-- Overview -->
-      <div v-if="activeTab === 'overview'" class="space-y-6">
-
-        <!-- 最近活动 -->
-        <div class="bg-white border border-gray-200 rounded-md p-4">
-          <h3 class="text-base font-semibold mb-3">Recent Activity</h3>
-          <div class="space-y-2">
-            <div v-if="missingReports?.length > 0" class="flex items-center gap-2 text-gray-700">
-              <span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-              Submitted a missing person report
-              <span class="text-sm text-gray-500">— {{ formatDate(missingReports[0].created_at) }}</span>
-            </div>
-            <div v-if="props.sightingReports?.length > 0" class="flex items-center gap-2 text-gray-700">
-              <span class="w-1.5 h-1.5 bg-emerald-600 rounded-full"></span>
-              Reported a sighting
-              <span class="text-sm text-gray-500">— {{ formatDate(props.sightingReports[0].created_at) }}</span>
-            </div>
-            <div v-if="!missingReports?.length && !props.sightingReports?.length" class="text-gray-500 py-2">
-              No recent activity
+    <!-- 主内容：两栏布局 -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- 主要内容区域 -->
+        <div class="lg:col-span-3">
+          <!-- Overview -->
+          <div v-if="activeTab === 'overview'" class="space-y-6">
+            <!-- 最近活动 -->
+            <div class="bg-white border border-gray-200 rounded-md p-4">
+              <h3 class="text-base font-semibold mb-3">Recent Activity</h3>
+              <div class="space-y-2">
+                <div v-if="recentActivities.length > 0">
+                  <div v-for="activity in recentActivities" :key="activity.id" class="flex items-center gap-2 text-gray-700">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="activity.color"></span>
+                    {{ activity.description }}
+                    <span class="text-sm text-gray-500">— {{ formatDate(activity.date) }}</span>
+                  </div>
+                </div>
+                <div v-else class="text-gray-500 py-2">
+                  No recent activity
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- 快捷操作 -->
-        <div class="flex flex-wrap gap-3">
-          <button
-            @click="showPointsModal = true"
-            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-            View Points History
-          </button>
-          <Link href="/rewards" class="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-black">
-            My Rewards
-          </Link>
-          <Link href="/rewards/my-vouchers" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700">
-            My Vouchers
-          </Link>
-        </div>
-      </div>
-
-      <!-- Reports -->
-      <div v-if="activeTab === 'reports'" class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold">My Missing Person Reports</h3>
-          <button
-            @click="router.visit('/missing-persons/report')"
-            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-            Report New Case
-          </button>
-        </div>
-
-        <div v-if="loadingReports" class="text-center py-12">
-          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
-          <p class="mt-4 text-gray-600">Loading your reports...</p>
-        </div>
-
-        <div v-else-if="missingReports && missingReports.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div
-            v-for="report in missingReports"
-            :key="report.id"
-            class="bg-white border border-gray-200 rounded-md p-4 flex flex-col items-center hover:shadow-sm transition"
-            :class="{ 'border-red-300 bg-red-50': report.case_status === 'Rejected' }"
-          >
-            <div class="w-28 h-28 bg-gray-100 rounded-md flex items-center justify-center mb-3 overflow-hidden border border-gray-200">
-              <img v-if="report.photo_url" :src="report.photo_url" :alt="report.full_name" class="w-full h-full object-cover" />
-              <div v-else class="text-xl font-bold text-gray-500">
-                {{ report.full_name?.charAt(0)?.toUpperCase() || 'U' }}
-              </div>
+          <!-- Reports -->
+          <div v-if="activeTab === 'reports'" class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold">My Missing Person Reports</h3>
             </div>
 
-            <div v-if="report.case_status" class="mb-2">
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="getStatusColor(report.case_status)">
-                {{ getDisplayStatus(report.case_status) }}
-              </span>
+            <div v-if="loadingReports" class="text-center py-12">
+              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+              <p class="mt-4 text-gray-600">Loading your reports...</p>
             </div>
 
-            <div class="text-center flex-1">
-              <div class="font-medium">{{ report.full_name || 'Name:xx' }}</div>
-              <div class="text-sm text-gray-600">AGE: {{ report.age || 'xx' }}</div>
-              <div class="text-sm text-gray-600 truncate max-w-[200px] mx-auto">{{ report.last_seen_location || 'xx' }}</div>
-              <div class="text-xs text-gray-500 mt-1">{{ formatDate(report.created_at) }}</div>
-
-              <div v-if="report.case_status === 'Rejected' && report.rejection_reason" class="mt-2">
-                <div class="text-xs text-red-600 font-medium">Rejection Reason:</div>
-                <div class="text-xs text-red-500 truncate max-w-[220px] mx-auto">
-                  {{ report.rejection_reason.length > 60 ? report.rejection_reason.substring(0, 60) + '...' : report.rejection_reason }}
+            <div v-else-if="missingReports && missingReports.length" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div
+                v-for="report in missingReports"
+                :key="report.id"
+                class="bg-white border border-gray-200 rounded-md p-4 flex flex-col items-center hover:shadow-sm transition"
+                :class="{ 'border-red-300 bg-red-50': report.case_status === 'Rejected' }"
+              >
+                <div class="w-28 h-28 bg-gray-100 rounded-md flex items-center justify-center mb-3 overflow-hidden border border-gray-200">
+                  <img v-if="report.photo_url" :src="report.photo_url" :alt="report.full_name" class="w-full h-full object-cover" />
+                  <div v-else class="text-xl font-bold text-gray-500">
+                    {{ report.full_name?.charAt(0)?.toUpperCase() || 'U' }}
+                  </div>
                 </div>
+
+                <div v-if="report.case_status" class="mb-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" :class="getStatusColor(report.case_status)">
+                    {{ getDisplayStatus(report.case_status) }}
+                  </span>
+                </div>
+
+                <div class="text-center flex-1">
+                  <div class="font-medium">{{ report.full_name || 'Name:xx' }}</div>
+                  <div class="text-sm text-gray-600">AGE: {{ report.age || 'xx' }}</div>
+                  <div class="text-sm text-gray-600 truncate max-w-[200px] mx-auto">{{ report.last_seen_location || 'xx' }}</div>
+                  <div class="text-xs text-gray-500 mt-1">{{ formatDate(report.created_at) }}</div>
+
+                  <div v-if="report.case_status === 'Rejected' && report.rejection_reason" class="mt-2">
+                    <div class="text-xs text-red-600 font-medium">Rejection Reason:</div>
+                    <div class="text-xs text-red-500 truncate max-w-[220px] mx-auto">
+                      {{ report.rejection_reason.length > 60 ? report.rejection_reason.substring(0, 60) + '...' : report.rejection_reason }}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  @click="viewReport(report)"
+                  class="mt-3 w-full px-3 py-2 rounded-md text-sm font-medium"
+                  :class="report.case_status === 'Rejected' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700'">
+                  {{ report.case_status === 'Rejected' ? 'View Rejection' : 'View Details' }}
+                </button>
               </div>
             </div>
 
-            <button
-              @click="viewReport(report)"
-              class="mt-3 w-full px-3 py-2 rounded-md text-sm font-medium"
-              :class="report.case_status === 'Rejected' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700'">
-              {{ report.case_status === 'Rejected' ? 'View Rejection' : 'View Details' }}
-            </button>
-          </div>
-        </div>
-
-        <div v-else class="text-center py-12">
-          <svg class="w-14 h-14 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-          </svg>
-          <h3 class="text-base font-medium mb-1">No reports yet</h3>
-          <p class="text-gray-500 mb-5">Start helping by reporting a missing person case.</p>
-          <button
-            @click="router.visit('/missing-persons/report')"
-            class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700">
-            Report Your First Case
-          </button>
-        </div>
-      </div>
-
-      <!-- Projects -->
-      <div v-if="activeTab === 'projects' && props.user?.role !== 'user'" class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold">My Community Projects</h3>
-          <button @click="router.visit('/volunteer/projects')" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700">
-            Browse Projects
-          </button>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div
-            v-for="project in props.communityProjects"
-            :key="project.id"
-            class="bg-white border border-gray-200 rounded-md overflow-hidden hover:shadow-sm transition"
-          >
-            <div class="h-44 relative bg-gray-100">
-              <img v-if="project.photo_url" :src="project.photo_url" :alt="project.title" class="w-full h-full object-cover" />
-              <div class="absolute top-3 left-3">
-                <span :class="['px-2 py-0.5 rounded text-xs font-medium', getStatusColor(project.status)]">
-                  {{ project.status }}
-                </span>
-              </div>
-              <div class="absolute bottom-3 right-3 bg-white border border-gray-200 rounded px-2 py-1 text-right">
-                <div class="text-sm font-bold">{{ project.points_reward }}</div>
-                <div class="text-[10px] text-gray-600">Points</div>
-              </div>
-            </div>
-
-            <div class="p-4">
-              <h4 class="font-semibold mb-1 line-clamp-1">{{ project.title }}</h4>
-              <p class="text-sm text-gray-600 mb-3 line-clamp-1">{{ project.location }}</p>
-
-              <div class="space-y-1 mb-3 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Date:</span>
-                  <span class="font-medium">{{ formatDate(project.date) }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Volunteers:</span>
-                  <span class="font-medium">{{ project.volunteers_joined }}/{{ project.volunteers_needed }}</span>
-                </div>
-              </div>
-
-              <div class="w-full bg-gray-200 rounded h-1.5 mb-3">
-                <div
-                  class="bg-emerald-600 h-1.5 rounded"
-                  :style="{ width: `${(project.volunteers_joined / project.volunteers_needed) * 100}%` }"
-                ></div>
-              </div>
-
+            <div v-else class="text-center py-12">
+              <svg class="w-14 h-14 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+              <h3 class="text-base font-medium mb-1">No reports yet</h3>
+              <p class="text-gray-500 mb-5">Start helping by reporting a missing person case.</p>
               <button
-                @click="router.visit(`/volunteer/projects/${project.id}`)"
-                class="w-full bg-emerald-600 text-white py-2 rounded-md text-sm font-medium hover:bg-emerald-700">
-                View Details
+                @click="router.visit('/missing-persons/report')"
+                class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700">
+                Report Your First Case
               </button>
+            </div>
+          </div>
+
+          <!-- Projects -->
+          <div v-if="activeTab === 'projects' && props.user?.role !== 'user'" class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold">My Community Projects</h3>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div
+                v-for="project in props.communityProjects"
+                :key="project.id"
+                class="bg-white border border-gray-200 rounded-md overflow-hidden hover:shadow-sm transition"
+              >
+                <div class="h-44 relative bg-gray-100">
+                  <img v-if="project.photo_url" :src="project.photo_url" :alt="project.title" class="w-full h-full object-cover" />
+                  <div class="absolute top-3 left-3">
+                    <span :class="['px-2 py-0.5 rounded text-xs font-medium', getStatusColor(project.status)]">
+                      {{ project.status }}
+                    </span>
+                  </div>
+                  <div class="absolute bottom-3 right-3 bg-white border border-gray-200 rounded px-2 py-1 text-right">
+                    <div class="text-sm font-bold">{{ project.points_reward }}</div>
+                    <div class="text-[10px] text-gray-600">Points</div>
+                  </div>
+                </div>
+
+                <div class="p-4">
+                  <h4 class="font-semibold mb-1 line-clamp-1">{{ project.title }}</h4>
+                  <p class="text-sm text-gray-600 mb-3 line-clamp-1">{{ project.location }}</p>
+
+                  <div class="space-y-1 mb-3 text-sm">
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Date:</span>
+                      <span class="font-medium">{{ formatDate(project.date) }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Volunteers:</span>
+                      <span class="font-medium">{{ project.volunteers_joined }}/{{ project.volunteers_needed }}</span>
+                    </div>
+                  </div>
+
+                  <div class="w-full bg-gray-200 rounded h-1.5 mb-3">
+                    <div
+                      class="bg-emerald-600 h-1.5 rounded"
+                      :style="{ width: `${(project.volunteers_joined / project.volunteers_needed) * 100}%` }"
+                    ></div>
+                  </div>
+
+                  <button
+                    @click="router.visit(`/community-projects/${project.id}`)"
+                    class="w-full bg-emerald-600 text-white py-2 rounded-md text-sm font-medium hover:bg-emerald-700">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 侧边栏：积分和快捷操作 -->
+        <div class="lg:col-span-1">
+          <div class="space-y-6">
+            <!-- 积分卡片 -->
+            <div class="bg-white border border-gray-200 rounded-md p-4">
+              <h3 class="text-base font-semibold mb-3">Points & Rewards</h3>
+              <div class="text-center mb-4">
+                <div class="text-3xl font-bold text-emerald-600">{{ props.totalPoints || 0 }}</div>
+                <div class="text-sm text-gray-600">Total Points</div>
+              </div>
+              <button
+                @click="showPointsModal = true"
+                class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+                View Points History
+              </button>
+            </div>
+
+            <!-- 快捷操作 -->
+            <div class="bg-white border border-gray-200 rounded-md p-4">
+              <h3 class="text-base font-semibold mb-3">Quick Actions</h3>
+              <div class="space-y-3">
+                <Link href="/rewards" class="block w-full bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-black text-sm text-center">
+                  My Rewards
+                </Link>
+                <Link href="/rewards/my-vouchers" class="block w-full bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 text-sm text-center">
+                  My Vouchers
+                </Link>
+                <button
+                  @click="router.visit('/missing-persons/report')"
+                  class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+                  Report New Case
+                </button>
+                <button
+                  v-if="props.user?.role !== 'user'"
+                  @click="router.visit('/volunteer/projects')"
+                  class="w-full bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 text-sm">
+                  Browse Projects
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -544,8 +611,8 @@ function shareToSocial(reportId) {
                 <p class="font-medium">{{ point.description }}</p>
                 <p class="text-sm text-gray-500">{{ formatDate(point.created_at) }}</p>
               </div>
-              <span class="text-base font-bold text-emerald-700">
-                +{{ point.points }} point{{ point.points > 1 ? 's' : '' }}
+              <span class="text-base font-bold" :class="point.type === 'earned' ? 'text-emerald-700' : 'text-red-700'">
+                {{ point.type === 'earned' ? '+' : '-' }}{{ point.points }} point{{ point.points > 1 ? 's' : '' }}
               </span>
             </div>
           </div>

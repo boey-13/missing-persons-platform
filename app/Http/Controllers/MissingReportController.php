@@ -37,6 +37,7 @@ class MissingReportController extends Controller
                 'police_report_path' => ['nullable'],
                 'reporter_relationship' => ['required', 'in:Parent,Child,Spouse,Sibling,Friend,Other'],
                 'reporter_name' => ['required', 'regex:/^[A-Za-z\s]+$/', 'max:255'],
+                'reporter_ic_number' => ['required', 'digits:12'],
                 'reporter_phone' => ['required', 'digits_between:10,11'],
                 'reporter_email' => ['nullable', 'email', 'max:255'],
                 'additional_notes' => ['nullable', 'string', 'max:2000'],
@@ -45,6 +46,7 @@ class MissingReportController extends Controller
                 'full_name.regex' => 'Full name must only contain alphabets and spaces.',
                 'nickname.regex' => 'Nickname must only contain alphabets and spaces.',
                 'ic_number.digits' => 'IC Number must be exactly 12 digits.',
+                'reporter_ic_number.digits' => 'Reporter IC Number must be exactly 12 digits.',
                 'reporter_name.regex' => 'Reporter name must only contain alphabets and spaces.',
                 'reporter_phone.digits_between' => 'Phone number must be 10 or 11 digits.',
                 'reporter_relationship.in' => 'Please select a valid relationship.'
@@ -82,7 +84,7 @@ class MissingReportController extends Controller
             ['report_id' => $report->id, 'reporter_name' => $validated['reporter_name']]
         );
 
-        return redirect()->route('home')
+        return redirect('/')
             ->with('success', 'Report submitted successfully!');
     }
 
@@ -95,8 +97,24 @@ class MissingReportController extends Controller
             ? $report->photo_paths
             : json_decode($report->photo_paths, true);
 
+        // Get other approved and missing cases (excluding current case)
+        $otherCases = MissingReport::where('id', '!=', $id)
+            ->whereIn('case_status', ['Approved', 'Missing'])
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get(['id', 'full_name', 'age', 'gender', 'last_seen_location', 'photo_paths', 'case_status', 'last_seen_date', 'created_at']);
+
+        // Format photo_paths for other cases
+        $otherCases->transform(function ($case) {
+            $case->photo_paths = is_array($case->photo_paths)
+                ? $case->photo_paths
+                : json_decode($case->photo_paths, true);
+            return $case;
+        });
+
         return inertia('MissingPersons/Show', [
-            'report' => $report
+            'report' => $report,
+            'otherCases' => $otherCases
         ]);
     }
 

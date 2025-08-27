@@ -50,16 +50,28 @@ class AdminController extends Controller
             return [
                 'id' => $item->id,
                 'name' => $item->full_name,
-                'reporter' => $item->reporter_name,
+                'full_name' => $item->full_name,
+                'ic_number' => $item->ic_number,
+                'nickname' => $item->nickname,
+                'age' => $item->age,
+                'gender' => $item->gender,
+                'height_cm' => $item->height_cm,
+                'weight_kg' => $item->weight_kg,
+                'physical_description' => $item->physical_description,
+                'last_seen_date' => $item->last_seen_date,
+                'last_seen_location' => $item->last_seen_location,
+                'last_seen_clothing' => $item->last_seen_clothing,
+                'photo_paths' => $item->photo_paths,
+                'police_report_path' => $item->police_report_path,
+                'reporter_name' => $item->reporter_name,
+                'reporter_ic_number' => $item->reporter_ic_number,
+                'reporter_relationship' => $item->reporter_relationship,
                 'reporter_phone' => $item->reporter_phone,
                 'reporter_email' => $item->reporter_email,
+                'additional_notes' => $item->additional_notes,
                 'created_at' => $item->created_at?->toDateTimeString(),
                 'last_seen' => $item->last_seen_location,
                 'status' => $item->case_status,
-                'age' => $item->age,
-                'gender' => $item->gender,
-                'last_seen_date' => $item->last_seen_date,
-                'photo_paths' => $item->photo_paths,
             ];
         });
 
@@ -91,7 +103,34 @@ class AdminController extends Controller
             }, $report->photo_paths);
         }
 
-        return response()->json($report);
+        // Ensure all fields are included in the response
+        $reportData = [
+            'id' => $report->id,
+            'full_name' => $report->full_name,
+            'ic_number' => $report->ic_number,
+            'nickname' => $report->nickname,
+            'age' => $report->age,
+            'gender' => $report->gender,
+            'height_cm' => $report->height_cm,
+            'weight_kg' => $report->weight_kg,
+            'physical_description' => $report->physical_description,
+            'last_seen_date' => $report->last_seen_date,
+            'last_seen_location' => $report->last_seen_location,
+            'last_seen_clothing' => $report->last_seen_clothing,
+            'photo_paths' => $report->photo_paths,
+            'police_report_path' => $report->police_report_path,
+            'reporter_name' => $report->reporter_name,
+            'reporter_ic_number' => $report->reporter_ic_number,
+            'reporter_relationship' => $report->reporter_relationship,
+            'reporter_phone' => $report->reporter_phone,
+            'reporter_email' => $report->reporter_email,
+            'additional_notes' => $report->additional_notes,
+            'case_status' => $report->case_status,
+            'created_at' => $report->created_at,
+            'updated_at' => $report->updated_at,
+        ];
+
+        return response()->json($reportData);
     }
 
     /**

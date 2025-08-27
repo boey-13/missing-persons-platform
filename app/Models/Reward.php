@@ -66,6 +66,6 @@ class Reward extends Model
         if ($this->image_path) {
             return asset('storage/' . $this->image_path);
         }
-        return null;
+        return asset('voucher.png');
     }
 }

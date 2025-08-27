@@ -7,7 +7,11 @@ defineOptions({ layout: MainLayout })
 
 const props = defineProps({
   report: Object,
-  flash: Object
+  flash: Object,
+  otherCases: {
+    type: Array,
+    default: () => []
+  }
 })
 
 // Google Map setup
@@ -135,6 +139,7 @@ function reportSighting() {
 }
 
 function formatDate(dateString) {
+  if (!dateString) return 'Date unknown'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -213,17 +218,7 @@ function getStatusColor(status) {
           </div>
         </div>
 
-        <!-- Meta line -->
-        <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
-          <div class="inline-flex items-center gap-2">
-            <i class="far fa-calendar"></i>
-            <span>Last seen: {{ formatDate(report.last_seen_date) }}</span>
-          </div>
-          <div class="inline-flex items-center gap-2">
-            <i class="fas fa-map-marker-alt"></i>
-            <span>{{ report.last_seen_location }}</span>
-          </div>
-        </div>
+        
       </div>
     </header>
 
@@ -348,27 +343,103 @@ function getStatusColor(status) {
             </dl>
           </div>
 
-          <!-- Actions -->
-          <div class="mt-6 flex flex-wrap gap-4">
-            <Link :href="`/missing-persons/${report.id}/preview-poster`"
-                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 text-white hover:bg-sky-700 font-medium shadow">
-              <i class="fas fa-file-download"></i>
-              Download Poster
-            </Link>
-            <Link :href="`/missing-persons/${report.id}/report-sighting`"
-                  class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium shadow">
-              <i class="fas fa-binoculars"></i>
-              Submit Sighting
-            </Link>
-          </div>
+                     <!-- Actions -->
+           <div class="mt-6 flex flex-wrap gap-4">
+             <Link :href="`/missing-persons/${report.id}/preview-poster`"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 text-white hover:bg-sky-700 font-medium shadow">
+               <i class="fas fa-file-download"></i>
+               Download Poster
+             </Link>
+             <Link :href="`/missing-persons/${report.id}/report-sighting`"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium shadow">
+               <i class="fas fa-binoculars"></i>
+               Submit Sighting
+             </Link>
+           </div>
+         </section>
+       </div>
 
-          <!-- Map -->
-          <div class="mt-8">
-            <h2 class="text-xl font-semibold mb-3">Last Seen Location</h2>
-            <div ref="mapDiv" class="w-full h-64 rounded-xl border shadow-inner ring-1 ring-gray-100"></div>
+       <!-- Last Seen Details - Full Width -->
+       <div class="mt-8">
+         <h2 class="text-xl font-semibold mb-3">Last Seen Location</h2>
+         
+         <!-- Meta line -->
+         <div class="mb-4 flex flex-wrap items-center gap-4 text-sm text-gray-600">
+           <div class="inline-flex items-center gap-2">
+             <i class="far fa-calendar"></i>
+             <span>Last seen: {{ formatDate(report.last_seen_date) }}</span>
+           </div>
+           <div class="inline-flex items-center gap-2">
+             <i class="fas fa-map-marker-alt"></i>
+             <span>{{ report.last_seen_location }}</span>
+           </div>
+         </div>
+         
+         <div ref="mapDiv" class="w-full h-64 rounded-xl border shadow-inner ring-1 ring-gray-100"></div>
+       </div>
+
+       <!-- Divider -->
+       <div class="max-w-7xl mx-auto px-6">
+         <hr class="border-gray-200 my-12">
+       </div>
+
+       <!-- Other Missing Persons Cases -->
+       <section class="max-w-7xl mx-auto px-6 py-12 bg-gray-50">
+        <div class="text-center mb-8">
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Other Missing Persons Cases</h2>
+          <p class="text-gray-600">Help spread awareness by viewing other cases</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div v-for="otherCase in otherCases" :key="otherCase.id" 
+               class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+               @click="router.visit(`/missing-persons/${otherCase.id}`)">
+            
+            <!-- Case Image -->
+            <div class="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+              <img v-if="otherCase.photo_paths && otherCase.photo_paths.length > 0"
+                   :src="`/storage/${otherCase.photo_paths[0]}`"
+                   :alt="otherCase.full_name"
+                   class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full flex items-center justify-center">
+                <i class="fas fa-user text-4xl text-gray-400"></i>
+              </div>
+                             <div class="absolute top-2 left-2">
+                 <span class="px-2 py-1 text-xs font-medium rounded-full"
+                       :class="otherCase.case_status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                   {{ otherCase.case_status === 'Approved' ? 'Approved' : 'Pending' }}
+                 </span>
+               </div>
+            </div>
+            
+            <!-- Case Info -->
+            <div class="p-4">
+              <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ otherCase.full_name }}</h3>
+              <div class="text-sm text-gray-600 space-y-1">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-venus-mars text-gray-400"></i>
+                  <span>{{ otherCase.gender }}, {{ otherCase.age }} years</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-map-marker-alt text-gray-400"></i>
+                  <span class="line-clamp-1">{{ otherCase.last_seen_location || 'Location unknown' }}</span>
+                </div>
+                                 <div class="flex items-center gap-2">
+                   <i class="far fa-calendar-alt text-gray-400"></i>
+                   <span>{{ formatDate(otherCase.last_seen_date) }}</span>
+                 </div>
+              </div>
+            </div>
           </div>
-        </section>
-      </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div v-if="!otherCases || otherCases.length === 0" class="text-center py-12">
+          <div class="text-5xl mb-4">🔍</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No other cases available</h3>
+          <p class="text-gray-600">Check back later for more missing persons cases.</p>
+        </div>
+      </section>
     </main>
   </div>
 </template>
@@ -377,4 +448,11 @@ function getStatusColor(status) {
 ::-webkit-scrollbar { height: 6px; }
 ::-webkit-scrollbar-thumb { background: #d7d7d7; border-radius: 999px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
 </style>

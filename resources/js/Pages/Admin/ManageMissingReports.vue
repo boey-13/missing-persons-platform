@@ -391,11 +391,11 @@ function handleImageLoad(event) {
               />
             </td>
             <td class="px-4 py-3 font-medium">#{{ row.id }}</td>
-            <td class="px-4 py-3 font-medium">{{ row.name }}</td>
+            <td class="px-4 py-3 font-medium">{{ row.full_name }}</td>
             <td class="px-4 py-3">{{ row.age }}/{{ row.gender }}</td>
             <td class="px-4 py-3">
               <div>
-                <div class="font-medium">{{ row.reporter }}</div>
+                <div class="font-medium">{{ row.reporter_name }}</div>
                 <div class="text-xs text-gray-500">{{ row.reporter_phone }}</div>
               </div>
             </td>
@@ -593,6 +593,14 @@ function handleImageLoad(event) {
                   <label class="block text-sm font-medium text-gray-700">Full Name</label>
                   <p class="mt-1 text-sm text-gray-900">{{ currentReport.full_name }}</p>
                 </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">IC Number</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.ic_number }}</p>
+                </div>
+                <div v-if="currentReport.nickname">
+                  <label class="block text-sm font-medium text-gray-700">Nickname</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.nickname }}</p>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Age</label>
@@ -603,13 +611,31 @@ function handleImageLoad(event) {
                     <p class="mt-1 text-sm text-gray-900">{{ currentReport.gender }}</p>
                   </div>
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Height (cm)</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ currentReport.height_cm || 'Not specified' }}</p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Weight (kg)</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ currentReport.weight_kg || 'Not specified' }}</p>
+                  </div>
+                </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Last Seen Date</label>
                   <p class="mt-1 text-sm text-gray-900">{{ formatDate(currentReport.last_seen_date) }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Last Seen Location</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.last_seen }}</p>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.last_seen_location }}</p>
+                </div>
+                <div v-if="currentReport.last_seen_clothing">
+                  <label class="block text-sm font-medium text-gray-700">Last Seen Clothing</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.last_seen_clothing }}</p>
+                </div>
+                <div v-if="currentReport.physical_description">
+                  <label class="block text-sm font-medium text-gray-700">Physical Description</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.physical_description }}</p>
                 </div>
               </div>
             </div>
@@ -620,7 +646,15 @@ function handleImageLoad(event) {
               <div class="space-y-3">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Reporter Name</label>
-                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter }}</p>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_name }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Reporter IC Number</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_ic_number }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Relationship</label>
+                  <p class="mt-1 text-sm text-gray-900">{{ currentReport.reporter_relationship }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Phone</label>
@@ -640,6 +674,23 @@ function handleImageLoad(event) {
                     {{ currentReport.status }}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div v-if="currentReport.additional_notes" class="md:col-span-2">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
+              <p class="text-sm text-gray-900">{{ currentReport.additional_notes }}</p>
+            </div>
+
+            <!-- Police Report -->
+            <div v-if="currentReport.police_report_path" class="md:col-span-2">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Police Report</h3>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-file-pdf text-red-500"></i>
+                <a :href="`/storage/${currentReport.police_report_path}`" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                  View Police Report
+                </a>
               </div>
             </div>
 
