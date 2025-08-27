@@ -61,7 +61,7 @@ const visibleCases = computed(() => {
     <section class="relative min-h-[50vh] bg-cover bg-center bg-no-repeat"
       style="background-image: url('/banner.png');">
       <!-- Overlay for better text readability -->
-      <div class="absolute inset-0 bg-black/40"></div>
+      <div class="absolute inset-0 bg-black/30"></div>
       <div
         class="relative max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center min-h-[90vh]">
         <div class="text-white">

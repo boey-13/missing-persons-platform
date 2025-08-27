@@ -181,6 +181,20 @@ async function handleMenuClick(item) {
             return;
         }
         
+        if (item.action === "searchDirect" && item.query) {
+            handleSearch(item.query);
+            return;
+        }
+        
+        if (item.action === "showOtherOptions") {
+            messages.value.push({
+                role: "system",
+                text: "No problem! Here are other ways I can help you:",
+            });
+            messages.value.push({ role: "system", menu: mainMenu.value });
+            return;
+        }
+        
         if (item.action === "faq") {
             messages.value.push({
                 role: "system",
