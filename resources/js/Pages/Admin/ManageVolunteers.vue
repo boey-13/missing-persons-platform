@@ -4,7 +4,10 @@ import { router, usePage } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
 defineOptions({ layout: AdminLayout })
 
-const props = defineProps({ applications: Object })
+const props = defineProps({ 
+  applications: Object,
+  filters: Object
+})
 const $page = usePage()
 
 // Success message handling
@@ -111,6 +114,41 @@ function getApplicationStatusColor(status) {
   }
   return colors[status] || 'bg-gray-100 text-gray-800'
 }
+
+// Filter states
+const statusFilter = ref(props.filters?.status || '')
+const searchFilter = ref(props.filters?.search || '')
+const skillsFilter = ref(props.filters?.skills || '')
+const languagesFilter = ref(props.filters?.languages || '')
+
+// Common skills and languages for filter options
+const commonSkills = [
+  'First Aid', 'CPR', 'Search & Rescue', 'Communication', 'Leadership',
+  'Medical', 'Technical', 'Logistics', 'Coordination', 'Translation'
+]
+
+const commonLanguages = [
+  'English', 'Chinese', 'Malay', 'Tamil', 'Spanish', 'French', 'German',
+  'Japanese', 'Korean', 'Arabic', 'Hindi', 'Thai', 'Vietnamese'
+]
+
+function applyFilters() {
+  const params = {}
+  if (statusFilter.value) params.status = statusFilter.value
+  if (searchFilter.value) params.search = searchFilter.value
+  if (skillsFilter.value) params.skills = skillsFilter.value
+  if (languagesFilter.value) params.languages = languagesFilter.value
+  
+  router.get('/admin/volunteers', params)
+}
+
+function clearFilters() {
+  statusFilter.value = ''
+  searchFilter.value = ''
+  skillsFilter.value = ''
+  languagesFilter.value = ''
+  router.get('/admin/volunteers')
+}
 </script>
 
 <template>
@@ -124,6 +162,52 @@ function getApplicationStatusColor(status) {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
         {{ successMessage }}
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-xl shadow p-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <select v-model="statusFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <input
+            v-model="searchFilter"
+            type="text"
+            placeholder="Search by name or email..."
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Skills</label>
+          <select v-model="skillsFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">All Skills</option>
+            <option v-for="skill in commonSkills" :key="skill" :value="skill">{{ skill }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Languages</label>
+          <select v-model="languagesFilter" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">All Languages</option>
+            <option v-for="language in commonLanguages" :key="language" :value="language">{{ language }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <button @click="applyFilters" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          Apply Filters
+        </button>
+        <button @click="clearFilters" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+          Clear
+        </button>
       </div>
     </div>
 
@@ -211,6 +295,50 @@ function getApplicationStatusColor(status) {
           </tr>
         </tbody>
       </table>
+
+      <!-- Empty State -->
+      <div v-if="!props.applications.data || props.applications.data.length === 0" class="text-center py-12">
+        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No volunteer applications found</h3>
+        <p class="text-gray-500">Try adjusting your filters or search terms.</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="props.applications && props.applications.total > props.applications.per_page" class="mt-6 flex justify-center">
+      <div class="flex items-center space-x-4">
+        <button
+          :disabled="props.applications.current_page <= 1"
+          @click="router.get('/admin/volunteers', { page: props.applications.current_page - 1, status: statusFilter, search: searchFilter, skills: skillsFilter, languages: languagesFilter })"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          &lt;
+        </button>
+        
+        <button
+          v-for="page in Math.ceil(props.applications.total / props.applications.per_page)"
+          :key="page"
+          @click="router.get('/admin/volunteers', { page, status: statusFilter, search: searchFilter, skills: skillsFilter, languages: languagesFilter })"
+          :class="[
+            'text-sm',
+            page === props.applications.current_page
+              ? 'underline font-medium'
+              : 'text-gray-600 hover:text-gray-900'
+          ]"
+        >
+          {{ page }}
+        </button>
+        
+        <button
+          :disabled="props.applications.current_page >= Math.ceil(props.applications.total / props.applications.per_page)"
+          @click="router.get('/admin/volunteers', { page: props.applications.current_page + 1, status: statusFilter, search: searchFilter, skills: skillsFilter, languages: languagesFilter })"
+          class="text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          &gt;
+        </button>
+      </div>
     </div>
 
     <!-- Detail Modal -->

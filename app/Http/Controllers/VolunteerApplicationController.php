@@ -136,9 +136,36 @@ class VolunteerApplicationController extends Controller
     // Admin index
     public function adminIndex(Request $request)
     {
-        $apps = VolunteerApplication::with(['user:id,name,email,role'])
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $query = VolunteerApplication::with(['user:id,name,email,role'])
+            ->orderByDesc('created_at');
+        
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Search by user name or email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by skills
+        if ($request->filled('skills')) {
+            $skills = $request->skills;
+            $query->whereJsonContains('skills', $skills);
+        }
+        
+        // Filter by languages
+        if ($request->filled('languages')) {
+            $languages = $request->languages;
+            $query->whereJsonContains('languages', $languages);
+        }
+
+        $apps = $query->paginate(15);
 
         // Get project applications for each volunteer
         $apps->getCollection()->transform(function ($app) {
@@ -167,6 +194,12 @@ class VolunteerApplicationController extends Controller
 
         return Inertia::render('Admin/ManageVolunteers', [
             'applications' => $apps,
+            'filters' => [
+                'status' => $request->status,
+                'search' => $request->search,
+                'skills' => $request->skills,
+                'languages' => $request->languages,
+            ],
         ]);
     }
 
