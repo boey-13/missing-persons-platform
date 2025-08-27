@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
+import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import axios from 'axios'
 
@@ -144,6 +144,18 @@ function deleteNews(newsId) {
       })
   }
 }
+
+// Go back function
+function goBack() {
+  // Try to go back in browser history first
+  if (window.history.length > 1) {
+    window.history.back()
+  } else {
+    // If no history, fallback to appropriate project list page
+    const targetUrl = props.isAdmin ? '/admin/community-projects' : '/volunteer/projects'
+    router.visit(targetUrl)
+  }
+}
 </script>
 
 <template>
@@ -186,6 +198,20 @@ function deleteNews(newsId) {
     <!-- Header -->
     <div class="bg-white/80 backdrop-blur shadow-sm border-b border-gray-200">
       <div class="px-6 py-5 max-w-7xl mx-auto">
+        <!-- Back Button -->
+        <div class="mb-4">
+          <button
+            @click="goBack"
+            class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Back
+          </button>
+        </div>
+        
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 tracking-tight">{{ project.title }}</h1>
@@ -516,20 +542,6 @@ function deleteNews(newsId) {
       </div>
     </div>
 
-    <!-- Fixed Bottom Button -->
-    <div class="bg-white/80 backdrop-blur border-t border-gray-200 p-6">
-      <div class="max-w-7xl mx-auto">
-        <Link
-          :href="isAdmin ? '/admin/community-projects' : '/volunteer/projects'"
-          class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-100 text-gray-800 py-3 px-4 font-medium hover:bg-gray-200 transition"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-          </svg>
-          Back to Projects
-        </Link>
-      </div>
-    </div>
+
   </div>
 </template>

@@ -15,13 +15,25 @@ use App\Http\Controllers\VolunteerApplicationController;
 use Illuminate\Http\Request as HttpRequest;
 
 Route::get('/', function () {
-    $recent = \App\Models\MissingReport::orderByDesc('created_at')->limit(8)->get([
-        'id','full_name','age','last_seen_location','photo_paths','created_at'
-    ]);
+    $recent = \App\Models\MissingReport::whereIn('case_status', ['Approved', 'Missing'])
+        ->orderByDesc('created_at')
+        ->limit(8)
+        ->get([
+            'id','full_name','age','last_seen_location','photo_paths','created_at'
+        ]);
     return Inertia::render('Home', [
         'recent' => $recent,
     ]);
 });
+
+// About Us and Contact Us pages
+Route::get('/about', function () {
+    return Inertia::render('AboutUs');
+})->name('about');
+
+Route::get('/contact', function () {
+    return Inertia::render('ContactUs');
+})->name('contact');
 
 Route::get('/missing-persons', function() {
     return Inertia::render('MissingPersons/Index');
@@ -42,6 +54,7 @@ Route::get('/dashboard', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update.post');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Volunteer application & home

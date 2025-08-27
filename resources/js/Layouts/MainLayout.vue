@@ -33,8 +33,8 @@
             <a href="/volunteer/apply" class="block px-4 py-2 hover:bg-[#e7d6c3]">Become Volunteer</a>
           </div>
         </div>
-        <a href="#">About Us</a>
-        <a href="#">Contact Us</a>
+        <a href="/about">About Us</a>
+        <a href="/contact">Contact Us</a>
         <!-- User Dropdown (show name if logged in, Login if not) -->
         <div class="relative">
           <button @click="toggleDropdown('user')" class="flex items-center gap-1">
@@ -87,7 +87,7 @@
         <div>
           <div class="font-bold text-lg mb-3 tracking-wide">Quick Links</div>
           <nav class="flex flex-col gap-2 text-base">
-            <a href="#" class="hover:text-[#A67B5B]">About</a>
+            <a href="/about" class="hover:text-[#A67B5B]">About</a>
             <a href="/missing-persons" class="hover:text-[#A67B5B]">View Case</a>
             <a href="/missing-persons/report" class="hover:text-[#A67B5B]">Report Case</a>
             <a href="/volunteer/projects" class="hover:text-[#A67B5B]">Volunteer</a>
@@ -97,7 +97,7 @@
         <div>
           <div class="font-bold text-lg mb-3 tracking-wide">Help</div>
           <nav class="flex flex-col gap-2 text-base">
-            <a href="#" class="hover:text-[#A67B5B]">Contact Us</a>
+            <a href="/contact" class="hover:text-[#A67B5B]">Contact Us</a>
             <a href="#" class="hover:text-[#A67B5B]">Terms & Conditions</a>
             <a href="#" class="hover:text-[#A67B5B]">Privacy Policy</a>
           </nav>

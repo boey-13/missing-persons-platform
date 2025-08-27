@@ -38,9 +38,9 @@ class ProfileController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Get user's community projects (if volunteer)
+        // Get user's community projects (for admin and volunteer only)
         $communityProjects = collect();
-        if ($user->role === 'volunteer') {
+        if ($user->role !== 'user') {
             $projectApplications = ProjectApplication::where('user_id', $user->id)
                 ->with('project')
                 ->get();
@@ -80,47 +80,74 @@ class ProfileController extends Controller
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
             'method' => $request->method(),
-            'url' => $request->url()
+            'url' => $request->url(),
+            'user_id' => $user->id,
+            'content_type' => $request->header('Content-Type'),
+            'files' => $request->allFiles()
         ]);
         
-        // Validate the request
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ]);
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email,' . $user->id,
+                'phone' => 'nullable|string|max:32',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
 
-        // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($user->avatar_url && file_exists(public_path($user->avatar_url))) {
-                unlink(public_path($user->avatar_url));
+            \Log::info('Validation passed', $validated);
+
+            if (!empty($validated['phone'])) {
+                $validated['phone'] = preg_replace('/[^0-9+]/', '', $validated['phone']);
             }
+
+            // Handle avatar upload
+            if ($request->hasFile('avatar')) {
+                \Log::info('Processing avatar upload');
+                // Delete old avatar if exists
+                if ($user->avatar_url && file_exists(public_path($user->avatar_url))) {
+                    unlink(public_path($user->avatar_url));
+                }
+                
+                // Store new avatar
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                $user->avatar_url = '/storage/' . $avatarPath;
+                \Log::info('Avatar uploaded to: ' . $user->avatar_url);
+            }
+
+            // Update user data
+            $user->fill([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? $user->phone
+            ]);
+
+            // Handle email change
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
+
+            $user->save();
+
+            \Log::info('Profile updated successfully for user: ' . $user->id);
+
+            return redirect()->back()->with('status', 'Profile updated successfully.');
             
-            // Store new avatar
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar_url = '/storage/' . $avatarPath;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Profile update validation failed: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'errors' => $e->errors()
+            ]);
+            
+            return redirect()->back()->withErrors($e->errors());
+        } catch (\Exception $e) {
+            \Log::error('Profile update failed: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'exception' => $e
+            ]);
+            
+            return redirect()->back()->withErrors(['error' => 'Profile update failed: ' . $e->getMessage()]);
         }
-
-        // Update user data
-        $user->fill([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? $user->phone
-        ]);
-
-        // Handle email change
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
-
-        // Log the profile update
-        \Log::info('Profile updated for user: ' . $user->id);
-
-        return redirect()->back()->with('status', 'Profile updated successfully.');
     }
 
     /**

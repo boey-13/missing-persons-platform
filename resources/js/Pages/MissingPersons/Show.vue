@@ -200,10 +200,10 @@ function getStatusColor(status) {
             <p class="text-sm text-gray-600">Help us reunite families by sharing or reporting any information you may have.</p>
           </div>
           <div class="flex items-center gap-2">
-            <span v-if="report.status"
-                  :class="`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium capitalize ${getStatusColor(report.status)}`">
+            <span v-if="report.case_status"
+                  :class="`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium capitalize ${getStatusColor(report.case_status)}`">
               <span class="inline-block h-2 w-2 rounded-full bg-current/70"></span>
-              {{ report.status }}
+              {{ report.case_status }}
             </span>
             <button @click="showShareModal = true"
                     class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">
@@ -360,11 +360,6 @@ function getStatusColor(status) {
               <i class="fas fa-binoculars"></i>
               Submit Sighting
             </Link>
-            <button @click="showShareModal = true"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 font-medium shadow-sm">
-              <i class="fas fa-share-alt text-orange-500"></i>
-              Share
-            </button>
           </div>
 
           <!-- Map -->
