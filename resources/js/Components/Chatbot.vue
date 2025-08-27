@@ -110,6 +110,18 @@ const quickCommands = {
     'home': 'mainMenu'
 };
 
+// ---- session helpers (最小实现，避免报错) ----
+const sessionId = ref(null);
+const autoEndTimeout = ref(null);
+const warningTimeout = ref(null);
+
+function generateSessionId() {
+  return 'fm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function loadSession() { return false; }  // 先直接返回 false：表示没有历史会话
+function saveSession() {}                  // 需要的话再补
+function updateActivity() {}               // 需要的话再补
+
 function toggleChat() {
     isOpen.value = !isOpen.value;
     if (isOpen.value) {
