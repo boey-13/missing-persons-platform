@@ -5,7 +5,7 @@
     {"label": "🤝 Become Volunteer", "action": "volunteer"},
     {"label": "❓ FAQ / Help", "action": "faq"},
     {"label": "📞 Contact Support", "action": "contactSupport"},
-    {"label": "🏠 Back to Main Menu", "action": "mainMenu"}
+    {"label": "🚪 End Chat", "action": "endChat"}
   ],
   "faq": [
     {
