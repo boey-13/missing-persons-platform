@@ -157,6 +157,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
         ->name('sighting-reports.status');
     Route::get('/sighting-reports/{sighting}', [App\Http\Controllers\SightingReportController::class, 'show'])
         ->name('sighting-reports.show');
+    Route::get('/sighting-reports/{id}/create-project', [App\Http\Controllers\CommunityProjectController::class, 'createFromSightingReport'])
+        ->name('sighting-reports.create-project');
         
     // Admin: Community Projects Management
     Route::get('/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'index'])

@@ -73,6 +73,10 @@ function rejectSighting() {
   })
 }
 
+function createProjectFromSighting(sightingId) {
+  router.get(`/admin/sighting-reports/${sightingId}/create-project`)
+}
+
 function applyFilters() {
   const params = {}
   if (statusFilter.value) params.status = statusFilter.value
@@ -192,19 +196,49 @@ function formatDate(dateString) {
                 {{ row.status }}
               </span>
             </td>
-            <td class="px-4 py-3">
-              <div class="flex flex-wrap gap-2">
-                <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(row.id)">
-                  View
-                </button>
-                <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
-                  Approve
-                </button>
-                <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
-                  Reject
-                </button>
-              </div>
-            </td>
+                         <td class="px-4 py-3">
+               <div class="flex flex-wrap gap-2">
+                 <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(row.id)">
+                   View
+                 </button>
+                 
+                 <!-- Pending Status Actions -->
+                 <template v-if="row.status === 'Pending'">
+                   <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
+                     Approve
+                   </button>
+                   <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
+                     Reject
+                   </button>
+                 </template>
+                 
+                 <!-- Approved Status Actions -->
+                 <template v-if="row.status === 'Approved'">
+                   <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
+                     Approve
+                   </button>
+                   <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
+                     Reject
+                   </button>
+                   <button 
+                     @click="createProjectFromSighting(row.id)"
+                     class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
+                   >
+                     Create Project
+                   </button>
+                 </template>
+                 
+                 <!-- Rejected Status Actions -->
+                 <template v-if="row.status === 'Rejected'">
+                   <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
+                     Approve
+                   </button>
+                   <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
+                     Reject
+                   </button>
+                 </template>
+               </div>
+             </td>
           </tr>
         </tbody>
       </table>

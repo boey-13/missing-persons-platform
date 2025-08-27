@@ -533,4 +533,54 @@ class CommunityProjectController extends Controller
             'prefilledData' => $prefilledData
         ]);
     }
+
+    /**
+     * Show create project form with pre-filled data from sighting report
+     */
+    public function createFromSightingReport($sightingReportId)
+    {
+        $sightingReport = \App\Models\SightingReport::with('missingReport')->findOrFail($sightingReportId);
+        $missingReport = $sightingReport->missingReport;
+        
+        // Pre-fill data based on sighting report
+        $prefilledData = [
+            'title' => "Follow-up Search for {$missingReport->full_name}",
+            'description' => "Community search operation to follow up on recent sighting of {$missingReport->full_name} at {$sightingReport->location}. " . 
+                           ($sightingReport->description ? "Sighting details: {$sightingReport->description}. " : "") .
+                           ($missingReport->physical_description ? "Physical description: {$missingReport->physical_description}. " : "") .
+                           ($missingReport->additional_notes ? "Additional notes: {$missingReport->additional_notes}" : ""),
+            'location' => $sightingReport->location,
+            'category' => 'search',
+            'status' => 'active',
+            'volunteers_needed' => 8,
+            'points_reward' => 60,
+            'date' => now()->addDays(1)->format('Y-m-d'), // Default to 1 day from now for urgent follow-up
+            'time' => '08:00',
+            'duration' => '6 hours'
+        ];
+        
+        return Inertia::render('Admin/CreateProjectFromSightingReport', [
+            'sightingReport' => [
+                'id' => $sightingReport->id,
+                'location' => $sightingReport->location,
+                'sighted_at' => $sightingReport->sighted_at,
+                'description' => $sightingReport->description,
+                'reporter_name' => $sightingReport->reporter_name,
+                'reporter_phone' => $sightingReport->reporter_phone,
+                'reporter_email' => $sightingReport->reporter_email,
+            ],
+            'missingReport' => [
+                'id' => $missingReport->id,
+                'full_name' => $missingReport->full_name,
+                'age' => $missingReport->age,
+                'gender' => $missingReport->gender,
+                'last_seen_location' => $missingReport->last_seen_location,
+                'last_seen_date' => $missingReport->last_seen_date,
+                'physical_description' => $missingReport->physical_description,
+                'additional_notes' => $missingReport->additional_notes,
+                'photo_paths' => $missingReport->photo_paths,
+            ],
+            'prefilledData' => $prefilledData
+        ]);
+    }
 }
