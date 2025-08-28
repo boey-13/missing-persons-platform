@@ -31,6 +31,7 @@ function linkClasses(path, extra = '') {
         <Link :class="linkClasses('/admin/community-projects')" href="/admin/community-projects">Manage Community Project</Link>
         <Link :class="linkClasses('/admin/rewards')" href="/admin/rewards">Manage Rewards</Link>
         <Link :class="linkClasses('/admin/users')" href="/admin/users">Manage Users</Link>
+        <Link :class="linkClasses('/admin/contact-messages')" href="/admin/contact-messages">Contact Messages</Link>
         <Link :class="linkClasses('/admin/logs')" href="/admin/logs">System Logs</Link>
         <Link :class="linkClasses('/dashboard', 'mt-4')" href="/">Back To Main Dashboard</Link>
       </nav>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ContactController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -32,27 +33,8 @@ Route::get('/about', function () {
     return Inertia::render('AboutUs');
 })->name('about');
 
-Route::get('/contact', function () {
-    return Inertia::render('ContactUs');
-})->name('contact');
-
-Route::post('/contact', function () {
-    // 简单的联系表单处理
-    $validated = request()->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255',
-        'subject' => 'required|string|max:255',
-        'message' => 'required|string|max:1000',
-    ]);
-    
-    // 这里可以添加发送邮件或保存到数据库的逻辑
-    // 暂时只返回成功响应
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Thank you for your message. We will get back to you soon!'
-    ]);
-})->name('contact.store');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 Route::get('/missing-persons', function() {
     return Inertia::render('MissingPersons/Index');
@@ -221,6 +203,12 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     
     Route::get('/rewards/stats', [App\Http\Controllers\AdminRewardController::class, 'stats'])
         ->name('rewards.stats');
+
+    // Admin: Contact Messages Management
+    Route::get('/contact-messages', [AdminController::class, 'contactMessages'])
+        ->name('contact-messages');
+    Route::post('/contact-messages/{id}/status', [AdminController::class, 'updateContactMessageStatus'])
+        ->name('contact-messages.status');
 
     // Admin: manage volunteer applications
     Route::get('/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])

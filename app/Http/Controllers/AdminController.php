@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MissingReport;
 use App\Models\SystemLog;
+use App\Models\ContactMessage;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -223,5 +224,73 @@ class AdminController extends Controller
         );
 
         return back()->with('success', 'Report updated successfully.');
+    }
+
+    /**
+     * Display contact messages for admin management
+     */
+    public function contactMessages(Request $request): Response
+    {
+        $query = ContactMessage::orderBy('created_at', 'desc');
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Search by name, email, or subject
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('subject', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $messages = $query->paginate(15);
+        
+        $data = $messages->getCollection()->transform(function ($item) {
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'email' => $item->email,
+                'subject' => $item->subject,
+                'message' => $item->message,
+                'status' => $item->status,
+                'created_at' => $item->created_at?->toDateTimeString(),
+                'ip_address' => $item->ip_address,
+            ];
+        });
+
+        return Inertia::render('Admin/ContactMessages', [
+            'messages' => $data,
+            'pagination' => [
+                'total' => $messages->total(),
+                'current_page' => $messages->currentPage(),
+                'per_page' => $messages->perPage(),
+            ],
+            'filters' => [
+                'status' => $request->status,
+                'search' => $request->search,
+            ],
+        ]);
+    }
+
+    /**
+     * Update contact message status
+     */
+    public function updateContactMessageStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:unread,read,replied,archived',
+        ]);
+
+        $message = ContactMessage::findOrFail($id);
+        $message->update(['status' => $request->status]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Message status updated successfully'
+        ]);
     }
 }

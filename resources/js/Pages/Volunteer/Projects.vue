@@ -1,50 +1,26 @@
 <script setup>
-import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { router, useForm, Link, usePage } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
 
-// 👉 Add: flash + local toast state
 const page = usePage()
-const successMsg = computed(() => page.props.flash?.success || '')
-const errorMsg   = computed(() => page.props.flash?.error || '')
+const { success, error } = useToast()
 
-const localMsg  = ref('')
-const localType = ref('success')
-
-// Final message/type used by the toast
-const displayMsg  = computed(() => errorMsg.value || successMsg.value || localMsg.value)
-const displayType = computed(() => errorMsg.value ? 'error' : (successMsg.value ? 'success' : (localType.value === 'info' ? 'success' : localType.value)))
-
-const showFlash = ref(false)
-let hideTimer = null
-
-// 👉 Add: use this for JSON endpoints (fetch/axios) to show toast
-function showToast(message, type = 'success') {
-  localMsg.value  = message
-  localType.value = type
-  showFlash.value = true
-  clearTimeout(hideTimer)
-  hideTimer = setTimeout(() => {
-    showFlash.value = false
-    localMsg.value = ''
-  }, 3000)
-}
-
-// 👉 Add: auto-show for backend flash & local toast
-watch([successMsg, errorMsg, localMsg], ([s, e, l]) => {
-  clearTimeout(hideTimer)
-  showFlash.value = !!(s || e || l)
-  if (showFlash.value) {
-    hideTimer = setTimeout(() => {
-      showFlash.value = false
-      localMsg.value = ''
-    }, 3000)
+// Handle backend flash messages
+watch(() => page.props.flash?.success, (newMessage) => {
+  if (newMessage) {
+    success(newMessage)
   }
-}, { immediate: true })
+})
 
-onBeforeUnmount(() => clearTimeout(hideTimer))
+watch(() => page.props.flash?.error, (newMessage) => {
+  if (newMessage) {
+    error(newMessage)
+  }
+})
 
 // Props from backend
 const props = defineProps({
@@ -185,7 +161,7 @@ function applyToProject(project) {
       message = 'You have already been approved for this project!'
     }
     
-    showToast(message, 'success')
+    success(message)
     return
   }
   
@@ -208,12 +184,12 @@ function submitApplication() {
   
   // Frontend validation
   if (applicationForm.experience.length < 10) {
-    showToast('Experience must be at least 10 characters long.', 'error')
+    error('Experience must be at least 10 characters long.')
     return
   }
   
   if (applicationForm.motivation.length < 10) {
-    showToast('Motivation must be at least 10 characters long.', 'error')
+    error('Motivation must be at least 10 characters long.')
     return
   }
   
@@ -224,7 +200,7 @@ function submitApplication() {
       showApplicationModal.value = false
       applicationForm.reset()
       // Show success notification
-      showToast('Application submitted successfully!', 'success')
+      success('Application submitted successfully!')
     },
     onError: (errors) => {
       console.error('Form errors:', errors)
@@ -243,7 +219,7 @@ function submitApplication() {
         errorMessage = errors
       }
       
-      showToast(errorMessage, 'error')
+      error(errorMessage)
     },
     onFinish: () => {
       console.log('Form submission finished')
@@ -745,22 +721,7 @@ function getCategoryColor(category) {
     </div>
   </div>
 
-  <!-- 👉 Add: 顶部居中 Flash（3 秒自动消失 + 动画；支持后端 flash 与本地 toast） -->
-  <teleport to="body">
-    <transition name="fade-down">
-      <div v-if="showFlash"
-           class="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex justify-center px-4">
-        <div class="pointer-events-auto max-w-md w-full">
-          <div
-            role="alert"
-            class="rounded-xl px-4 py-3 text-white text-center shadow-lg"
-            :class="displayType === 'error' ? 'bg-red-600/90' : 'bg-green-600/90'">
-            {{ displayMsg }}
-          </div>
-        </div>
-      </div>
-    </transition>
-  </teleport>
+
 </template>
 
 <style scoped>
@@ -771,11 +732,7 @@ function getCategoryColor(category) {
   overflow: hidden;
 }
 
-/* 👉 Add: 顶部提示：淡入向下动画 */
-.fade-down-enter-active,
-.fade-down-leave-active { transition: all .18s ease; }
-.fade-down-enter-from,
-.fade-down-leave-to { opacity: 0; transform: translateY(-8px); }
+
 </style>
 
 
