@@ -29,22 +29,35 @@ function submit() {
 const showForgotPasswordModal = ref(false)
 const showLoginErrorModal = ref(false)
 const showAccountLockedModal = ref(false)
+const isResettingPassword = ref(false)
 
 const resetForm = useForm({
   email: '',
 })
 
 function submitForgotPassword() {
+  if (!resetForm.email) {
+    error('Please enter your email address')
+    return
+  }
+
+  isResettingPassword.value = true
+  
   resetForm.post(route('password.email'), {
     onSuccess: () => {
-      success('Reset link sent to your email!')
+      success('Password reset link sent to your email!')
       showForgotPasswordModal.value = false
       resetForm.reset()
     },
     onError: (errors) => {
-      success('Reset link sent to your email!')
-      showForgotPasswordModal.value = false
-      resetForm.reset()
+      if (errors.email) {
+        error('Please enter a valid email address')
+      } else {
+        error('Failed to send reset link. Please try again.')
+      }
+    },
+    onFinish: () => {
+      isResettingPassword.value = false
     }
   })
 }
@@ -196,24 +209,77 @@ watch(() => page.props.flash, (flash) => {
 
     <!-- 找回密码弹层 -->
     <div v-if="showForgotPasswordModal"
-         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm text-center relative">
-        <h2 class="text-xl font-bold mb-6">Reset Password</h2>
+         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center relative">
+        <!-- 关闭按钮 -->
+        <button @click="showForgotPasswordModal = false"
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
 
-        <form @submit.prevent="submitForgotPassword">
-          <label for="resetEmail" class="block text-left mb-1 text-sm font-semibold tracking-wide">
-            Email Address
-          </label>
-          <input id="resetEmail" type="email" v-model="resetForm.email" required
-                 class="w-full h-11 rounded-md border border-gray-300 px-4 mb-6 focus:outline-none focus:border-gray-900" />
-          <button type="submit"
-                  class="bg-[#704c34] hover:bg-[#5e3f2b] text-white w-full h-11 rounded-full font-bold transition">
-            PROCEED
+        <!-- 图标 -->
+        <div class="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+        </div>
+
+        <!-- 标题和描述 -->
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Reset Your Password</h2>
+        <p class="text-gray-600 mb-8">Enter your email address and we'll send you a link to reset your password.</p>
+
+        <form @submit.prevent="submitForgotPassword" class="space-y-6">
+          <!-- 邮箱输入 -->
+          <div class="text-left">
+            <label for="resetEmail" class="block text-sm font-semibold text-gray-700 mb-2">
+              Email Address
+            </label>
+            <input 
+              id="resetEmail" 
+              type="email" 
+              v-model="resetForm.email" 
+              required
+              :disabled="isResettingPassword"
+              :class="[
+                'w-full h-12 px-4 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500',
+                resetForm.errors.email 
+                  ? 'border-red-300 focus:border-red-500' 
+                  : 'border-gray-300 focus:border-blue-500',
+                isResettingPassword ? 'bg-gray-50 cursor-not-allowed' : 'bg-white'
+              ]"
+              placeholder="Enter your email address"
+            />
+            <div v-if="resetForm.errors.email" class="mt-1 text-sm text-red-600">
+              {{ resetForm.errors.email }}
+            </div>
+          </div>
+
+          <!-- 提交按钮 -->
+          <button 
+            type="submit"
+            :disabled="isResettingPassword"
+            class="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <svg v-if="isResettingPassword" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ isResettingPassword ? 'Sending...' : 'Send Reset Link' }}
           </button>
         </form>
 
-        <button @click="showForgotPasswordModal = false"
-                class="absolute top-3 right-4 text-gray-400 text-xl font-bold hover:text-gray-700">×</button>
+        <!-- 返回登录链接 -->
+        <div class="mt-6 text-center">
+          <button 
+            @click="showForgotPasswordModal = false"
+            class="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+          >
+            Back to Login
+          </button>
+        </div>
       </div>
     </div>
 
