@@ -110,54 +110,108 @@ const quickCommands = {
     'home': 'mainMenu'
 };
 
-// ---- session helpers (最小实现，避免报错) ----
+// ---- session helpers (用户隔离的会话管理) ----
 const sessionId = ref(null);
 const autoEndTimeout = ref(null);
 const warningTimeout = ref(null);
 
+// === Unread tracking（只统计system消息，不含user/typing） ===
+const lastReadIndex = ref(0);
+function countBotMessages(arr = messages.value) {
+  return (arr || []).filter(m => m.role !== 'user' && !m.typing).length;
+}
+
 function generateSessionId() {
   return 'fm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
+
+// 获取用户特定的会话键
+function getSessionKey() {
+  const userId = user.value?.id || 'guest';
+  return `findme_chat_session_${userId}`;
+}
+
+function storageKey() {
+  return getSessionKey();
+}
+
 function loadSession() {
   try {
-    const sessionData = localStorage.getItem('findme_chat_session');
-    if (sessionData) {
-      const data = JSON.parse(sessionData);
-      const now = Date.now();
-      
-      // 检查会话是否在30分钟内
-      if (data.timestamp && (now - data.timestamp) < 30 * 60 * 1000) {
-        sessionId.value = data.sessionId;
-        messages.value = data.messages || [];
-        return true; // 有有效会话
-      }
-    }
-  } catch (e) {
-    console.error('Error loading session:', e);
+    const raw = localStorage.getItem(storageKey());
+    if (!raw) return false;
+    const data = JSON.parse(raw) || {};
+    if (!data.sessionId) return false;
+
+    // 过滤任何遗留的 typing 泡泡，避免"卡loading"
+    messages.value = Array.isArray(data.messages) ? data.messages.filter(m => !m.typing) : [];
+    sessionId.value = data.sessionId;
+    lastReadIndex.value = data.lastReadIndex || countBotMessages(messages.value);
+    if (!isOpen.value) unreadCount.value = Math.max(0, countBotMessages(messages.value) - lastReadIndex.value);
+
+    return true;
+  } catch {
+    return false;
   }
-  return false; // 没有有效会话
 }
 
 function saveSession() {
   try {
-    const sessionData = {
-      sessionId: sessionId.value,
-      messages: messages.value,
-      timestamp: Date.now()
+    const payload = {
+      sessionId: sessionId.value || generateSessionId(),
+      // 永远不保存 typing 项（防止下次打开还在转圈）
+      messages: (messages.value || []).filter(m => !m.typing),
+      lastReadIndex: lastReadIndex.value,
+      unreadCount: !isOpen.value ? Math.max(0, countBotMessages() - lastReadIndex.value) : 0,
     };
-    localStorage.setItem('findme_chat_session', JSON.stringify(sessionData));
-  } catch (e) {
-    console.error('Error saving session:', e);
-  }
+    localStorage.setItem(storageKey(), JSON.stringify(payload));
+  } catch {}
 }
 
 function clearSession() {
   try {
-    localStorage.removeItem('findme_chat_session');
+    const sessionKey = getSessionKey();
+    localStorage.removeItem(sessionKey);
     sessionId.value = null;
     messages.value = [];
   } catch (e) {
     console.error('Error clearing session:', e);
+  }
+}
+
+function endChat(clearSessionData = false) {
+  if (clearSessionData) {
+    clearSession();
+  }
+  isOpen.value = false;
+  unreadCount.value = 0;
+  lastReadIndex.value = 0;
+}
+
+// 清理所有旧的会话数据（可选的安全措施）
+function cleanupOldSessions() {
+  try {
+    const keys = Object.keys(localStorage);
+    const currentSessionKey = getSessionKey();
+    const oldSessionKeys = keys.filter(key => 
+      key.startsWith('findme_chat_session_') && 
+      key !== currentSessionKey
+    );
+    
+    // 清理超过1小时的旧会话
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    oldSessionKeys.forEach(key => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        if (data && data.timestamp && data.timestamp < oneHourAgo) {
+          localStorage.removeItem(key);
+        }
+      } catch (e) {
+        // 如果数据损坏，直接删除
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (e) {
+    console.error('Error cleaning up old sessions:', e);
   }
 }
 
@@ -200,33 +254,26 @@ function updateActivity() {
 }
 
 function toggleChat() {
-    isOpen.value = !isOpen.value;
-    if (isOpen.value) {
-        unreadCount.value = 0;
-        
-        // Try to load existing session, if not start new one
-        if (!loadSession()) {
-            // Start new session
-            sessionId.value = generateSessionId();
-            resetChat();
-        }
-        
-        // Start activity tracking
-        updateActivity();
-    } else {
-        // Save session when closing
-        saveSession();
-        
-        // Clear timeouts when closing
-        if (autoEndTimeout.value) {
-            clearTimeout(autoEndTimeout.value);
-            autoEndTimeout.value = null;
-        }
-        if (warningTimeout.value) {
-            clearTimeout(warningTimeout.value);
-            warningTimeout.value = null;
-        }
+  isOpen.value = !isOpen.value;
+
+  if (isOpen.value) {
+    // 打开：所有当前系统消息都视为已读
+    lastReadIndex.value = countBotMessages();
+    unreadCount.value = 0;
+
+    const restored = loadSession();
+    if (!restored || messages.value.length === 0) {
+      sessionId.value = generateSessionId();
+      resetChat();
     }
+    updateActivity();
+    saveSession();
+  } else {
+    // 关闭：以"当前系统消息数"作为已读基线，避免把刚看过的算未读
+    lastReadIndex.value = countBotMessages();
+    unreadCount.value = 0;
+    saveSession();
+  }
 }
 
 function resetChat() {
@@ -248,23 +295,54 @@ function scrollToBottom() {
     });
 }
 
+let typingToken = 0;
+
 function showTyping() {
-    isTyping.value = true;
-    messages.value.push({ role: "system", typing: true });
-    scrollToBottom();
+  isTyping.value = true;
+  messages.value.push({ role: "system", typing: true });
+  saveSession();
+  scrollToBottom();
 }
 
 function hideTyping() {
-    isTyping.value = false;
-    messages.value = messages.value.filter(msg => !msg.typing);
+  isTyping.value = false;
+  messages.value = messages.value.filter(m => !m.typing);
+  saveSession();
 }
 
 async function simulateTyping(callback) {
-    showTyping();
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+  const token = ++typingToken;
+  showTyping();
+  try {
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 900));
+    if (token !== typingToken) return; // 有新的typing开始了，当前作废
     hideTyping();
-    callback();
+    // callback 可能是 async
+    await Promise.resolve(callback());
+  } finally {
+    saveSession();
+  }
 }
+
+watch(
+  messages,
+  (newVal) => {
+    const currentBot = countBotMessages(newVal);
+
+    if (isOpen.value) {
+      // 打开时：把"最新系统消息数量"记录为已读基线
+      lastReadIndex.value = currentBot;
+      unreadCount.value = 0;
+      saveSession();
+      return;
+    }
+
+    // 关闭时：只统计新到的系统消息
+    unreadCount.value = Math.max(0, currentBot - lastReadIndex.value);
+    saveSession();
+  },
+  { deep: true }
+);
 
 watch(messages, scrollToBottom, { deep: true });
 
@@ -281,6 +359,10 @@ async function searchMissingPersons(query) {
 
 async function handleMenuClick(item) {
     messages.value.push({ role: "user", text: item.label });
+    
+    // Update activity and save session
+    updateActivity();
+    saveSession();
     
     await simulateTyping(() => {
         if (item.action === "mainMenu") {
@@ -579,37 +661,42 @@ function handleQuickCommand(action) {
 }
 
 async function handleSearch(query) {
-    if (!query.trim()) {
-        messages.value.push({
-            role: "system",
-            text: "Please provide a search term. Try 'search [name]' or 'search [location]'.",
-        });
-        return;
-    }
-    
+  if (!query.trim()) {
     messages.value.push({
-        role: "system",
-        text: `Searching for: "${query}"...`,
+      role: "system",
+      text: "Please provide a search term. Try 'search [name]' or 'search [location]'.",
     });
-    
+    saveSession();
+    return;
+  }
+
+  messages.value.push({ role: "system", text: `Searching for: "${query}"...` });
+  saveSession();
+
+  try {
     const results = await searchMissingPersons(query);
-    
+
     if (results.length > 0) {
-        messages.value.push({
-            role: "system",
-            text: `Found ${results.length} result(s):`,
-            searchResults: results.slice(0, 5) // Limit to 5 results
-        });
+      messages.value.push({
+        role: "system",
+        text: `Found ${results.length} result(s):`,
+        searchResults: results.slice(0, 5)
+      });
     } else {
-        messages.value.push({
-            role: "system",
-            text: `No results found for "${query}". Try a different search term or visit the main search page for more options.`,
-            actionBtn: {
-                label: "Go to Search Page",
-                url: "/missing-persons"
-            }
-        });
+      messages.value.push({
+        role: "system",
+        text: `No results found for "${query}". Try a different search term or visit the main search page for more options.`,
+        actionBtn: { label: "Go to Search Page", url: "/missing-persons" }
+      });
     }
+  } catch (e) {
+    messages.value.push({
+      role: "system",
+      text: "Search failed. Please try again in a moment."
+    });
+  } finally {
+    saveSession();
+  }
 }
 
 function handleQuestion(question) {
@@ -648,6 +735,30 @@ function handleQuestion(question) {
 
 // Auto-show chatbot after 30 seconds if user hasn't interacted
 onMounted(() => {
+    // Load existing session on mount
+    const restored = loadSession();
+    
+    // If no session was restored and no messages exist, initialize a new chat
+    if (!restored && messages.value.length === 0) {
+        sessionId.value = generateSessionId();
+        resetChat();
+        saveSession();
+    }
+    
+    // Save session before page unload
+    window.addEventListener('beforeunload', () => {
+        if (isOpen.value && messages.value.length > 0) {
+            saveSession();
+        }
+    });
+    
+    // Save session when page visibility changes (user switches tabs)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && isOpen.value && messages.value.length > 0) {
+            saveSession();
+        }
+    });
+    
     setTimeout(() => {
         if (!isOpen.value && shouldShowChatbot.value) {
             unreadCount.value = 1;
@@ -746,8 +857,8 @@ onMounted(() => {
     display: flex;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid #e5e5e5;
-    background: linear-gradient(135deg, #5C4033 0%, #8B7355 100%);
+    border-bottom: 1px solid #000000;
+    background: #483d3d;
     color: white;
     border-radius: 16px 16px 0 0;
 }

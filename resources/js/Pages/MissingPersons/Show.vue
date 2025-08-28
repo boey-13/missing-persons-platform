@@ -2,7 +2,7 @@
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import ToastMessage from '@/Components/ToastMessage.vue'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
 
@@ -25,8 +25,7 @@ const mapZoom = ref(14)
 
 const showShareModal = ref(false)
 const currentUrl = window.location.href
-const showSuccessMessage = ref(false)
-const successMessage = ref('')
+const { success, error, info } = useToast()
 
 function showMap() {
   if (!mapDiv.value || !window.google || !window.google.maps) return
@@ -64,8 +63,7 @@ onMounted(() => {
 
   // Show success message if exists
   if (props.flash?.success) {
-    successMessage.value = props.flash.success
-    showSuccessMessage.value = true
+    success(props.flash.success)
   }
 })
 watch([mapLat, mapLng], showMap)
@@ -85,6 +83,30 @@ function nextPhoto() {
 function goPhoto(idx) {
   currentPhotoIndex.value = idx
 }
+
+// Other cases carousel logic
+const currentCaseIndex = ref(0)
+const casesPerView = 4
+
+function prevCases() {
+  if (currentCaseIndex.value > 0) {
+    currentCaseIndex.value = Math.max(0, currentCaseIndex.value - casesPerView)
+  }
+}
+
+function nextCases() {
+  const maxIndex = Math.max(0, props.otherCases.length - casesPerView)
+  if (currentCaseIndex.value < maxIndex) {
+    currentCaseIndex.value = Math.min(maxIndex, currentCaseIndex.value + casesPerView)
+  }
+}
+
+const visibleCases = computed(() => {
+  return props.otherCases.slice(currentCaseIndex.value, currentCaseIndex.value + casesPerView)
+})
+
+const canGoPrev = computed(() => currentCaseIndex.value > 0)
+const canGoNext = computed(() => currentCaseIndex.value + casesPerView < props.otherCases.length)
 
 const showPhotoModal = ref(false)
 const modalPhotoUrl = ref('')     // URL for the photo in modal
@@ -119,10 +141,10 @@ async function shareToSocial(platform) {
     
     if (result.success) {
       // Show success message
-      alert(`Shared successfully! You earned ${result.pointsAwarded} point!`)
+      success(`Shared successfully! You earned ${result.pointsAwarded} point!`)
     } else {
       // Show message if already shared
-      alert(result.message)
+      info(result.message)
     }
 
     // Open social media share URL
@@ -139,7 +161,7 @@ async function shareToSocial(platform) {
 
   } catch (error) {
     console.error('Error recording social share:', error)
-    alert('Error recording share. Please try again.')
+    error('Error recording share. Please try again.')
   }
 }
 
@@ -205,8 +227,7 @@ function getStatusColor(status) {
       </div>
     </teleport>
 
-    <!-- Success Message -->
-    <ToastMessage v-if="showSuccessMessage" :message="successMessage" type="success" />
+
 
     <!-- Hero / Header -->
     <header class="border-b border-[#ebebeb] bg-white/70 backdrop-blur">
@@ -402,44 +423,61 @@ function getStatusColor(status) {
           <p class="text-gray-600">Help spread awareness by viewing other cases</p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <div v-for="otherCase in otherCases" :key="otherCase.id" 
-               class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-               @click="router.visit(`/missing-persons/${otherCase.id}`)">
-            
-            <!-- Case Image -->
-            <div class="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-              <img v-if="otherCase.photo_paths && otherCase.photo_paths.length > 0"
-                   :src="`/storage/${otherCase.photo_paths[0]}`"
-                   :alt="otherCase.full_name"
-                   class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center">
-                <i class="fas fa-user text-4xl text-gray-400"></i>
+        <!-- Carousel Container -->
+        <div class="relative">
+          <!-- Navigation Arrows -->
+          <button @click="prevCases" 
+                  :disabled="!canGoPrev"
+                  class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <i class="fas fa-chevron-left text-gray-600"></i>
+          </button>
+          
+          <button @click="nextCases" 
+                  :disabled="!canGoNext"
+                  class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <i class="fas fa-chevron-right text-gray-600"></i>
+          </button>
+          
+          <!-- Cases Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-12">
+            <div v-for="otherCase in visibleCases" :key="otherCase.id" 
+                 class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                 @click="router.visit(`/missing-persons/${otherCase.id}`)">
+              
+              <!-- Case Image -->
+              <div class="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+                <img v-if="otherCase.photo_paths && otherCase.photo_paths.length > 0"
+                     :src="`/storage/${otherCase.photo_paths[0]}`"
+                     :alt="otherCase.full_name"
+                     class="w-full h-full object-cover" />
+                <div v-else class="w-full h-full flex items-center justify-center">
+                  <img src="../../assets/default-avatar.jpg" alt="Default Avatar" class="max-h-full max-w-full object-contain" />
+                </div>
+                <div class="absolute top-2 left-2">
+                  <span class="px-2 py-1 text-xs font-medium rounded-full"
+                        :class="otherCase.case_status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                    {{ otherCase.case_status === 'Approved' ? 'Approved' : 'Pending' }}
+                  </span>
+                </div>
               </div>
-                             <div class="absolute top-2 left-2">
-                 <span class="px-2 py-1 text-xs font-medium rounded-full"
-                       :class="otherCase.case_status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
-                   {{ otherCase.case_status === 'Approved' ? 'Approved' : 'Pending' }}
-                 </span>
-               </div>
-            </div>
-            
-            <!-- Case Info -->
-            <div class="p-4">
-              <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ otherCase.full_name }}</h3>
-              <div class="text-sm text-gray-600 space-y-1">
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-venus-mars text-gray-400"></i>
-                  <span>{{ otherCase.gender }}, {{ otherCase.age }} years</span>
+              
+              <!-- Case Info -->
+              <div class="p-4">
+                <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ otherCase.full_name }}</h3>
+                <div class="text-sm text-gray-600 space-y-1">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-venus-mars text-gray-400"></i>
+                    <span>{{ otherCase.gender }}, {{ otherCase.age }} years</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                    <span class="line-clamp-1">{{ otherCase.last_seen_location || 'Location unknown' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <i class="far fa-calendar-alt text-gray-400"></i>
+                    <span>{{ formatDate(otherCase.last_seen_date) }}</span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-map-marker-alt text-gray-400"></i>
-                  <span class="line-clamp-1">{{ otherCase.last_seen_location || 'Location unknown' }}</span>
-                </div>
-                                 <div class="flex items-center gap-2">
-                   <i class="far fa-calendar-alt text-gray-400"></i>
-                   <span>{{ formatDate(otherCase.last_seen_date) }}</span>
-                 </div>
               </div>
             </div>
           </div>

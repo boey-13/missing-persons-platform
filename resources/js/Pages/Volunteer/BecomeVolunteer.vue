@@ -1,6 +1,6 @@
 <script setup>
 import { Link, useForm, usePage, router } from '@inertiajs/vue3'
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 defineOptions({ layout: MainLayout })
 
@@ -34,6 +34,8 @@ onBeforeUnmount(() => clearTimeout(hideTimer))
 const props = defineProps({ profile: Object })
 const step = ref(1)
 const totalSteps = 3
+const isProcessingStep = ref(false)
+const isInitializing = ref(true)
 
 const form = useForm({
   motivation: '',
@@ -63,7 +65,14 @@ const percent = computed(() => Math.round((step.value / totalSteps) * 100))
 // --- 分页控制（逻辑原样保留） ---
 function nextStep() {
   if (step.value < totalSteps) {
-    if (validateCurrentStep()) step.value++
+    isProcessingStep.value = true
+    // Simulate validation delay for better UX
+    setTimeout(() => {
+      if (validateCurrentStep()) {
+        step.value++
+      }
+      isProcessingStep.value = false
+    }, 300)
   }
 }
 function prevStep() { if (step.value > 1) step.value-- }
@@ -133,7 +142,16 @@ function getStepValidationStatus() {
   }
 }
 
-function onFilesChange(e) { form.supporting_documents = Array.from(e.target.files) }
+function onFilesChange(e) { 
+  form.supporting_documents = Array.from(e.target.files) 
+}
+
+// Initialize page after a short delay
+onMounted(() => {
+  setTimeout(() => {
+    isInitializing.value = false
+  }, 500)
+})
 
 function submit() {
   if (!validateCurrentStep()) return
@@ -160,10 +178,22 @@ function toggle(array, value) { const idx = array.indexOf(value); if (idx >= 0) 
 
 <template>
   <div class="max-w-[1400px] mx-auto py-10">
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">Become a Volunteer</h1>
-      <p class="text-gray-600">Join our community and help find missing persons</p>
+    <!-- Page Loading State -->
+    <div v-if="isInitializing" class="text-center py-20">
+      <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-[#335a3b] hover:bg-[#2a4a30] transition ease-in-out duration-150 cursor-not-allowed">
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading volunteer application form...
+      </div>
     </div>
+    
+    <div v-else>
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Become a Volunteer</h1>
+        <p class="text-gray-600">Join our community and help find missing persons</p>
+      </div>
 
     <!-- Stepper Header -->
     <div class="mb-6">
@@ -330,14 +360,38 @@ function toggle(array, value) { const idx = array.indexOf(value); if (idx >= 0) 
       <div class="flex justify-between mt-6">
         <button type="button" class="px-4 py-2 rounded bg-gray-200" :disabled="step===1" @click="prevStep">Back</button>
         <div class="space-x-2">
-          <button v-if="step<3" type="button" class="px-4 py-2 rounded bg-[#335a3b] text-white" @click="nextStep">Next</button>
-          <button v-else type="submit" :disabled="form.processing" class="px-4 py-2 rounded bg-[#335a3b] text-white disabled:opacity-50">
-            {{ form.processing ? 'Submitting...' : 'Submit Application' }}
+          <button v-if="step<3" type="button" 
+                  :disabled="isProcessingStep"
+                  class="px-4 py-2 rounded bg-[#335a3b] text-white relative disabled:opacity-50 disabled:cursor-not-allowed" 
+                  @click="nextStep">
+            <span v-if="isProcessingStep" class="absolute inset-0 flex items-center justify-center">
+              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </span>
+            <span :class="{ 'opacity-0': isProcessingStep }">
+              {{ isProcessingStep ? 'Validating...' : 'Next' }}
+            </span>
+          </button>
+          <button v-else type="submit" 
+                  :disabled="form.processing" 
+                  class="px-4 py-2 rounded bg-[#335a3b] text-white relative disabled:opacity-50 disabled:cursor-not-allowed">
+            <span v-if="form.processing" class="absolute inset-0 flex items-center justify-center">
+              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </span>
+            <span :class="{ 'opacity-0': form.processing }">
+              {{ form.processing ? 'Submitting...' : 'Submit Application' }}
+            </span>
           </button>
         </div>
       </div>
     </form>
-  </div>
+      </div>
+    </div>
 
   <!-- Top-centered Flash -->
   <teleport to="body">

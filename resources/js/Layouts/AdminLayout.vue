@@ -1,6 +1,7 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import ToastContainer from '../Components/ToastContainer.vue'
 
 const page = usePage()
 const currentUrl = computed(() => page.url)
@@ -37,6 +38,9 @@ function linkClasses(path, extra = '') {
     <main class="flex-1 p-8 overflow-y-auto">
       <slot />
     </main>
+    
+    <!-- Toast Container -->
+    <ToastContainer />
   </div>
 </template>
 

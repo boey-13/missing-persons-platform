@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { ref, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 defineOptions({ layout: AdminLayout })
 
 const props = defineProps({ 
@@ -39,6 +40,8 @@ function openRejectModal(id) {
   showRejectModal.value = true
 }
 
+const { success, error } = useToast()
+
 function approveSighting() {
   router.post(`/admin/sighting-reports/${selectedSightingId.value}/status`, { 
     status: 'Approved' 
@@ -46,12 +49,11 @@ function approveSighting() {
     onSuccess: () => {
       showApproveModal.value = false
       selectedSightingId.value = null
-      // Show success message
-      alert('✅ Sighting report approved successfully!')
+      success('Sighting report approved successfully!')
     },
     onError: (errors) => {
       console.error('Approval failed:', errors)
-      alert('❌ Failed to approve sighting report. Please try again.')
+      error('Failed to approve sighting report. Please try again.')
     }
   })
 }
@@ -63,12 +65,11 @@ function rejectSighting() {
     onSuccess: () => {
       showRejectModal.value = false
       selectedSightingId.value = null
-      // Show success message
-      alert('✅ Sighting report rejected successfully!')
+      success('Sighting report rejected successfully!')
     },
     onError: (errors) => {
       console.error('Rejection failed:', errors)
-      alert('❌ Failed to reject sighting report. Please try again.')
+      error('Failed to reject sighting report. Please try again.')
     }
   })
 }

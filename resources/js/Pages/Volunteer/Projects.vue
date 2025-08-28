@@ -56,6 +56,7 @@ const props = defineProps({
 const selectedProject = ref(null)
 const showDetailModal = ref(false)
 const showApplicationModal = ref(false)
+const isSubmittingApplication = ref(false)
 
 const filters = ref({
   category: 'all',
@@ -216,6 +217,7 @@ function submitApplication() {
     return
   }
   
+  isSubmittingApplication.value = true
   applicationForm.post(`/volunteer/projects/${selectedProject.value.id}/apply`, {
     onSuccess: () => {
       console.log('Application submitted successfully')
@@ -245,6 +247,7 @@ function submitApplication() {
     },
     onFinish: () => {
       console.log('Form submission finished')
+      isSubmittingApplication.value = false
     }
   })
 }
@@ -711,13 +714,21 @@ function getCategoryColor(category) {
               <div class="flex gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="submit"
-                  :disabled="applicationForm.processing"
-                  class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+                  :disabled="applicationForm.processing || isSubmittingApplication"
+                  class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 relative"
                 >
-                  {{ applicationForm.processing 
-                    ? (selectedProject?.user_application_status === 'rejected' ? 'Resubmitting...' : 'Submitting...') 
-                    : (selectedProject?.user_application_status === 'rejected' ? 'Resubmit Application' : 'Submit Application') 
-                  }}
+                  <span v-if="applicationForm.processing || isSubmittingApplication" class="absolute inset-0 flex items-center justify-center">
+                    <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </span>
+                  <span :class="{ 'opacity-0': applicationForm.processing || isSubmittingApplication }">
+                    {{ (applicationForm.processing || isSubmittingApplication)
+                      ? (selectedProject?.user_application_status === 'rejected' ? 'Resubmitting...' : 'Submitting...') 
+                      : (selectedProject?.user_application_status === 'rejected' ? 'Resubmit Application' : 'Submit Application') 
+                    }}
+                  </span>
                 </button>
                 <button
                   type="button"

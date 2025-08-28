@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router, usePage } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
+import { useToast } from '@/Composables/useToast'
 defineOptions({ layout: AdminLayout })
 
 const props = defineProps({ 
@@ -10,19 +11,7 @@ const props = defineProps({
 })
 const $page = usePage()
 
-// Success message handling
-const showSuccessMessage = ref(false)
-const successMessage = ref('')
 
-watch(() => $page.props.flash?.success, (newMessage) => {
-  if (newMessage) {
-    successMessage.value = newMessage
-    showSuccessMessage.value = true
-    setTimeout(() => {
-      showSuccessMessage.value = false
-    }, 3000)
-  }
-})
 
 // Modal states for confirmations
 const showApproveModal = ref(false)
@@ -41,6 +30,8 @@ function openRejectModal(app) {
   showRejectModal.value = true
 }
 
+const { success, error } = useToast()
+
 function approveApplication() {
   router.post(route('admin.volunteers.status', selectedApplication.value.id), { 
     status: 'Approved' 
@@ -48,10 +39,11 @@ function approveApplication() {
     onSuccess: () => {
       showApproveModal.value = false
       selectedApplication.value = null
+      success('Volunteer application approved successfully!')
     },
     onError: (errors) => {
       console.error('Approval failed:', errors)
-      alert('❌ Failed to approve volunteer application. Please try again.')
+      error('Failed to approve volunteer application. Please try again.')
     }
   })
 }
@@ -65,10 +57,11 @@ function rejectApplication() {
       showRejectModal.value = false
       selectedApplication.value = null
       rejectReason.value = ''
+      success('Volunteer application rejected successfully!')
     },
     onError: (errors) => {
       console.error('Rejection failed:', errors)
-      alert('❌ Failed to reject volunteer application. Please try again.')
+      error('Failed to reject volunteer application. Please try again.')
     }
   })
 }
@@ -155,15 +148,7 @@ function clearFilters() {
   <div>
     <h1 class="text-3xl font-extrabold mb-8">Volunteer Applications</h1>
     
-    <!-- Success Message -->
-    <div v-if="showSuccessMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg shadow-lg">
-      <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        {{ successMessage }}
-      </div>
-    </div>
+
 
     <!-- Filters -->
     <div class="bg-white rounded-xl shadow p-6 mb-6">

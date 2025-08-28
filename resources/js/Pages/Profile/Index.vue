@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { router, useForm, Link, usePage } from '@inertiajs/vue3'
 import axios from 'axios'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
 
@@ -33,6 +34,8 @@ const editForm = useForm({
   phone: '',
   avatar: null
 })
+
+const { success, error, info } = useToast()
 
 // Watch for props.user changes and update form data
 watch(() => props.user, (newUser) => {
@@ -149,14 +152,14 @@ function updateProfile() {
       onSuccess: () => {
         console.log('Profile update successful')
         showEditModal.value = false
-        alert('Profile updated successfully!')
+        success('Profile updated successfully!')
       },
       onError: (errors) => {
         console.error('Form errors:', errors)
-        if (errors.name) alert('Name error: ' + errors.name)
-        if (errors.email) alert('Email error: ' + errors.email)
-        if (errors.phone) alert('Phone error: ' + errors.phone)
-        if (errors.avatar) alert('Avatar error: ' + errors.avatar)
+        if (errors.name) error('Name error: ' + errors.name)
+        if (errors.email) error('Email error: ' + errors.email)
+        if (errors.phone) error('Phone error: ' + errors.phone)
+        if (errors.avatar) error('Avatar error: ' + errors.avatar)
       }
     })
   } else {
@@ -165,14 +168,14 @@ function updateProfile() {
       onSuccess: () => {
         console.log('Profile update successful')
         showEditModal.value = false
-        alert('Profile updated successfully!')
+        success('Profile updated successfully!')
       },
       onError: (errors) => {
         console.error('Form errors:', errors)
-        if (errors.name) alert('Name error: ' + errors.name)
-        if (errors.email) alert('Email error: ' + errors.email)
-        if (errors.phone) alert('Phone error: ' + errors.phone)
-        if (errors.avatar) alert('Avatar error: ' + errors.avatar)
+        if (errors.name) error('Name error: ' + errors.name)
+        if (errors.email) error('Email error: ' + errors.email)
+        if (errors.phone) error('Phone error: ' + errors.phone)
+        if (errors.avatar) error('Avatar error: ' + errors.avatar)
       }
     })
   }
@@ -231,7 +234,7 @@ function viewReport(report) {
 function shareToSocial(reportId) {
   const url = `${window.location.origin}/missing-persons/${reportId}`
   navigator.clipboard.writeText(url)
-  alert('Link copied to clipboard! Share it on social media to earn points.')
+  info('Link copied to clipboard! Share it on social media to earn points.')
 }
 </script>
 

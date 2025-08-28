@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { ref, onMounted } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: AdminLayout })
 
@@ -71,6 +72,8 @@ const editForm = useForm({
 const statusFilter = ref(props.filters?.status || '')
 const searchFilter = ref(props.filters?.search || '')
 
+const { success, error, warning } = useToast()
+
 // Functions
 async function openViewModal(report) {
   try {
@@ -129,7 +132,7 @@ function openStatusUpdateModal(report) {
 
 function openBulkStatusUpdateModal() {
   if (selectedReports.value.length === 0) {
-    alert('Please select at least one report to update.')
+    warning('Please select at least one report to update.')
     return
   }
   selectedReportId.value = null // Clear for bulk update
@@ -161,12 +164,11 @@ function approveReport() {
     onSuccess: () => {
       showApproveModal.value = false
       selectedReportId.value = null
-      // Show success message
-      alert('Report approved successfully!')
+      success('Report approved successfully!')
     },
     onError: (errors) => {
       console.error('Approval failed:', errors)
-      alert('Failed to approve report. Please try again.')
+      error('Failed to approve report. Please try again.')
     }
   })
 }
@@ -181,14 +183,13 @@ function updateStatus() {
         showStatusUpdateModal.value = false
         selectedReportId.value = null
         statusUpdateForm.reset()
-        // Show success message
-        alert(`Report status updated to "${statusUpdateForm.new_status}" successfully!`)
+        success(`Report status updated to "${statusUpdateForm.new_status}" successfully!`)
         // Refresh the page to show updated data
         window.location.reload()
       },
       onError: (errors) => {
         console.error('Status update failed:', errors)
-        alert('Failed to update status. Please try again.')
+        error('Failed to update status. Please try again.')
       }
     })
   } else if (selectedReports.value.length > 0) {
@@ -208,16 +209,15 @@ function updateStatus() {
       showStatusUpdateModal.value = false
       selectedReports.value = []
       statusUpdateForm.reset()
-      // Show success message
-      alert(`${selectedReports.value.length} report(s) status updated to "${statusUpdateForm.new_status}" successfully!`)
+      success(`${selectedReports.value.length} report(s) status updated to "${statusUpdateForm.new_status}" successfully!`)
       // Refresh the page to show updated data
       window.location.reload()
     }).catch(error => {
       console.error('Bulk status update failed:', error)
-      alert('Failed to update status. Please try again.')
+      error('Failed to update status. Please try again.')
     })
   } else {
-    alert('Please select at least one report to update.')
+    warning('Please select at least one report to update.')
   }
 }
 
@@ -229,12 +229,11 @@ function rejectReport() {
       showRejectModal.value = false
       selectedReportId.value = null
       rejectForm.reset()
-      // Show success message
-      alert('Report rejected successfully!')
+      success('Report rejected successfully!')
     },
     onError: (errors) => {
       console.error('Rejection failed:', errors)
-      alert('Failed to reject report. Please try again.')
+      error('Failed to reject report. Please try again.')
     }
   })
 }
@@ -245,12 +244,11 @@ function updateReport() {
       showEditModal.value = false
       currentReport.value = null
       editForm.reset()
-      // Show success message
-      alert('✅ Report updated successfully!')
+      success('Report updated successfully!')
     },
     onError: (errors) => {
       console.error('Update failed:', errors)
-      alert('Failed to update report. Please try again.')
+      error('Failed to update report. Please try again.')
     }
   })
 }

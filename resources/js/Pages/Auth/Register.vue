@@ -234,6 +234,13 @@ function submit() {
                 {{ form.processing ? 'Creating Account...' : 'CREATE AN ACCOUNT' }}
               </button>
             </form>
+
+            <!-- 访客登录链接 -->
+            <div class="mt-6 text-center">
+              <Link href="/" class="text-sm text-gray-500 hover:text-gray-700 underline">
+                Continue as Guest
+              </Link>
+            </div>
           </div>
 
           <!-- 页脚 -->

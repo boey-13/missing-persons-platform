@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: AdminLayout })
 
@@ -67,15 +68,17 @@ const sortOptions = [
   { value: 'stock_quantity', label: 'Stock Quantity' }
 ]
 
+const { success, error } = useToast()
+
 function deleteReward(rewardId) {
   if (confirm('Are you sure you want to delete this reward?')) {
     router.delete(`/admin/rewards/${rewardId}`, {
       onSuccess: () => {
-        alert('✅ Reward deleted successfully!')
+        success('Reward deleted successfully!')
       },
       onError: (errors) => {
         console.error('Delete failed:', errors)
-        alert('Failed to delete reward. Please try again.')
+        error('Failed to delete reward. Please try again.')
       }
     })
   }

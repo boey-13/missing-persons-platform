@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch, onBeforeUnmount } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router, useForm, usePage, Link } from '@inertiajs/vue3'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: AdminLayout })
 
@@ -28,51 +29,21 @@ const statusFilter = ref(props.filters?.status || 'all')
 const sortBy = ref(props.filters?.sort_by || 'created_at')
 const sortOrder = ref(props.filters?.sort_order || 'desc')
 
-// ===== Flash（顶部居中 + 3秒自动消失）=====
+// ===== Flash Message Handling =====
 const page = usePage()
-// 来自后端（Inertia redirect + session flash）
-const successMsg = computed(() => page.props.flash?.success || '')
-const errorMsg   = computed(() => page.props.flash?.error || '')
-// 本地（给 fetch JSON 用）
-const localMsg   = ref('')
-const localType  = ref('success') // 'success' | 'error'
+const { success, error } = useToast()
 
-// 统一用于模板展示的消息 & 类型（优先后端的 error/success，再退回本地）
-const displayMsg  = computed(() => errorMsg.value || successMsg.value || localMsg.value)
-const displayType = computed(() =>
-  errorMsg.value ? 'error'
-  : (successMsg.value ? 'success' : (localType.value || 'success'))
-)
-
-const showFlash = ref(false)
-let hideTimer = null
-
-function showToast(msg, type = 'success') {
-  localMsg.value  = msg
-  localType.value = type
-  showFlash.value = true
-  clearTimeout(hideTimer)
-  hideTimer = setTimeout(() => {
-    showFlash.value = false
-    // 只清本地消息，不影响后端 flash
-    localMsg.value = ''
-  }, 3000)
-}
-
-// 监听后端 flash 或本地消息，有就显示 3 秒
-watch([successMsg, errorMsg, localMsg], ([s, e, l]) => {
-  clearTimeout(hideTimer)
-  showFlash.value = !!(s || e || l)
-  if (showFlash.value) {
-    hideTimer = setTimeout(() => {
-      showFlash.value = false
-      localMsg.value = ''
-    }, 3000)
+// Handle backend flash messages
+watch(() => page.props.flash?.success, (newMessage) => {
+  if (newMessage) {
+    success(newMessage)
   }
-}, { immediate: true })
+})
 
-onBeforeUnmount(() => {
-  clearTimeout(hideTimer)
+watch(() => page.props.flash?.error, (newMessage) => {
+  if (newMessage) {
+    error(newMessage)
+  }
 })
 
 // ===== Forms =====
@@ -181,7 +152,7 @@ function addProject() {
     },
     onError: (errors) => {
       console.error('Create failed:', errors)
-      showToast('Failed to create project. Please check the form and try again.', 'error')
+      error('Failed to create project. Please check the form and try again.')
     }
   })
 }
@@ -246,9 +217,9 @@ function updateProject() {
       console.error('Update failed:', errors)
       if (errors && typeof errors === 'object') {
         const errorMessages = Object.values(errors).flat()
-        showToast(`Validation failed: ${errorMessages.join(', ')}`, 'error')
+        error(`Validation failed: ${errorMessages.join(', ')}`)
       } else {
-        showToast('Failed to update project. Please check the form and try again.', 'error')
+        error('Failed to update project. Please check the form and try again.')
       }
     }
   })
@@ -263,7 +234,7 @@ function deleteProject(projectId) {
       },
       onError: (errors) => {
         console.error('Delete failed:', errors)
-        showToast('Failed to delete project. Please try again.', 'error')
+        error('Failed to delete project. Please try again.')
       }
     })
   }
@@ -331,12 +302,12 @@ function approveApplication(applicationId) {
       if (data?.success) {
         showApplicationModal.value = false
         fetchApplications()
-        showToast(data?.message || 'Application approved successfully')
+        success(data?.message || 'Application approved successfully')
       } else {
-        showToast(data?.message || 'Approve failed', 'error')
+        error(data?.message || 'Approve failed')
       }
     })
-    .catch(() => showToast('Approve failed', 'error'))
+    .catch(() => error('Approve failed'))
 }
 
 function rejectApplication(applicationId) {
@@ -354,12 +325,12 @@ function rejectApplication(applicationId) {
       if (data?.success) {
         showApplicationModal.value = false
         fetchApplications()
-        showToast(data?.message || 'Application rejected')
+        success(data?.message || 'Application rejected')
       } else {
-        showToast(data?.message || 'Reject failed', 'error')
+        error(data?.message || 'Reject failed')
       }
     })
-    .catch(() => showToast('Reject failed', 'error'))
+    .catch(() => error('Reject failed'))
 }
 
 function handlePhotoUpload(event) {
@@ -433,22 +404,7 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- 顶部居中 Flash（3 秒自动消失 + 动画；支持后端 flash 与本地 toast） -->
-    <teleport to="body">
-      <transition name="fade-down">
-        <div v-if="showFlash"
-             class="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex justify-center px-4">
-          <div class="pointer-events-auto max-w-md w-full">
-            <div
-              role="alert"
-              class="rounded-xl px-4 py-3 text-white text-center shadow-lg"
-              :class="displayType === 'error' ? 'bg-red-600/90' : 'bg-green-600/90'">
-              {{ displayMsg }}
-            </div>
-          </div>
-        </div>
-      </transition>
-    </teleport>
+
 
     <!-- Header -->
     <div class="bg-white shadow-sm border-b border-gray-200">

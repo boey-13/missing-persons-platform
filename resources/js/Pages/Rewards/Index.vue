@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import axios from 'axios'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
 
@@ -24,6 +25,8 @@ const loading = ref(false)
 // Filters (沿用原有逻辑)
 const selectedCategoryFilter = ref(props.selectedCategory || '')
 const showRedeemableOnly = ref(props.showRedeemableOnly || false)
+
+const { success, error } = useToast()
 
 // —— methods（逻辑完全不动） ——
 function openRewardModal(reward) {
@@ -49,13 +52,13 @@ async function redeemReward() {
     const response = await axios.post(`/rewards/${selectedReward.value.id}/redeem`)
     if (response.data.success) {
       router.reload({ only: ['currentPoints'] })
-      alert(response.data.message)
+      success(response.data.message)
       closeRedeemModal()
       router.visit('/rewards/my-vouchers')
     }
   } catch (error) {
-    if (error.response?.data?.message) alert(error.response.data.message)
-    else alert('Failed to redeem reward. Please try again.')
+    if (error.response?.data?.message) error(error.response.data.message)
+    else error('Failed to redeem reward. Please try again.')
   } finally {
     loading.value = false
   }

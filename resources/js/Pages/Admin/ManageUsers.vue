@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { router, Link } from '@inertiajs/vue3'
 import { ref } from 'vue'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: AdminLayout })
 
@@ -35,16 +36,18 @@ function handleSearch() {
   applyFilters()
 }
 
+const { success, error } = useToast()
+
 function changeRole(userId, role) {
   router.post(`/admin/users/${userId}/role`, {
     role
   }, {
     onSuccess: () => {
-      alert('✅ User role updated successfully!')
+      success('User role updated successfully!')
     },
     onError: (errors) => {
       console.error('Role update failed:', errors)
-      alert('Failed to update user role. Please try again.')
+      error('Failed to update user role. Please try again.')
     }
   })
 }
@@ -53,11 +56,11 @@ function deleteUser(userId) {
   if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
     router.delete(`/admin/users/${userId}`, {
       onSuccess: () => {
-        alert('✅ User deleted successfully!')
+        success('User deleted successfully!')
       },
       onError: (errors) => {
         console.error('Delete failed:', errors)
-        alert('Failed to delete user. Please try again.')
+        error('Failed to delete user. Please try again.')
       }
     })
   }
