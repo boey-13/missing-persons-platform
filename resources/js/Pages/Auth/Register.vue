@@ -1,9 +1,10 @@
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/Composables/useToast'
 import { ref, computed } from 'vue'
+import ToastContainer from '@/Components/ToastContainer.vue'
 
-const toast = useToast()
+const { success, error } = useToast()
 
 const form = useForm({
   name: '',
@@ -62,22 +63,22 @@ const isFormValid = computed(() => {
 function submit() {
   // Client-side validation
   if (!isFormValid.value) {
-    toast.error('Please fix all validation errors before submitting.')
+    error('Please fix all validation errors before submitting.')
     return
   }
 
   form.post(route('register'), {
     onSuccess: () => { 
       // Toast will show briefly before redirect
-      toast.success('Registration successful! Please log in with your new account.')
+      success('Registration successful! Please log in with your new account.')
     },
     onError: (errors) => { 
       if (errors.email) {
-        toast.error('Email already exists. Please use a different email.')
+        error('Email already exists. Please use a different email.')
       } else if (errors.name) {
-        toast.error('Username already exists. Please choose a different name.')
+        error('Username already exists. Please choose a different name.')
       } else {
-        toast.error('Registration failed. Please check all fields.')
+        error('Registration failed. Please check all fields.')
       }
     }
   })
@@ -271,5 +272,8 @@ function submit() {
         </div>
       </div>
     </div>
+    
+    <!-- Toast Container -->
+    <ToastContainer />
   </div>
 </template>

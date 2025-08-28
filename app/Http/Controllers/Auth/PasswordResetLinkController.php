@@ -48,7 +48,7 @@ class PasswordResetLinkController extends Controller
                 ['email' => $request->email, 'ip' => $request->ip()]
             );
             
-            return back()->with('status', __($status));
+            return back()->with('success', 'Password reset link sent to your email!');
         }
 
         throw ValidationException::withMessages([

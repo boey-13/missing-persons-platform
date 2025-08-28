@@ -78,7 +78,7 @@ class RegisteredUserController extends Controller
         );
 
         // Don't auto-login, let user login manually
-        return redirect('/login')->with('status', 'Registration successful! Please log in with your new account.');
+        return redirect('/login')->with('success', 'Registration successful! Please log in with your new account.');
 
     }
 }

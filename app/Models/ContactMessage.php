@@ -17,11 +17,16 @@ class ContactMessage extends Model
         'status',
         'ip_address',
         'user_agent',
+        'admin_reply',
+        'admin_reply_subject',
+        'admin_replied_at',
+        'admin_replied_by',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'admin_replied_at' => 'datetime',
     ];
 
     public function scopeUnread($query)
@@ -32,5 +37,10 @@ class ContactMessage extends Model
     public function scopeRead($query)
     {
         return $query->where('status', 'read');
+    }
+
+    public function adminRepliedBy()
+    {
+        return $this->belongsTo(User::class, 'admin_replied_by');
     }
 }

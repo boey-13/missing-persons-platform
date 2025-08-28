@@ -52,7 +52,7 @@
               <a href="/profile" class="block px-4 py-2 hover:bg-[#ddc3a5]">User Profile</a>
               <!-- Show Admin Dashboard only for admins -->
               <a v-if="isAdmin" href="/admin/dashboard" class="block px-4 py-2 hover:bg-[#ddc3a5]">Admin Dashboard</a>
-              <Link href="/logout" method="post" as="button"
+              <Link :href="route('logout')" method="post" as="button"
                 class="block px-4 py-2 hover:bg-[#ddc3a5] w-full text-left">
               Log Out
               </Link>

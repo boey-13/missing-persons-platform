@@ -15,7 +15,7 @@ class VolunteerApplicationController extends Controller
 
         // Check if user is already an approved volunteer
         if ($user && $user->isApprovedVolunteer()) {
-            return redirect()->route('volunteer.projects')->with('status', 'You are already an approved volunteer.');
+            return redirect()->route('volunteer.projects')->with('success', 'You are already an approved volunteer.');
         }
 
         // If there is a pending application, show info page
@@ -79,7 +79,7 @@ class VolunteerApplicationController extends Controller
         if ($pending) {
             return Inertia::render('Volunteer/ApplicationPending', [
                 'application' => $pending,
-            ])->with('status', 'You already have a pending application.');
+            ])->with('success', 'You already have a pending application.');
         }
 
         // File uploads (optional multiple)
@@ -102,7 +102,7 @@ class VolunteerApplicationController extends Controller
         NotificationService::newVolunteerApplicationForAdmin($application);
 
         return redirect()->route('volunteer.application-pending')
-            ->with('status', 'Application submitted.');
+            ->with('success', 'Application submitted.');
     }
 
     public function applicationPending()

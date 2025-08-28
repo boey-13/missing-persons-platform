@@ -2,11 +2,13 @@
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { ref, onMounted, watch, nextTick } from 'vue'
-import ToastMessage from '@/Components/ToastMessage.vue'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
 
 const props = defineProps({ report: Object })
+
+const { success, error } = useToast()
 
 const form = useForm({
   location: props.report?.last_seen_location || '',
@@ -18,9 +20,6 @@ const form = useForm({
   photos: []
 })
 
-const showToast = ref(false)
-const toastMessage = ref('')
-const toastType = ref('success')
 const isInitializing = ref(true)
 const uploadProgress = ref(0)
 
@@ -148,27 +147,21 @@ function onPhotosChange(e) {
 
 /** -------- 提交 -------- */
 function submit() {
-  if (!form.location.trim())  return showToastMessage('Please enter a location.', 'error')
-  if (!form.reporter_name.trim())  return showToastMessage('Please enter your name.', 'error')
-  if (!form.reporter_phone.trim()) return showToastMessage('Please enter your phone number.', 'error')
+  if (!form.location.trim())  return error('Please enter a location.')
+  if (!form.reporter_name.trim())  return error('Please enter your name.')
+  if (!form.reporter_phone.trim()) return error('Please enter your phone number.')
 
   form.post(`/missing-persons/${props.report.id}/sightings`, {
     forceFormData: true,
-    onError: () => showToastMessage('There was an error submitting your report. Please try again.', 'error')
+    onError: () => error('There was an error submitting your report. Please try again.')
   })
 }
 
-function showToastMessage(message, type = 'success') {
-  toastMessage.value = message
-  toastType.value = type
-  showToast.value = true
-}
+
 </script>
 
 <template>
   <Head title="Report Sighting" />
-
-  <ToastMessage v-if="showToast" :message="toastMessage" :type="toastType" />
 
   <div class="min-h-screen bg-white font-['Poppins'] text-[#333]">
     <!-- 保留原有 loading（但为避免阻断 DOM，这里已在 onMounted 立刻关闭） -->

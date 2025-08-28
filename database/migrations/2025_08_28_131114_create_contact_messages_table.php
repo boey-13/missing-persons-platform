@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email');
             $table->string('subject');
             $table->text('message');
-            $table->enum('status', ['unread', 'read', 'replied', 'archived'])->default('unread');
+            $table->enum('status', ['unread', 'read', 'replied', 'closed'])->default('unread');
             $table->string('ip_address')->nullable();
             $table->text('user_agent')->nullable();
             $table->timestamps();

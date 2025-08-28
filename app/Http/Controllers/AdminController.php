@@ -231,7 +231,7 @@ class AdminController extends Controller
      */
     public function contactMessages(Request $request): Response
     {
-        $query = ContactMessage::orderBy('created_at', 'desc');
+        $query = ContactMessage::with('adminRepliedBy')->orderBy('created_at', 'desc');
 
         // Filter by status
         if ($request->filled('status')) {
@@ -259,6 +259,13 @@ class AdminController extends Controller
                 'status' => $item->status,
                 'created_at' => $item->created_at?->toDateTimeString(),
                 'ip_address' => $item->ip_address,
+                'admin_reply' => $item->admin_reply,
+                'admin_reply_subject' => $item->admin_reply_subject,
+                'admin_replied_at' => $item->admin_replied_at ? $item->admin_replied_at->toDateTimeString() : null,
+                'admin_replied_by' => $item->adminRepliedBy ? [
+                    'id' => $item->adminRepliedBy->id,
+                    'name' => $item->adminRepliedBy->name,
+                ] : null,
             ];
         });
 
@@ -282,15 +289,52 @@ class AdminController extends Controller
     public function updateContactMessageStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:unread,read,replied,archived',
+            'status' => 'required|in:unread,read,replied,closed',
         ]);
 
         $message = ContactMessage::findOrFail($id);
         $message->update(['status' => $request->status]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Message status updated successfully'
+        return back()->with('success', 'Message status updated successfully');
+    }
+
+    /**
+     * Send reply to contact message
+     */
+    public function replyToContactMessage(Request $request, $id)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|max:2000',
         ]);
+
+        $contactMessage = ContactMessage::findOrFail($id);
+
+        try {
+            // Send email to user
+            \Mail::send('emails.contact-reply', [
+                'userName' => $contactMessage->name,
+                'adminMessage' => $request->message,
+                'originalSubject' => $contactMessage->subject,
+            ], function ($message) use ($contactMessage, $request) {
+                $message->to($contactMessage->email, $contactMessage->name)
+                        ->subject($request->subject)
+                        ->from(config('mail.from.address'), config('mail.from.name'));
+            });
+
+            // Update message status and save reply information
+            $contactMessage->update([
+                'status' => 'replied',
+                'admin_reply' => $request->message,
+                'admin_reply_subject' => $request->subject,
+                'admin_replied_at' => now(),
+                'admin_replied_by' => auth()->id(),
+            ]);
+
+            return back()->with('success', 'Reply sent successfully');
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Failed to send reply: ' . $e->getMessage()]);
+        }
     }
 }

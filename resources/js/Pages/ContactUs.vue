@@ -1,7 +1,7 @@
 <script setup>
 import MainLayout from '@/Layouts/MainLayout.vue'
-import { ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { ref, watch } from 'vue'
+import { useForm, usePage } from '@inertiajs/vue3'
 import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
@@ -14,14 +14,23 @@ const form = useForm({
 })
 
 const { success, error } = useToast()
+const page = usePage()
+
+// Watch for flash messages
+watch(() => page.props.flash, (flash) => {
+  if (flash?.success) {
+    success(flash.success)
+  }
+  if (flash?.error) {
+    error(flash.error)
+  }
+}, { immediate: true })
 
 const submitForm = () => {
   form.post('/contact', {
-    onSuccess: (response) => {
+    onSuccess: () => {
       // Clear form fields
       form.reset()
-      // Show success message
-      success(response.message || 'Thank you for your message. We will get back to you soon!')
     },
     onError: (errors) => {
       console.error('Form submission failed:', errors)

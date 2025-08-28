@@ -152,7 +152,7 @@ class ProfileController extends Controller
 
             \Log::info('Profile updated successfully for user: ' . $user->id);
 
-            return redirect()->back()->with('status', 'Profile updated successfully.');
+            return redirect()->back()->with('success', 'Profile updated successfully.');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Profile update validation failed: ' . $e->getMessage(), [

@@ -1,9 +1,10 @@
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
-import { useToast } from 'vue-toastification'
+import { useToast } from '@/Composables/useToast'
+import ToastContainer from '@/Components/ToastContainer.vue'
 
-const toast = useToast()
+const { success, error } = useToast()
 
 const form = useForm({
   email: '',
@@ -19,7 +20,7 @@ function submit() {
       } else if (errors.email || errors.password) {
         showLoginErrorModal.value = true
       } else {
-        toast.error('Login failed. Please check your credentials.')
+        error('Login failed. Please check your credentials.')
       }
     }
   })
@@ -36,12 +37,12 @@ const resetForm = useForm({
 function submitForgotPassword() {
   resetForm.post(route('password.email'), {
     onSuccess: () => {
-      toast.success('Reset link sent to your email!')
+      success('Reset link sent to your email!')
       showForgotPasswordModal.value = false
       resetForm.reset()
     },
     onError: (errors) => {
-      toast.success('Reset link sent to your email!')
+      success('Reset link sent to your email!')
       showForgotPasswordModal.value = false
       resetForm.reset()
     }
@@ -67,26 +68,21 @@ function closeLockedModal() {
   showAccountLockedModal.value = false
 }
 
-const showStatus = ref(true)
 const page = usePage()
 
-watch(() => page.props.status, (newVal) => {
-  if (newVal) {
-    showStatus.value = true
-    setTimeout(() => { showStatus.value = false }, 2000)
+// Watch for flash messages from backend
+watch(() => page.props.flash, (flash) => {
+  if (flash?.success) {
+    success(flash.success)
+  }
+  if (flash?.error) {
+    error(flash.error)
   }
 }, { immediate: true })
 </script>
 
 <template>
   <div class="relative min-h-screen bg-white">
-    <!-- 顶部全局状态提示 -->
-    <div v-if="showStatus && $page.props.status"
-         class="fixed top-0 left-0 w-full flex justify-center z-50 pointer-events-none">
-      <div class="mt-6 w-full max-w-md bg-green-100 border border-green-300 text-green-800 rounded-lg shadow px-5 py-3 text-center font-semibold">
-        {{ $page.props.status }}
-      </div>
-    </div>
 
     <!-- 双栏布局 -->
     <div class="grid grid-cols-1 md:grid-cols-2 min-h-screen">
@@ -287,5 +283,8 @@ watch(() => page.props.status, (newVal) => {
                 class="absolute top-3 right-4 text-gray-400 text-xl font-bold hover:text-gray-700">×</button>
       </div>
     </div>
+    
+    <!-- Toast Container -->
+    <ToastContainer />
   </div>
 </template>

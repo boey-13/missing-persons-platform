@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -209,6 +210,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
         ->name('contact-messages');
     Route::post('/contact-messages/{id}/status', [AdminController::class, 'updateContactMessageStatus'])
         ->name('contact-messages.status');
+    Route::post('/contact-messages/{id}/reply', [AdminController::class, 'replyToContactMessage'])
+        ->name('contact-messages.reply');
 
     // Admin: manage volunteer applications
     Route::get('/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])

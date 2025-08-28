@@ -2,6 +2,7 @@
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, watch } from 'vue'
+import { useToast } from '@/Composables/useToast'
 
 defineOptions({ layout: MainLayout })
 
@@ -9,19 +10,16 @@ const props = defineProps({
   recent: { type: Array, default: () => [] }
 })
 
+const { success, error } = useToast()
 const $page = usePage()
-const showStatus = ref(false)
 
-// Watch for status messages and auto-hide after 3 seconds
-watch(() => $page.props.status, (newVal) => {
-  console.log('Status changed:', newVal) // Debug log
-  if (newVal) {
-    showStatus.value = true
-    setTimeout(() => {
-      showStatus.value = false
-    }, 3000)
-  } else {
-    showStatus.value = false
+// Watch for flash messages from backend
+watch(() => $page.props.flash, (flash) => {
+  if (flash?.success) {
+    success(flash.success)
+  }
+  if (flash?.error) {
+    error(flash.error)
   }
 }, { immediate: true })
 
@@ -49,13 +47,6 @@ const visibleCases = computed(() => {
 
 <template>
   <div>
-    <!-- Status Messages -->
-    <div v-if="showStatus && $page.props.status"
-         class="fixed top-0 left-0 w-full flex justify-center z-50 pointer-events-none">
-      <div class="mt-6 w-full max-w-md bg-green-100 border border-green-300 text-green-800 rounded-lg shadow px-5 py-3 text-center font-semibold">
-        {{ $page.props.status }}
-      </div>
-    </div>
 
     <!-- Hero -->
     <section class="relative min-h-[50vh] bg-cover bg-center bg-no-repeat"

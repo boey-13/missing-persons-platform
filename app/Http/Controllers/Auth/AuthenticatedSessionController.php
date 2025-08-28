@@ -20,7 +20,6 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
         ]);
     }
 
@@ -43,7 +42,7 @@ class AuthenticatedSessionController extends Controller
         // Load user with volunteer application for frontend permissions
         $user = auth()->user()->load('volunteerApplication');
 
-        return redirect()->intended(route('home', absolute: false))->with('status', 'Welcome back! You have successfully logged in.');
+        return redirect()->intended(route('home', absolute: false))->with('success', 'Welcome back! You have successfully logged in.');
     }
 
     /**
@@ -67,7 +66,7 @@ class AuthenticatedSessionController extends Controller
             );
         }
 
-        return redirect('/login')->with('status', 'You have successfully logged out.');
+        return redirect('/login')->with('success', 'You have successfully logged out.');
     }
 
 }

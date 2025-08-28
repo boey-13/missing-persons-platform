@@ -55,16 +55,10 @@ class ContactController extends Controller
                 ]);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Thank you for your message. We will get back to you soon!'
-            ]);
+            return back()->with('success', 'Thank you for your message. We will get back to you soon!');
 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to send message. Please try again.'
-            ], 500);
+            return back()->withErrors(['error' => 'Failed to send message. Please try again.']);
         }
     }
 }

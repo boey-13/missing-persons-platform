@@ -10,7 +10,7 @@
     >
       <div
         v-if="isVisible"
-        class="fixed top-4 right-4 z-50 max-w-sm w-full"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full"
         @mouseenter="pauseTimer"
         @mouseleave="resumeTimer"
       >

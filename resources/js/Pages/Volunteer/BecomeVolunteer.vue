@@ -2,33 +2,10 @@
 import { Link, useForm, usePage, router } from '@inertiajs/vue3'
 import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
+import { useToast } from '@/Composables/useToast'
 defineOptions({ layout: MainLayout })
 
-// --- flash + local toast (原样保留) ---
-const page = usePage()
-const successMsg = computed(() => page.props.flash?.success || '')
-const errorMsg   = computed(() => page.props.flash?.error || '')
-const localMsg  = ref('')
-const localType = ref('success')
-const displayMsg  = computed(() => errorMsg.value || successMsg.value || localMsg.value)
-const displayType = computed(() => errorMsg.value ? 'error' : (successMsg.value ? 'success' : localType.value))
-const showFlash = ref(false)
-let hideTimer = null
-function showToast(message, type = 'success') {
-  localMsg.value  = message
-  localType.value = type
-  showFlash.value = true
-  clearTimeout(hideTimer)
-  hideTimer = setTimeout(() => { showFlash.value = false; localMsg.value = '' }, 3000)
-}
-watch([successMsg, errorMsg, localMsg], ([s, e, l]) => {
-  clearTimeout(hideTimer)
-  showFlash.value = !!(s || e || l)
-  if (showFlash.value) {
-    hideTimer = setTimeout(() => { showFlash.value = false; localMsg.value = '' }, 3000)
-  }
-}, { immediate: true })
-onBeforeUnmount(() => clearTimeout(hideTimer))
+const { success, error } = useToast()
 
 // --- props + 表单（原样保留） ---
 const props = defineProps({ profile: Object })
@@ -103,17 +80,17 @@ function validateCurrentStep() {
       isValid = true
       break
     case 2:
-      if (!form.motivation || form.motivation.length < 10) { showToast('Motivation must be at least 10 characters long.', 'error'); isValid = false }
-      if (!form.emergency_contact_name || form.emergency_contact_name.trim() === '') { showToast('Emergency contact name is required.', 'error'); isValid = false }
-      if (!form.emergency_contact_phone || form.emergency_contact_phone.trim() === '') { showToast('Emergency contact phone is required.', 'error'); isValid = false }
-      if (form.skills.length === 0) { showToast('Please select at least one skill.', 'error'); isValid = false }
-      if (form.languages.length === 0) { showToast('Please select at least one language.', 'error'); isValid = false }
-      if (form.availability.length === 0) { showToast('Please select at least one available day.', 'error'); isValid = false }
-      if (form.preferred_roles.length === 0) { showToast('Please select at least one preferred role.', 'error'); isValid = false }
-      if (!form.transport_mode || form.transport_mode.trim() === '') { showToast('Please select your mode of transport.', 'error'); isValid = false }
+      if (!form.motivation || form.motivation.length < 10) { error('Motivation must be at least 10 characters long.'); isValid = false }
+      if (!form.emergency_contact_name || form.emergency_contact_name.trim() === '') { error('Emergency contact name is required.'); isValid = false }
+      if (!form.emergency_contact_phone || form.emergency_contact_phone.trim() === '') { error('Emergency contact phone is required.'); isValid = false }
+      if (form.skills.length === 0) { error('Please select at least one skill.'); isValid = false }
+      if (form.languages.length === 0) { error('Please select at least one language.'); isValid = false }
+      if (form.availability.length === 0) { error('Please select at least one available day.'); isValid = false }
+      if (form.preferred_roles.length === 0) { error('Please select at least one preferred role.'); isValid = false }
+      if (!form.transport_mode || form.transport_mode.trim() === '') { error('Please select your mode of transport.'); isValid = false }
       break
     case 3:
-      if (!form.termsAccepted) { showToast('You must accept the Terms & Conditions and Code of Conduct.', 'error'); isValid = false }
+      if (!form.termsAccepted) { error('You must accept the Terms & Conditions and Code of Conduct.'); isValid = false }
       break
   }
   return isValid
@@ -158,12 +135,12 @@ function submit() {
   form.post(route('volunteer.apply.store'), {
     forceFormData: true,
     onSuccess: () => {
-      showToast('Volunteer application submitted successfully! Please wait for admin approval.', 'success')
+      success('Volunteer application submitted successfully! Please wait for admin approval.')
       setTimeout(() => { router.visit(route('volunteer.application-pending')) }, 2000)
     },
     onError: (errors) => {
-      if (Object.keys(errors).length > 0) showToast('Please fix the errors in your application form.', 'error')
-      else showToast('Failed to submit application. Please try again.', 'error')
+      if (Object.keys(errors).length > 0) error('Please fix the errors in your application form.')
+      else error('Failed to submit application. Please try again.')
     }
   })
 }
