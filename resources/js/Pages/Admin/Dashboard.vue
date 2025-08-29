@@ -12,58 +12,58 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto p-6">
+  <div class="max-w-7xl mx-auto p-4 sm:p-6">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-extrabold text-gray-900">Admin Dashboard</h1>
-      <p class="text-gray-600 mt-2">Welcome back! Here's what's happening with your platform.</p>
+    <div class="mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Admin Dashboard</h1>
+      <p class="text-gray-600 mt-2 text-sm sm:text-base">Welcome back! Here's what's happening with your platform.</p>
     </div>
 
     <!-- Main Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div class="flex items-center">
+            <div class="flex-1">
+              <div class="text-gray-500 text-xs sm:text-sm font-medium">Total Missing Cases</div>
+              <div class="text-2xl sm:text-3xl font-bold text-gray-900">{{ stats?.totalMissingCases || 0 }}</div>
+              <div class="text-green-600 text-xs sm:text-sm mt-1">Active cases</div>
+            </div>
+          </div>
+        </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="flex items-center">
           <div class="flex-1">
-            <div class="text-gray-500 text-sm font-medium">Total Missing Cases</div>
-            <div class="text-3xl font-bold text-gray-900">{{ stats?.totalMissingCases || 0 }}</div>
-            <div class="text-green-600 text-sm mt-1">Active cases</div>
+            <div class="text-gray-500 text-xs sm:text-sm font-medium">Pending Sightings</div>
+            <div class="text-2xl sm:text-3xl font-bold text-gray-900">{{ stats?.pendingSightings || 0 }}</div>
+            <div class="text-orange-600 text-xs sm:text-sm mt-1">Awaiting review</div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="flex items-center">
           <div class="flex-1">
-            <div class="text-gray-500 text-sm font-medium">Pending Sightings</div>
-            <div class="text-3xl font-bold text-gray-900">{{ stats?.pendingSightings || 0 }}</div>
-            <div class="text-orange-600 text-sm mt-1">Awaiting review</div>
+            <div class="text-gray-500 text-xs sm:text-sm font-medium">Total Users</div>
+            <div class="text-2xl sm:text-3xl font-bold text-gray-900">{{ stats?.totalUsers || 0 }}</div>
+            <div class="text-blue-600 text-xs sm:text-sm mt-1">Registered users</div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <div class="flex items-center">
           <div class="flex-1">
-            <div class="text-gray-500 text-sm font-medium">Total Users</div>
-            <div class="text-3xl font-bold text-gray-900">{{ stats?.totalUsers || 0 }}</div>
-            <div class="text-blue-600 text-sm mt-1">Registered users</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center">
-          <div class="flex-1">
-            <div class="text-gray-500 text-sm font-medium">Active Rewards</div>
-            <div class="text-3xl font-bold text-gray-900">{{ stats?.activeRewards || 0 }}</div>
-            <div class="text-purple-600 text-sm mt-1">Available rewards</div>
+            <div class="text-gray-500 text-xs sm:text-sm font-medium">Active Rewards</div>
+            <div class="text-2xl sm:text-3xl font-bold text-gray-900">{{ stats?.activeRewards || 0 }}</div>
+            <div class="text-purple-600 text-xs sm:text-sm mt-1">Available rewards</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Additional Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="text-gray-500 text-sm font-medium mb-2">Community Projects</div>
         <div class="text-2xl font-bold text-gray-900">{{ stats?.totalProjects || 0 }}</div>
@@ -84,7 +84,7 @@ const props = defineProps({
     </div>
 
     <!-- Recent Activities & Quick Actions -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
       <!-- Recent Missing Reports -->
       <div class="lg:col-span-2">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

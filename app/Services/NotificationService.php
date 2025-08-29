@@ -35,7 +35,7 @@ class NotificationService
             $report->user_id,
             'missing_report_submitted',
             'Missing Person Report Submitted',
-            "Your missing person report for {$report->full_name} has been submitted and is under review.",
+            "Your missing person report for {$report->full_name} has been submitted successfully. We will notify you once it's processed.",
             [
                 'action' => 'view_report',
                 'report_id' => $report->id,
@@ -101,7 +101,7 @@ class NotificationService
                 $sighting->user_id,
                 'sighting_report_submitted',
                 'Sighting Report Submitted',
-                "Your sighting report has been submitted and is under review.",
+                "Your sighting report has been submitted successfully. Thank you for helping our community.",
                 [
                     'action' => 'view_sighting',
                     'sighting_id' => $sighting->id,
@@ -171,7 +171,7 @@ class NotificationService
             $application->user_id,
             'project_application_submitted',
             'Project Application Submitted',
-            "Your application for '{$application->project->title}' has been submitted and is under review.",
+            "Your application for '{$application->project->title}' has been submitted successfully. We will notify you once it's processed.",
             [
                 'action' => 'view_application',
                 'application_id' => $application->id,
@@ -242,7 +242,7 @@ class NotificationService
             $application->user_id,
             'volunteer_application_submitted',
             'Volunteer Application Submitted',
-            "Your volunteer application has been submitted and is under review.",
+            "Your volunteer application has been submitted successfully. We will notify you once it's processed.",
             [
                 'action' => 'view_application',
                 'application_id' => $application->id

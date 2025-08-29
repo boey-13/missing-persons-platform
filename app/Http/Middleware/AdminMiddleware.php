@@ -12,7 +12,32 @@ class AdminMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (auth()->check() && auth()->user()->role === 'admin') {
+            
             return $next($request);
+        }
+
+        // Log unauthorized admin access attempt
+        if (auth()->check()) {
+            \App\Models\SystemLog::log(
+                'access_denied',
+                'Non-admin user attempted to access admin area',
+                [
+                    'user_id' => auth()->id(),
+                    'user_email' => auth()->user()->email,
+                    'user_role' => auth()->user()->role,
+                    'requested_url' => $request->url(),
+                    'ip_address' => $request->ip()
+                ]
+            );
+        } else {
+            \App\Models\SystemLog::log(
+                'access_denied',
+                'Unauthenticated user attempted to access admin area',
+                [
+                    'requested_url' => $request->url(),
+                    'ip_address' => $request->ip()
+                ]
+            );
         }
 
         // Instead of abort(403), show a friendly error page

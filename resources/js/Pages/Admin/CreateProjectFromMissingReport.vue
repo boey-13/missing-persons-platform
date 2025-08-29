@@ -66,25 +66,25 @@ function formatDate(dateString) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50 py-6 sm:py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Header -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between">
+      <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-extrabold text-gray-900">Create Community Project</h1>
-            <p class="mt-2 text-gray-600">Create a community project based on missing person case</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Create Community Project</h1>
+            <p class="mt-2 text-gray-600 text-sm sm:text-base">Create a community project based on missing person case</p>
           </div>
           <button
             @click="goBack"
-            class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+            class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors text-center"
           >
             ← Back to Missing Reports
           </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         <!-- Missing Person Info -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

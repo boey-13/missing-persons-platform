@@ -61,9 +61,7 @@ async function fetchUserReports() {
 }
 
 onMounted(() => {
-  console.log('Profile page mounted successfully')
-  console.log('User data:', props.user)
-  console.log('CSRF token available:', !!page.props.csrf_token)
+
   fetchUserReports()
 })
 
@@ -138,24 +136,17 @@ function editProfile() {
 }
 
 function updateProfile() {
-  console.log('Submitting form with data:', {
-    name: editForm.name,
-    email: editForm.email,
-    phone: editForm.phone,
-    avatar: editForm.avatar
-  })
+  
 
   // If there's a file, use post method with _method patch
   if (editForm.avatar) {
     editForm._method = 'PATCH'
     editForm.post('/profile', {
       onSuccess: () => {
-        console.log('Profile update successful')
         showEditModal.value = false
         success('Profile updated successfully!')
       },
       onError: (errors) => {
-        console.error('Form errors:', errors)
         if (errors.name) error('Name error: ' + errors.name)
         if (errors.email) error('Email error: ' + errors.email)
         if (errors.phone) error('Phone error: ' + errors.phone)
@@ -166,12 +157,10 @@ function updateProfile() {
     // No file, use patch method
     editForm.patch('/profile', {
       onSuccess: () => {
-        console.log('Profile update successful')
         showEditModal.value = false
         success('Profile updated successfully!')
       },
       onError: (errors) => {
-        console.error('Form errors:', errors)
         if (errors.name) error('Name error: ' + errors.name)
         if (errors.email) error('Email error: ' + errors.email)
         if (errors.phone) error('Phone error: ' + errors.phone)
@@ -241,15 +230,15 @@ function shareToSocial(reportId) {
 <template>
   <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white text-gray-900">
     <!-- ===== Hero + Profile Card ===== -->
-    <!-- 顶部封面：背景照片 + 白色半透明蒙版 -->
+    <!-- Top cover: background photo + white semi-transparent overlay -->
     <div class="relative h-[180px] sm:h-[200px] md:h-[240px]">
-      <!-- 你的封面照片，放到 public 下，例如 /images/profile-hero.jpg -->
+      <!-- Your cover photo, place it in public folder, e.g. /images/profile-hero.jpg -->
       <img src="/contact.jpg" alt="Cover" class="absolute inset-0 w-full h-full object-cover" />
-      <!-- 白色半透明蒙版（可调透明度：/60 /65 /70 /75 等） -->
+      <!-- White semi-transparent overlay (adjustable opacity: /60 /65 /70 /75 etc.) -->
       <div class="absolute inset-0 bg-black/65"></div>
     </div>
 
-    <!-- 资料卡上移覆盖封面高度（根据上面高度调这个负 margin） -->
+    <!-- Profile card moved up to overlap cover height (adjust negative margin based on height above) -->
     <header class="-mt-16 sm:-mt-20 md:-mt-24">
 
       <div class="max-w-7xl mx-auto px-4">

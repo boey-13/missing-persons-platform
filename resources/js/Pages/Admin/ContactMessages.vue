@@ -210,7 +210,8 @@ function goToPage(page) {
     <!-- Messages List -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto">
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -306,6 +307,73 @@ function goToPage(page) {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="lg:hidden space-y-4 p-4">
+          <div v-for="message in messages" :key="message.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">{{ message.name }}</h3>
+                <p class="text-sm text-gray-600">{{ message.email }}</p>
+              </div>
+              <span :class="`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(message.status)}`">
+                {{ message.status }}
+              </span>
+            </div>
+            
+            <div class="space-y-2 mb-4">
+              <div>
+                <span class="text-sm font-medium text-gray-700">Subject:</span>
+                <p class="text-sm text-gray-900 mt-1 break-words">{{ message.subject }}</p>
+              </div>
+              
+              <div class="flex justify-between">
+                <span class="text-sm font-medium text-gray-700">Date:</span>
+                <span class="text-sm text-gray-600">{{ formatDate(message.created_at) }}</span>
+              </div>
+              
+              <div v-if="message.admin_reply" class="flex items-center text-green-600">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm">Replied by {{ message.admin_replied_by?.name || 'Admin' }}</span>
+              </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+              <button
+                v-if="message.status === 'unread'"
+                @click="updateStatus(message.id, 'read')"
+                :disabled="isUpdatingStatus[message.id]"
+                class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs disabled:opacity-50"
+              >
+                <span v-if="isUpdatingStatus[message.id]">Updating...</span>
+                <span v-else>Mark Read</span>
+              </button>
+              <button
+                @click="viewMessage(message)"
+                class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
+              >
+                View
+              </button>
+              <button
+                v-if="message.status !== 'replied' && message.status !== 'closed'"
+                @click="openReplyModal(message)"
+                class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs"
+              >
+                Reply
+              </button>
+              <button
+                @click="updateStatus(message.id, 'closed')"
+                :disabled="isUpdatingStatus[message.id]"
+                class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs disabled:opacity-50"
+              >
+                <span v-if="isUpdatingStatus[message.id]">Updating...</span>
+                <span v-else>Close Case</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->

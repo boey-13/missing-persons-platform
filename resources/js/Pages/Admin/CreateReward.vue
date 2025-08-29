@@ -47,17 +47,17 @@ function handleImageUpload(event) {
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
     <!-- Header -->
-    <div class="mb-8">
-      <div class="flex items-center justify-between">
+    <div class="mb-6 sm:mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Create New Reward</h1>
-          <p class="text-gray-600 mt-2">Add a new reward to the system</p>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Create New Reward</h1>
+          <p class="text-gray-600 mt-2 text-sm sm:text-base">Add a new reward to the system</p>
         </div>
         <Link
           href="/admin/rewards"
-          class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+          class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors text-center"
         >
           ← Back to Rewards
         </Link>
@@ -66,7 +66,7 @@ function handleImageUpload(event) {
 
     <!-- Form -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-      <form @submit.prevent="submit" class="p-6 space-y-6">
+      <form @submit.prevent="submit" class="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <!-- Category -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -239,11 +239,11 @@ function handleImageUpload(event) {
         </div>
 
         <!-- Submit Button -->
-        <div class="flex gap-3 pt-6 border-t border-gray-200">
+        <div class="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-gray-200">
           <button
             type="submit"
             :disabled="form.processing"
-            class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 relative"
+            class="w-full sm:flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 relative"
           >
             <span v-if="form.processing" class="absolute inset-0 flex items-center justify-center">
               <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -257,7 +257,7 @@ function handleImageUpload(event) {
           </button>
           <Link
             href="/admin/rewards"
-            class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center"
+            class="w-full sm:flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center"
           >
             Cancel
           </Link>

@@ -104,6 +104,8 @@ function getActionColor(action) {
 
     <!-- Logs Table -->
     <div class="bg-white rounded-xl shadow overflow-hidden">
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50">
           <tr>
@@ -140,6 +142,44 @@ function getActionColor(action) {
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4 p-4">
+        <div v-for="log in props.logs" :key="log.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 v-if="log.user" class="text-lg font-semibold text-gray-900">{{ log.user.name }}</h3>
+              <h3 v-else class="text-lg font-semibold text-gray-500">Guest</h3>
+              <p v-if="log.user" class="text-sm text-gray-600">{{ log.user.email }}</p>
+              <p class="text-xs text-gray-500">{{ new Date(log.created_at).toLocaleString() }}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs" :class="getActionColor(log.action)">
+                {{ log.action.replace('_', ' ').toUpperCase() }}
+              </span>
+              <span v-if="log.user" class="inline-block px-2 py-1 text-xs rounded bg-gray-100">{{ log.user.role }}</span>
+            </div>
+          </div>
+          
+          <div class="space-y-2 mb-4">
+            <div>
+              <span class="text-sm font-medium text-gray-700">Description:</span>
+              <p class="text-sm text-gray-800 mt-1 break-words">{{ log.description }}</p>
+            </div>
+            
+            <div v-if="log.metadata" class="">
+              <span class="text-sm font-medium text-gray-700">Metadata:</span>
+              <p class="text-xs text-gray-500 mt-1 break-all">{{ JSON.stringify(log.metadata) }}</p>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">IP Address:</span>
+              <span class="text-sm text-gray-600">{{ log.ip_address || '-' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Pagination -->

@@ -308,7 +308,7 @@ function handleImageError(event) {
 }
 
 function handleImageLoad(event) {
-  console.log('Image loaded successfully:', event.target.src)
+  
 }
 </script>
 
@@ -376,6 +376,8 @@ function handleImageLoad(event) {
         </div>
       </div>
       
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50">
           <tr>
@@ -547,6 +549,172 @@ function handleImageLoad(event) {
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4">
+        <div v-for="row in props.items" :key="row.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center space-x-3">
+              <input 
+                type="checkbox" 
+                @change="toggleReportSelection(row)"
+                :checked="selectedReports.some(r => r.id === row.id)"
+                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+              />
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">{{ row.full_name }}</h3>
+                <p class="text-sm text-gray-600">Case #{{ row.id }}</p>
+              </div>
+            </div>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusColor(row.status)">
+              {{ row.status }}
+            </span>
+          </div>
+          
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Age/Gender:</span>
+              <span class="text-sm text-gray-600">{{ row.age }}/{{ row.gender }}</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Reporter:</span>
+              <div class="text-right">
+                <div class="text-sm text-gray-600">{{ row.reporter_name }}</div>
+                <div class="text-xs text-gray-500">{{ row.reporter_phone }}</div>
+              </div>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Reported:</span>
+              <span class="text-sm text-gray-600">{{ formatDate(row.created_at) }}</span>
+            </div>
+            
+            <div>
+              <span class="text-sm font-medium text-gray-700">Last Seen:</span>
+              <p class="text-sm text-gray-600 mt-1 break-words">{{ row.last_seen }}</p>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+            <button 
+              @click="openViewModal(row)"
+              class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+            >
+              View
+            </button>
+            
+            <!-- Pending Status Actions -->
+            <template v-if="row.status === 'Pending'">
+              <button 
+                @click="openApproveModal(row)"
+                class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs"
+              >
+                Approve
+              </button>
+              <button 
+                @click="openRejectModal(row)"
+                class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs"
+              >
+                Reject
+              </button>
+            </template>
+            
+            <!-- Approved Status Actions -->
+            <template v-if="row.status === 'Approved'">
+              <button
+                @click="openEditModal(row)"
+                class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+              >
+                Edit
+              </button>
+              <button 
+                @click="openStatusUpdateModal(row)"
+                class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+              >
+                Update Status
+              </button>
+              <button 
+                @click="viewRelatedSightings(row.id)"
+                class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors text-xs"
+              >
+                Sightings
+              </button>
+              <button 
+                @click="createProjectFromMissing(row.id)"
+                class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
+              >
+                Create Project
+              </button>
+            </template>
+            
+            <!-- Rejected Status Actions -->
+            <template v-if="row.status === 'Rejected'">
+              <button 
+                @click="openStatusUpdateModal(row)"
+                class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+              >
+                Update Status
+              </button>
+            </template>
+            
+            <!-- Missing Status Actions -->
+            <template v-if="row.status === 'Missing'">
+              <button
+                @click="openEditModal(row)"
+                class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+              >
+                Edit
+              </button>
+              <button 
+                @click="openStatusUpdateModal(row)"
+                class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+              >
+                Update Status
+              </button>
+              <button 
+                @click="viewRelatedSightings(row.id)"
+                class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors text-xs"
+              >
+                Sightings
+              </button>
+              <button 
+                @click="createProjectFromMissing(row.id)"
+                class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
+              >
+                Create Project
+              </button>
+            </template>
+            
+            <!-- Found Status Actions -->
+            <template v-if="row.status === 'Found'">
+              <button
+                @click="openEditModal(row)"
+                class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+              >
+                Edit
+              </button>
+              <button 
+                @click="openStatusUpdateModal(row)"
+                class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
+              >
+                Update Status
+              </button>
+            </template>
+            
+            <!-- Closed Status Actions -->
+            <template v-if="row.status === 'Closed'">
+              <button
+                @click="openEditModal(row)"
+                class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
+              >
+                Edit
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
       
       <!-- Empty State -->
       <div v-if="!props.items || props.items.length === 0" class="text-center py-12">

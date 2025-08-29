@@ -38,10 +38,11 @@ function getDisplayStatus(status) {
 
 <template>
   <div class="bg-white rounded-lg border border-gray-200 p-4 flex flex-col items-center hover:shadow-md transition h-80">
-    <!-- 更大的头像区域 -->
+
     <div class="w-32 h-32 bg-[#B3D4FC] rounded-xl flex items-center justify-center mb-3 overflow-hidden">
-      <img v-if="person.photo_url" :src="person.photo_url" alt="Photo" class="w-full h-full rounded object-cover" />
-      <img v-else src="../../assets/default-avatar.jpg" alt="Default Avatar" class="w-full h-full rounded object-cover" />
+      <img v-if="person.photo_paths && person.photo_paths.length" :src="'/storage/' + person.photo_paths[0]" alt="Photo" class="w-full h-full rounded object-cover" />
+      <img v-else-if="person.photo_url" :src="person.photo_url" alt="Photo" class="w-full h-full rounded object-cover" />
+      <img v-else src="/default-avatar.jpg" alt="Default Avatar" class="w-full h-full rounded object-cover" />
     </div>
     
     <!-- Status Badge -->
@@ -58,7 +59,7 @@ function getDisplayStatus(status) {
     </div>
     <Link
       :href="`/missing-persons/${person.id}`"
-      class="mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+      class="mt-auto px-4 py-2 bg-[#5C4033] text-white rounded-lg hover:bg-[#4c352b] transition font-medium"
     >
       View Details
     </Link>

@@ -219,7 +219,8 @@ function deleteReward(rewardId) {
 
     <!-- Rewards Table -->
     <div class="bg-white rounded-xl shadow overflow-hidden">
-      <div class="overflow-x-auto">
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -311,6 +312,74 @@ function deleteReward(rewardId) {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4 p-4">
+        <div v-for="reward in rewards.data" :key="reward.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="h-12 w-12 flex-shrink-0">
+              <img
+                v-if="reward.image_url"
+                :src="reward.image_url"
+                :alt="reward.name"
+                class="h-12 w-12 rounded-lg object-cover"
+              />
+              <div v-else class="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                <span class="text-gray-400">🎁</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-semibold text-gray-900 truncate">{{ reward.name }}</h3>
+              <p v-if="reward.description" class="text-sm text-gray-600 line-clamp-2">{{ reward.description }}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span
+                :class="[
+                  'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
+                  reward.status === 'active' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                ]"
+              >
+                {{ reward.status }}
+              </span>
+              <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                {{ reward.category?.name }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Points Required:</span>
+              <span class="text-sm text-gray-900 font-semibold">{{ reward.points_required }}</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Stock:</span>
+              <span class="text-sm text-gray-900">
+                <span v-if="reward.stock_quantity === 0" class="text-green-600">Unlimited</span>
+                <span v-else>{{ reward.redeemed_count }}/{{ reward.stock_quantity }}</span>
+              </span>
+            </div>
+          </div>
+          
+          <div class="flex gap-2 pt-2 border-t border-gray-100">
+            <Link
+              :href="`/admin/rewards/${reward.id}/edit`"
+              class="px-3 py-1 bg-[#5C4033] text-white rounded hover:bg-[#4A3329] transition-colors text-xs flex-1 text-center"
+            >
+              Edit
+            </Link>
+            <button
+              @click="deleteReward(reward.id)"
+              class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs flex-1"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
       </div>
 
       

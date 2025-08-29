@@ -93,7 +93,7 @@ class CommunityProjectController extends Controller
             'points_reward' => 'required|integer|min:0',
             'category' => 'required|in:search,awareness,training',
             'status' => 'required|in:active,upcoming,completed,cancelled',
-            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120'
         ]);
 
         $photoPaths = [];
@@ -145,7 +145,7 @@ class CommunityProjectController extends Controller
             'category' => 'required|in:search,awareness,training',
             'status' => 'required|in:active,upcoming,completed,cancelled',
             'latest_news' => 'nullable|string',
-            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'photos.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120'
         ]);
 
         $photoPaths = $project->photo_paths ?? [];

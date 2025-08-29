@@ -22,13 +22,13 @@ const showRedeemModal = ref(false)
 const selectedReward = ref(null)
 const loading = ref(false)
 
-// Filters (沿用原有逻辑)
+// Filters
 const selectedCategoryFilter = ref(props.selectedCategory || '')
 const showRedeemableOnly = ref(props.showRedeemableOnly || false)
 
 const { success, error } = useToast()
 
-// —— methods（逻辑完全不动） ——
+// methods
 function openRewardModal(reward) {
   selectedReward.value = reward
   showRewardModal.value = true
@@ -94,7 +94,7 @@ function goToPage(page) {
 }
 
 function goBack() {
-  // 如果历史记录只有一页，说明是直接访问的，默认回到Profile
+// if history length is 1, it means it's directly accessed, default to Profile
   if (window.history.length <= 1) {
     router.visit('/profile')
   } else {
@@ -106,13 +106,13 @@ function goBack() {
 <template>
   <div class="bg-white min-h-screen">
          <!-- Top bar -->
-     <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
-       <button @click="goBack" class="text-gray-700 hover:text-black text-sm font-medium">← Back</button>
+     <div class="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+       <button @click="goBack" class="text-gray-700 hover:text-black text-xs sm:text-sm font-medium">← Back</button>
       <Link
         href="/rewards/my-vouchers"
-        class="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-black"
+        class="inline-flex items-center gap-1.5 sm:gap-2 bg-gray-900 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-semibold hover:bg-black"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0120 9v10a2 2 0 01-2 2z"/>
         </svg>
@@ -121,32 +121,32 @@ function goBack() {
     </div>
 
     <!-- Header -->
-    <header class="max-w-[1400px] mx-auto px-6 pb-2 text-center">
-      <h1 class="text-3xl font-extrabold text-gray-900">Rewards</h1>
-      <p class="text-gray-600 mt-2">Redeem your points for available rewards</p>
+    <header class="max-w-[1400px] mx-auto px-4 sm:px-6 pb-2 text-center">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Rewards</h1>
+      <p class="text-sm sm:text-base text-gray-600 mt-1.5 sm:mt-2">Redeem your points for available rewards</p>
 
       <!-- Points summary -->
-      <div class="mt-6 inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm rounded-md px-6 py-3">
-        <div class="w-8 h-8 rounded-md bg-gray-900 text-white flex items-center justify-center text-sm font-bold">
+      <div class="mt-4 sm:mt-6 inline-flex items-center gap-2.5 sm:gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm rounded-md px-4 sm:px-6 py-2.5 sm:py-3">
+        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-md bg-gray-900 text-white flex items-center justify-center text-xs sm:text-sm font-bold">
           P
         </div>
         <div class="text-left">
-          <div class="text-2xl font-bold leading-tight text-gray-900">{{ currentPoints }}</div>
+          <div class="text-xl sm:text-2xl font-bold leading-tight text-gray-900">{{ currentPoints }}</div>
           <div class="text-xs text-gray-500 -mt-0.5">Available points</div>
         </div>
       </div>
     </header>
 
     <!-- Filters -->
-    <section class="max-w-[1400px] mx-auto px-6 pt-6 pb-4">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5 bg-gray-50 rounded-lg">
+    <section class="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4 p-4 sm:p-5 bg-gray-50 rounded-lg">
         <!-- Category chips -->
         <div class="overflow-x-auto hide-scrollbar -mx-1">
-          <div class="flex items-center gap-2 px-1">
+          <div class="flex items-center gap-1.5 sm:gap-2 px-1">
             <button
               @click="clearFilter"
               :class="[
-                'px-3 py-1.5 text-sm border rounded-md',
+                'px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm border rounded-md',
                 selectedCategoryFilter === '' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               ]"
             >
@@ -157,7 +157,7 @@ function goBack() {
                :key="c.id"
                @click="filterByCategory(c.id)"
                :class="[
-                 'px-3 py-1.5 text-sm border rounded-md',
+                 'px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm border rounded-md',
                  String(selectedCategoryFilter) === String(c.id)
                    ? 'bg-gray-900 text-white border-gray-900'
                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -169,8 +169,8 @@ function goBack() {
         </div>
 
         <!-- Redeemable only switch -->
-        <label class="inline-flex items-center gap-3 cursor-pointer select-none">
-          <span class="text-sm text-gray-700">Redeemable only</span>
+        <label class="inline-flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none">
+          <span class="text-xs sm:text-sm text-gray-700">Redeemable only</span>
           <input
             type="checkbox"
             :checked="showRedeemableOnly"
@@ -178,10 +178,10 @@ function goBack() {
             class="peer sr-only"
           />
           <span
-            class="w-10 h-6 inline-flex items-center bg-gray-200 peer-checked:bg-gray-900 rounded-full p-0.5 transition-colors"
+            class="w-8 h-5 sm:w-10 sm:h-6 inline-flex items-center bg-gray-200 peer-checked:bg-gray-900 rounded-full p-0.5 transition-colors"
           >
             <span
-              class="w-5 h-5 bg-white rounded-full shadow transform transition-transform peer-checked:translate-x-4"
+              class="w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full shadow transform transition-transform peer-checked:translate-x-3 sm:peer-checked:translate-x-4"
             ></span>
           </span>
         </label>
@@ -189,8 +189,8 @@ function goBack() {
     </section>
 
     <!-- Rewards grid -->
-    <main class="max-w-[1400px] mx-auto px-6 pb-12">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <main class="max-w-[1400px] mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         <article
           v-for="reward in rewards"
           :key="reward.id"
@@ -198,7 +198,7 @@ function goBack() {
           @click="openRewardModal(reward)"
         >
           <!-- Image -->
-          <div class="relative h-48 bg-gray-100 overflow-hidden">
+          <div class="relative h-36 sm:h-48 bg-gray-100 overflow-hidden">
             <img
               :src="reward.image_url || '/voucher.png'"
               :alt="reward.name"
@@ -206,29 +206,29 @@ function goBack() {
             />
             <span
               v-if="reward.category?.name"
-              class="absolute top-3 left-3 text-xs px-2 py-0.5 rounded bg-white/90 border border-gray-200"
+              class="absolute top-2 sm:top-3 left-2 sm:left-3 text-xs px-1.5 sm:px-2 py-0.5 rounded bg-white/90 border border-gray-200"
             >
               {{ reward.category.name }}
             </span>
           </div>
 
           <!-- Body -->
-          <div class="p-5 flex flex-col gap-3 flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ reward.name }}</h3>
-            <p v-if="reward.description" class="text-sm text-gray-600 line-clamp-2">
+          <div class="p-3 sm:p-5 flex flex-col gap-2.5 sm:gap-3 flex-1">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2">{{ reward.name }}</h3>
+            <p v-if="reward.description" class="text-xs sm:text-sm text-gray-600 line-clamp-2">
               {{ reward.description }}
             </p>
 
             <div class="flex items-center justify-between mt-1">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded bg-gray-900 text-white text-xs font-bold flex items-center justify-center">P</div>
-                <div class="text-sm text-gray-900 font-semibold">
+              <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="w-5 h-5 sm:w-6 sm:h-6 rounded bg-gray-900 text-white text-xs font-bold flex items-center justify-center">P</div>
+                <div class="text-xs sm:text-sm text-gray-900 font-semibold">
                   {{ reward.points_required }} pts
                 </div>
               </div>
 
               <span
-                class="text-xs px-2 py-0.5 rounded border"
+                class="text-xs px-1.5 sm:px-2 py-0.5 rounded border"
                 :class="
                   reward.can_redeem 
                     ? 'border-green-200 text-green-700 bg-green-50' 
@@ -249,7 +249,7 @@ function goBack() {
 
             <!-- CTA -->
             <button
-              class="mt-auto w-full py-2.5 px-3 rounded-md text-sm font-medium transition-colors"
+              class="mt-auto w-full py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-colors"
               :disabled="!reward.can_redeem || reward.is_fully_redeemed"
               :class="
                 reward.can_redeem && !reward.is_fully_redeemed
@@ -270,19 +270,19 @@ function goBack() {
       </div>
 
       <!-- Empty -->
-      <div v-if="rewards.length === 0" class="text-center py-16">
-        <div class="text-5xl mb-3">🎁</div>
-        <h3 class="text-lg font-semibold text-gray-900">No rewards available</h3>
-        <p class="text-gray-600 text-sm mt-1">Check back later for new rewards.</p>
+      <div v-if="rewards.length === 0" class="text-center py-12 sm:py-16">
+        <div class="text-4xl sm:text-5xl mb-2.5 sm:mb-3">🎁</div>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900">No rewards available</h3>
+        <p class="text-xs sm:text-sm text-gray-600 mt-1">Check back later for new rewards.</p>
       </div>
 
       <!-- Pagination -->
-      <div v-if="pagination && pagination.last_page > 1" class="mt-10 flex justify-center">
+      <div v-if="pagination && pagination.last_page > 1" class="mt-8 sm:mt-10 flex justify-center">
         <nav class="inline-flex items-center gap-1">
           <button
             @click="goToPage(pagination.current_page - 1)"
             :disabled="pagination.current_page <= 1"
-            class="px-3 py-2 border border-gray-300 rounded-l-md text-sm hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
+            class="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-l-md text-xs sm:text-sm hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white"
           >
             Prev
           </button>
@@ -292,7 +292,7 @@ function goBack() {
               v-if="page === 1 || page === pagination.last_page || (page >= pagination.current_page - 1 && page <= pagination.current_page + 1)"
               @click="goToPage(page)"
               :class="[
-                'px-3 py-2 border border-gray-300 text-sm',
+                'px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm',
                 page === pagination.current_page ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50'
               ]"
             >

@@ -25,7 +25,7 @@ const uploadProgress = ref(0)
 
 /** -------- Google Maps -------- */
 const mapDiv = ref(null)
-const autocompleteInput = ref(null) // 用 ref 代替 getElementById
+const autocompleteInput = ref(null) // use ref instead of getElementById
 const map = ref(null)
 const marker = ref(null)
 const mapLat = ref(3.1390)
@@ -145,7 +145,7 @@ function onPhotosChange(e) {
   })
 }
 
-/** -------- 提交 -------- */
+/** -------- submit -------- */
 function submit() {
   if (!form.location.trim())  return error('Please enter a location.')
   if (!form.reporter_name.trim())  return error('Please enter your name.')
@@ -164,10 +164,10 @@ function submit() {
   <Head title="Report Sighting" />
 
   <div class="min-h-screen bg-white font-['Poppins'] text-[#333]">
-    <!-- 保留原有 loading（但为避免阻断 DOM，这里已在 onMounted 立刻关闭） -->
-    <div v-if="isInitializing" class="text-center py-20">
-      <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-black">
-        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <!-- Keep original loading (but close immediately in onMounted to avoid blocking DOM) -->
+    <div v-if="isInitializing" class="text-center py-16 sm:py-20">
+      <div class="inline-flex items-center px-3 sm:px-4 py-2 font-semibold leading-6 text-xs sm:text-sm shadow rounded-md text-white bg-black">
+        <svg class="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -176,21 +176,21 @@ function submit() {
     </div>
 
     <div v-else>
-      <header class="max-w-3xl mx-auto px-4 sm:px-6 pt-10 pb-6 text-center">
-        <h1 class="text-3xl font-extrabold tracking-tight">Report a Sighting</h1>
-        <p class="text-gray-600 mt-2">
+      <header class="max-w-3xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-4 sm:pb-6 text-center">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Report a Sighting</h1>
+        <p class="text-sm sm:text-base text-gray-600 mt-1.5 sm:mt-2">
           Case: <span class="font-semibold">{{ props.report.full_name }}</span>
         </p>
       </header>
 
-      <form @submit.prevent="submit" enctype="multipart/form-data" class="max-w-3xl mx-auto px-4 sm:px-6 pb-14 space-y-10">
+      <form @submit.prevent="submit" enctype="multipart/form-data" class="max-w-3xl mx-auto px-4 sm:px-6 pb-10 sm:pb-14 space-y-8 sm:space-y-10">
         <!-- Sighting details -->
         <section>
-          <h2 class="text-sm font-semibold text-gray-900 mb-4">Sighting details</h2>
+          <h2 class="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Sighting details</h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label class="block text-sm text-gray-700 mb-1">
+              <label class="block text-xs sm:text-sm text-gray-700 mb-1">
                 Location <span class="text-red-500">*</span>
               </label>
               <input
@@ -199,92 +199,92 @@ function submit() {
                 type="text"
                 autocomplete="off"
                 placeholder="Enter location and select a suggestion"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none"
+                class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base"
               />
-              <div v-if="form.errors.location" class="text-red-600 text-sm mt-1">{{ form.errors.location }}</div>
+              <div v-if="form.errors.location" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.location }}</div>
             </div>
 
             <div>
-              <label class="block text-sm text-gray-700 mb-1">Sighted at</label>
+              <label class="block text-xs sm:text-sm text-gray-700 mb-1">Sighted at</label>
               <input
                 v-model="form.sighted_at"
                 type="datetime-local"
-                class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none"
+                class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base"
               />
             </div>
           </div>
 
           <!-- Map -->
-          <div class="mt-5">
-            <div ref="mapDiv" class="w-full h-64 border border-gray-200 rounded-md"></div>
-            <p class="text-xs text-gray-500 mt-2">Drag the pin or click map to adjust exact location.</p>
+          <div class="mt-4 sm:mt-5">
+            <div ref="mapDiv" class="w-full h-48 sm:h-64 border border-gray-200 rounded-md"></div>
+            <p class="text-xs text-gray-500 mt-1.5 sm:mt-2">Drag the pin or click map to adjust exact location.</p>
           </div>
 
-          <div class="mt-5">
-            <label class="block text-sm text-gray-700 mb-1">Description</label>
+          <div class="mt-4 sm:mt-5">
+            <label class="block text-xs sm:text-sm text-gray-700 mb-1">Description</label>
             <textarea
               v-model="form.description"
               rows="4"
               placeholder="Clothing, behavior, direction…"
-              class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none"
+              class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base"
             />
           </div>
 
-          <div class="border-t border-gray-200 mt-8" />
+          <div class="border-t border-gray-200 mt-6 sm:mt-8" />
         </section>
 
         <!-- Your information -->
         <section>
-          <h2 class="text-sm font-semibold text-gray-900 mb-4">Your information</h2>
+          <h2 class="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Your information</h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label class="block text-sm text-gray-700 mb-1">Full name <span class="text-red-500">*</span></label>
-              <input v-model="form.reporter_name" type="text" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none" />
-              <div v-if="form.errors.reporter_name" class="text-red-600 text-sm mt-1">{{ form.errors.reporter_name }}</div>
+              <label class="block text-xs sm:text-sm text-gray-700 mb-1">Full name <span class="text-red-500">*</span></label>
+              <input v-model="form.reporter_name" type="text" class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base" />
+              <div v-if="form.errors.reporter_name" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.reporter_name }}</div>
             </div>
 
             <div>
-              <label class="block text-sm text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
-              <input v-model="form.reporter_phone" type="text" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none" />
-              <div v-if="form.errors.reporter_phone" class="text-red-600 text-sm mt-1">{{ form.errors.reporter_phone }}</div>
+              <label class="block text-xs sm:text-sm text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
+              <input v-model="form.reporter_phone" type="text" class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base" />
+              <div v-if="form.errors.reporter_phone" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.reporter_phone }}</div>
             </div>
           </div>
 
-          <div class="mt-4">
-            <label class="block text-sm text-gray-700 mb-1">Email (optional)</label>
-            <input v-model="form.reporter_email" type="email" class="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none" />
-            <p class="text-xs text-gray-500 mt-2">We’ll only use your contact to follow up on this sighting if needed.</p>
+          <div class="mt-3 sm:mt-4">
+            <label class="block text-xs sm:text-sm text-gray-700 mb-1">Email (optional)</label>
+            <input v-model="form.reporter_email" type="email" class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base" />
+            <p class="text-xs text-gray-500 mt-1.5 sm:mt-2">We'll only use your contact to follow up on this sighting if needed.</p>
           </div>
 
-          <div class="border-t border-gray-200 mt-8" />
+          <div class="border-t border-gray-200 mt-6 sm:mt-8" />
         </section>
 
         <!-- Photos -->
         <section>
-          <h2 class="text-sm font-semibold text-gray-900 mb-4">Photos (optional)</h2>
-          <input type="file" multiple accept="image/*" @change="onPhotosChange" class="block w-full text-sm text-gray-700 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-gray-900 file:text-white hover:file:bg-black" />
-          <p class="text-xs text-gray-500 mt-2">JPEG/PNG, up to a few photos.</p>
+          <h2 class="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Photos (optional)</h2>
+          <input type="file" multiple accept="image/*" @change="onPhotosChange" class="block w-full text-xs sm:text-sm text-gray-700 file:mr-3 file:px-2.5 sm:file:px-3 file:py-1 sm:file:py-1.5 file:rounded-md file:border-0 file:bg-gray-900 file:text-white hover:file:bg-black" />
+          <p class="text-xs text-gray-500 mt-1.5 sm:mt-2">JPEG/PNG, up to a few photos.</p>
 
           <div v-if="uploadProgress > 0 && uploadProgress < 100" class="mt-3">
             <div class="flex items-center space-x-2 mb-2">
-              <svg class="animate-spin h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin h-3 w-3 sm:h-4 sm:w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span class="text-sm text-gray-600">Processing photos...</span>
+              <span class="text-xs sm:text-sm text-gray-600">Processing photos...</span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div class="bg-black h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }" />
+            <div class="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
+              <div class="bg-black h-1.5 sm:h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }" />
             </div>
             <p class="text-xs text-gray-500 mt-1">{{ uploadProgress }}% complete</p>
           </div>
         </section>
 
         <div class="pt-2">
-          <button type="submit" :disabled="form.processing" class="w-full bg-black text-white py-3 rounded-md font-semibold hover:bg-[#111] disabled:opacity-60 relative">
+          <button type="submit" :disabled="form.processing" class="w-full bg-black text-white py-2.5 sm:py-3 rounded-md font-semibold hover:bg-[#111] disabled:opacity-60 relative text-sm sm:text-base">
             <span v-if="form.processing" class="absolute inset-0 flex items-center justify-center">
-              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin h-3 w-3 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>

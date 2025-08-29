@@ -75,17 +75,17 @@ function submit() {
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto p-6">
+  <div class="max-w-5xl mx-auto p-4 sm:p-6">
     <!-- Header -->
     <div class="mb-6">
-      <div class="flex items-start justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Edit Reward</h1>
-          <p class="text-gray-600 mt-2">Update reward details</p>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Edit Reward</h1>
+          <p class="text-gray-600 mt-2 text-sm sm:text-base">Update reward details</p>
         </div>
         <Link
           href="/admin/rewards"
-          class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+          class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors text-center"
         >
           ← Back to Rewards
         </Link>
@@ -93,8 +93,8 @@ function submit() {
     </div>
 
     <!-- Form -->
-    <div class="bg-white rounded-lg shadow p-6">
-      <form @submit.prevent="submit" class="space-y-6">
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+      <form @submit.prevent="submit" class="space-y-4 sm:space-y-6">
         <!-- Category -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">

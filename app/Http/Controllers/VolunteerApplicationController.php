@@ -220,7 +220,11 @@ class VolunteerApplicationController extends Controller
         $user = $application->user;
         if ($user) {
             if ($data['status'] === 'Approved') {
-                // Notify approval - no need to change user role as we use volunteer_application status
+                // Update user role to volunteer
+                $user->role = 'volunteer';
+                $user->save();
+                
+                // Notify approval
                 \App\Models\Notification::create([
                     'user_id' => $user->id,
                     'type' => 'volunteer_application',
@@ -229,8 +233,13 @@ class VolunteerApplicationController extends Controller
                     'data' => ['application_id' => $application->id, 'action' => 'open_projects'],
                 ]);
             } elseif ($data['status'] === 'Rejected') {
-                // Notify rejection - no need to change user role as we use volunteer_application status
-                // notify rejection
+                // Ensure user is not a volunteer
+                if ($user->role === 'volunteer') {
+                    $user->role = 'user';
+                    $user->save();
+                }
+                
+                // Notify rejection
                 \App\Models\Notification::create([
                     'user_id' => $user->id,
                     'type' => 'volunteer_application',
@@ -248,10 +257,9 @@ class VolunteerApplicationController extends Controller
         \App\Models\SystemLog::log('volunteer_application_'.$data['status'], 'Volunteer application status updated', [
             'application_id' => $application->id,
             'status' => $data['status'],
+            'user_role_updated' => $user ? $user->role : null,
         ]);
 
         return back()->with('success', "Volunteer application {$data['status']} successfully!");
     }
 }
-
-

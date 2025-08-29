@@ -206,9 +206,9 @@ function getStatusColor(status) {
 
       <!-- Share Modal -->
       <div v-if="showShareModal" class="fixed inset-0 z-50 grid place-items-center bg-black/50">
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-sm text-center">
-          <h2 class="text-lg font-semibold mb-4">Share to Social Media</h2>
-          <div class="flex justify-around mb-4 text-3xl">
+        <div class="bg-white rounded-2xl shadow-xl p-4 sm:p-6 w-[90%] max-w-sm text-center">
+          <h2 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Share to Social Media</h2>
+          <div class="flex justify-around mb-3 sm:mb-4 text-2xl sm:text-3xl">
             <button @click="shareToSocial('instagram')" class="hover:scale-110 transition">
               <i class="fab fa-instagram text-[#E4405F]"></i>
             </button>
@@ -222,42 +222,38 @@ function getStatusColor(status) {
               <i class="fab fa-twitter text-[#1DA1F2]"></i>
             </button>
           </div>
-          <button @click="showShareModal = false" class="text-sm text-gray-600 hover:text-black">Close</button>
+          <button @click="showShareModal = false" class="text-xs sm:text-sm text-gray-600 hover:text-black">Close</button>
         </div>
       </div>
     </teleport>
 
-
-
     <!-- Hero / Header -->
     <header class="border-b border-[#ebebeb] bg-white/70 backdrop-blur">
-      <div class="max-w-6xl mx-auto px-5 py-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="max-w-6xl mx-auto px-4 sm:px-5 py-4 sm:py-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
           <div class="space-y-1">
-            <h1 class="text-2xl font-extrabold tracking-tight">Missing Person Details</h1>
-            <p class="text-sm text-gray-600">Help us reunite families by sharing or reporting any information you may have.</p>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Missing Person Details</h1>
+            <p class="text-xs sm:text-sm text-gray-600">Help us reunite families by sharing or reporting any information you may have.</p>
           </div>
           <div class="flex items-center gap-2">
             <span v-if="report.case_status"
-                  :class="`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium capitalize ${getStatusColor(report.case_status)}`">
-              <span class="inline-block h-2 w-2 rounded-full bg-current/70"></span>
+                  :class="`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium capitalize ${getStatusColor(report.case_status)}`">
+              <span class="inline-block h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-current/70"></span>
               {{ report.case_status }}
             </span>
             <button @click="showShareModal = true"
-                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50">
+                    class="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg border border-gray-300 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-gray-50">
               <i class="fas fa-share-alt text-orange-500"></i>
               Share
             </button>
           </div>
         </div>
-
-        
       </div>
     </header>
 
     <!-- Content -->
-    <main class="max-w-6xl mx-auto px-5 py-8">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <main class="max-w-6xl mx-auto px-4 sm:px-5 py-6 sm:py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         <!-- Carousel -->
         <section class="lg:col-span-4">
           <div class="relative group">
@@ -274,33 +270,33 @@ function getStatusColor(status) {
                 <!-- arrows -->
                 <button @click="prevPhoto"
                         :disabled="currentPhotoIndex === 0"
-                        class="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white disabled:opacity-40"
+                        class="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1.5 sm:p-2 shadow hover:bg-white disabled:opacity-40"
                         aria-label="Previous photo">
-                  <i class="fas fa-chevron-left text-lg"></i>
+                  <i class="fas fa-chevron-left text-base sm:text-lg"></i>
                 </button>
                 <button @click="nextPhoto"
                         :disabled="currentPhotoIndex === photos.length - 1"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white disabled:opacity-40"
+                        class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1.5 sm:p-2 shadow hover:bg-white disabled:opacity-40"
                         aria-label="Next photo">
-                  <i class="fas fa-chevron-right text-lg"></i>
+                  <i class="fas fa-chevron-right text-base sm:text-lg"></i>
                 </button>
 
                 <!-- index -->
-                <div class="absolute bottom-2 right-3 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+                <div class="absolute bottom-2 right-2 sm:right-3 rounded-full bg-black/60 px-2 sm:px-3 py-1 text-xs text-white">
                   {{ currentPhotoIndex + 1 }} / {{ photos.length }}
                 </div>
               </template>
 
-                             <div v-else class="h-full grid place-items-center">
-                 <img src="../../assets/default-avatar.jpg" alt="Default Avatar" class="max-h-full max-w-full object-contain" />
-               </div>
+              <div v-else class="h-full grid place-items-center">
+                <img src="../../assets/default-avatar.jpg" alt="Default Avatar" class="max-h-full max-w-full object-contain" />
+              </div>
             </div>
 
             <!-- thumbs -->
-            <div v-if="photos.length" class="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div v-if="photos.length" class="mt-2 sm:mt-3 flex gap-1.5 sm:gap-2 overflow-x-auto pb-1">
               <img v-for="(p, i) in photos" :key="i" :src="photoUrl(p)" @click="goPhoto(i)"
                    :alt="'Thumbnail ' + (i+1)"
-                   class="h-14 w-14 flex-none rounded-md object-cover border transition"
+                   class="h-12 w-12 sm:h-14 sm:w-14 flex-none rounded-md object-cover border transition"
                    :class="i === currentPhotoIndex ? 'border-orange-400 ring-2 ring-orange-300' : 'border-gray-300 hover:border-sky-400'"/>
             </div>
           </div>
@@ -308,119 +304,119 @@ function getStatusColor(status) {
 
         <!-- Info -->
         <section class="lg:col-span-8">
-          <div class="rounded-2xl border border-[#eee] bg-white shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Person Information</h2>
+          <div class="rounded-2xl border border-[#eee] bg-white shadow p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Person Information</h2>
 
-            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
-              <div class="flex items-start gap-3">
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-2.5 sm:gap-y-3">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <i class="far fa-id-badge mt-1 text-gray-500"></i>
                 <div>
-                  <dt class="text-sm text-gray-500">Name</dt>
-                  <dd class="font-medium text-gray-900">{{ report.full_name }}</dd>
+                  <dt class="text-xs sm:text-sm text-gray-500">Name</dt>
+                  <dd class="font-medium text-gray-900 text-sm sm:text-base">{{ report.full_name }}</dd>
                 </div>
               </div>
 
-              <div class="flex items-start gap-3">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <i class="fas fa-venus-mars mt-1 text-gray-500"></i>
                 <div>
-                  <dt class="text-sm text-gray-500">Gender</dt>
-                  <dd class="font-medium text-gray-900">{{ report.gender }}</dd>
+                  <dt class="text-xs sm:text-sm text-gray-500">Gender</dt>
+                  <dd class="font-medium text-gray-900 text-sm sm:text-base">{{ report.gender }}</dd>
                 </div>
               </div>
 
-              <div class="flex items-start gap-3">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <i class="far fa-clock mt-1 text-gray-500"></i>
                 <div>
-                  <dt class="text-sm text-gray-500">Age</dt>
-                  <dd class="font-medium text-gray-900">{{ report.age }}</dd>
+                  <dt class="text-xs sm:text-sm text-gray-500">Age</dt>
+                  <dd class="font-medium text-gray-900 text-sm sm:text-base">{{ report.age }}</dd>
                 </div>
               </div>
 
-              <div class="flex items-start gap-3">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <i class="fas fa-ruler-vertical mt-1 text-gray-500"></i>
                 <div>
-                  <dt class="text-sm text-gray-500">Height</dt>
-                  <dd class="font-medium text-gray-900">{{ report.height_cm }} cm</dd>
+                  <dt class="text-xs sm:text-sm text-gray-500">Height</dt>
+                  <dd class="font-medium text-gray-900 text-sm sm:text-base">{{ report.height_cm }} cm</dd>
                 </div>
               </div>
 
-              <div class="flex items-start gap-3">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <i class="fas fa-weight mt-1 text-gray-500"></i>
                 <div>
-                  <dt class="text-sm text-gray-500">Weight</dt>
-                  <dd class="font-medium text-gray-900">{{ report.weight_kg }} kg</dd>
+                  <dt class="text-xs sm:text-sm text-gray-500">Weight</dt>
+                  <dd class="font-medium text-gray-900 text-sm sm:text-base">{{ report.weight_kg }} kg</dd>
                 </div>
               </div>
 
-              <div class="flex items-start gap-3">
+              <div class="flex items-start gap-2 sm:gap-3">
                 <i class="fas fa-tshirt mt-1 text-gray-500"></i>
                 <div>
-                  <dt class="text-sm text-gray-500">Clothing (Last Seen)</dt>
-                  <dd class="font-medium text-gray-900">{{ report.last_seen_clothing || '—' }}</dd>
+                  <dt class="text-xs sm:text-sm text-gray-500">Clothing (Last Seen)</dt>
+                  <dd class="font-medium text-gray-900 text-sm sm:text-base">{{ report.last_seen_clothing || '—' }}</dd>
                 </div>
               </div>
             </dl>
           </div>
 
-          <div class="rounded-2xl border border-[#eee] bg-white shadow p-6 mt-6">
-            <h2 class="text-xl font-semibold mb-3">Case Information</h2>
-            <dl class="space-y-3">
-              <div class="flex gap-3">
-                <dt class="w-48 text-sm text-gray-500">Physical Description</dt>
-                <dd class="flex-1 text-gray-800">{{ report.physical_description || '—' }}</dd>
+          <div class="rounded-2xl border border-[#eee] bg-white shadow p-4 sm:p-6 mt-4 sm:mt-6">
+            <h2 class="text-lg sm:text-xl font-semibold mb-2.5 sm:mb-3">Case Information</h2>
+            <dl class="space-y-2.5 sm:space-y-3">
+              <div class="flex flex-col sm:flex-row sm:gap-3">
+                <dt class="w-full sm:w-48 text-xs sm:text-sm text-gray-500 mb-1 sm:mb-0">Physical Description</dt>
+                <dd class="flex-1 text-gray-800 text-sm sm:text-base">{{ report.physical_description || '—' }}</dd>
               </div>
-              <div class="flex gap-3">
-                <dt class="w-48 text-sm text-gray-500">Other Notes</dt>
-                <dd class="flex-1 text-gray-800">{{ report.additional_notes || '—' }}</dd>
+              <div class="flex flex-col sm:flex-row sm:gap-3">
+                <dt class="w-full sm:w-48 text-xs sm:text-sm text-gray-500 mb-1 sm:mb-0">Other Notes</dt>
+                <dd class="flex-1 text-gray-800 text-sm sm:text-base">{{ report.additional_notes || '—' }}</dd>
               </div>
             </dl>
           </div>
 
-                     <!-- Actions -->
-           <div class="mt-6 flex flex-wrap gap-4">
-             <Link :href="`/missing-persons/${report.id}/preview-poster`"
-                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 text-white hover:bg-sky-700 font-medium shadow">
-               <i class="fas fa-file-download"></i>
-               Download Poster
-             </Link>
-             <Link :href="`/missing-persons/${report.id}/report-sighting`"
-                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium shadow">
-               <i class="fas fa-binoculars"></i>
-               Submit Sighting
-             </Link>
-           </div>
-         </section>
-       </div>
+          <!-- Actions -->
+          <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Link :href="`/missing-persons/${report.id}/preview-poster`"
+                  class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-sky-600 text-white hover:bg-sky-700 font-medium shadow text-sm sm:text-base">
+              <i class="fas fa-file-download"></i>
+              Download Poster
+            </Link>
+            <Link :href="`/missing-persons/${report.id}/report-sighting`"
+                  class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium shadow text-sm sm:text-base">
+              <i class="fas fa-binoculars"></i>
+              Submit Sighting
+            </Link>
+          </div>
+        </section>
+      </div>
 
-       <!-- Last Seen Details - Full Width -->
-       <div class="mt-8">
-         <h2 class="text-xl font-semibold mb-3">Last Seen Location</h2>
-         
-         <!-- Meta line -->
-         <div class="mb-4 flex flex-wrap items-center gap-4 text-sm text-gray-600">
-           <div class="inline-flex items-center gap-2">
-             <i class="far fa-calendar"></i>
-             <span>Last seen: {{ formatDate(report.last_seen_date) }}</span>
-           </div>
-           <div class="inline-flex items-center gap-2">
-             <i class="fas fa-map-marker-alt"></i>
-             <span>{{ report.last_seen_location }}</span>
-           </div>
-         </div>
-         
-         <div ref="mapDiv" class="w-full h-64 rounded-xl border shadow-inner ring-1 ring-gray-100"></div>
-       </div>
+      <!-- Last Seen Details - Full Width -->
+      <div class="mt-6 sm:mt-8">
+        <h2 class="text-lg sm:text-xl font-semibold mb-2.5 sm:mb-3">Last Seen Location</h2>
+        
+        <!-- Meta line -->
+        <div class="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+          <div class="inline-flex items-center gap-1.5 sm:gap-2">
+            <i class="far fa-calendar"></i>
+            <span>Last seen: {{ formatDate(report.last_seen_date) }}</span>
+          </div>
+          <div class="inline-flex items-center gap-1.5 sm:gap-2">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ report.last_seen_location }}</span>
+          </div>
+        </div>
+        
+        <div ref="mapDiv" class="w-full h-48 sm:h-64 rounded-xl border shadow-inner ring-1 ring-gray-100"></div>
+      </div>
 
-       <!-- Divider -->
-       <div class="max-w-7xl mx-auto px-6">
-         <hr class="border-gray-200 my-12">
-       </div>
+      <!-- Divider -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <hr class="border-gray-200 my-8 sm:my-12">
+      </div>
 
-       <!-- Other Missing Persons Cases -->
-       <section class="max-w-7xl mx-auto px-6 py-12 bg-gray-50">
-        <div class="text-center mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">Other Missing Persons Cases</h2>
-          <p class="text-gray-600">Help spread awareness by viewing other cases</p>
+      <!-- Other Missing Persons Cases -->
+      <section class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 bg-gray-50">
+        <div class="text-center mb-6 sm:mb-8">
+          <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-1.5 sm:mb-2">Other Missing Persons Cases</h2>
+          <p class="text-sm sm:text-base text-gray-600">Help spread awareness by viewing other cases</p>
         </div>
         
         <!-- Carousel Container -->
@@ -428,24 +424,24 @@ function getStatusColor(status) {
           <!-- Navigation Arrows -->
           <button @click="prevCases" 
                   :disabled="!canGoPrev"
-                  class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            <i class="fas fa-chevron-left text-gray-600"></i>
+                  class="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <i class="fas fa-chevron-left text-gray-600 text-sm sm:text-base"></i>
           </button>
           
           <button @click="nextCases" 
                   :disabled="!canGoNext"
-                  class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-            <i class="fas fa-chevron-right text-gray-600"></i>
+                  class="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white rounded-full shadow-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <i class="fas fa-chevron-right text-gray-600 text-sm sm:text-base"></i>
           </button>
           
           <!-- Cases Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-12">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 px-10 sm:px-12">
             <div v-for="otherCase in visibleCases" :key="otherCase.id" 
                  class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                  @click="router.visit(`/missing-persons/${otherCase.id}`)">
               
               <!-- Case Image -->
-              <div class="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+              <div class="relative h-40 sm:h-48 bg-gray-100 rounded-t-lg overflow-hidden">
                 <img v-if="otherCase.photo_paths && otherCase.photo_paths.length > 0"
                      :src="`/storage/${otherCase.photo_paths[0]}`"
                      :alt="otherCase.full_name"
@@ -454,7 +450,7 @@ function getStatusColor(status) {
                   <img src="../../assets/default-avatar.jpg" alt="Default Avatar" class="max-h-full max-w-full object-contain" />
                 </div>
                 <div class="absolute top-2 left-2">
-                  <span class="px-2 py-1 text-xs font-medium rounded-full"
+                  <span class="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full"
                         :class="otherCase.case_status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
                     {{ otherCase.case_status === 'Approved' ? 'Approved' : 'Pending' }}
                   </span>
@@ -462,18 +458,18 @@ function getStatusColor(status) {
               </div>
               
               <!-- Case Info -->
-              <div class="p-4">
-                <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1">{{ otherCase.full_name }}</h3>
-                <div class="text-sm text-gray-600 space-y-1">
-                  <div class="flex items-center gap-2">
+              <div class="p-3 sm:p-4">
+                <h3 class="font-semibold text-gray-900 mb-1 line-clamp-1 text-sm sm:text-base">{{ otherCase.full_name }}</h3>
+                <div class="text-xs sm:text-sm text-gray-600 space-y-1">
+                  <div class="flex items-center gap-1.5 sm:gap-2">
                     <i class="fas fa-venus-mars text-gray-400"></i>
                     <span>{{ otherCase.gender }}, {{ otherCase.age }} years</span>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1.5 sm:gap-2">
                     <i class="fas fa-map-marker-alt text-gray-400"></i>
                     <span class="line-clamp-1">{{ otherCase.last_seen_location || 'Location unknown' }}</span>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1.5 sm:gap-2">
                     <i class="far fa-calendar-alt text-gray-400"></i>
                     <span>{{ formatDate(otherCase.last_seen_date) }}</span>
                   </div>
@@ -484,10 +480,10 @@ function getStatusColor(status) {
         </div>
         
         <!-- Empty State -->
-        <div v-if="!otherCases || otherCases.length === 0" class="text-center py-12">
-          <div class="text-5xl mb-4">🔍</div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">No other cases available</h3>
-          <p class="text-gray-600">Check back later for more missing persons cases.</p>
+        <div v-if="!otherCases || otherCases.length === 0" class="text-center py-8 sm:py-12">
+          <div class="text-4xl sm:text-5xl mb-3 sm:mb-4">🔍</div>
+          <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-1.5 sm:mb-2">No other cases available</h3>
+          <p class="text-sm sm:text-base text-gray-600">Check back later for more missing persons cases.</p>
         </div>
       </section>
     </main>

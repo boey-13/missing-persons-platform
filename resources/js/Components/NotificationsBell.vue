@@ -1,9 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 
 const open = ref(false)
 const items = ref([])
 let timerId = null
+
+// Get current user from Inertia page props
+const page = usePage()
+const currentUser = computed(() => page.props.auth?.user)
+const isAdmin = computed(() => currentUser.value?.role === 'admin')
 
 async function fetchFeed() {
   const res = await fetch(`/notifications?t=${Date.now()}` , {
@@ -49,6 +55,30 @@ function timeAgo(iso) {
 }
 
 function onItemClick(n) {
+  // Special handling for contact messages without action (admin only)
+  if (n.type === 'contact_message' && (!n.data || !n.data.action)) {
+    if (isAdmin.value) {
+      window.location.href = '/admin/contact-messages'
+    }
+    return
+  }
+  
+  // Special handling for missing reports without action (admin only)
+  if (n.type === 'missing_report' && (!n.data || !n.data.action)) {
+    if (isAdmin.value) {
+      window.location.href = '/admin/missing-reports'
+    }
+    return
+  }
+  
+  // Special handling for new missing reports without action (admin only)
+  if (n.type === 'new_missing_report' && (!n.data || !n.data.action)) {
+    if (isAdmin.value) {
+      window.location.href = '/admin/missing-reports'
+    }
+    return
+  }
+  
   if (n.data && n.data.action) {
     switch (n.data.action) {
       case 'reapply':
@@ -86,7 +116,13 @@ function onItemClick(n) {
         break
         
       case 'view_application':
-        window.location.href = `/volunteer/my-applications`
+        // For volunteer applications, go to application status page
+        if (n.type === 'volunteer_application_submitted' || n.type === 'volunteer_application') {
+          window.location.href = `/volunteer/application-pending`
+        } else {
+          // For project applications, go to my applications page
+          window.location.href = `/volunteer/my-applications`
+        }
         break
         
       case 'reapply_project':
@@ -104,19 +140,33 @@ function onItemClick(n) {
         break
         
       case 'review_report':
-        window.location.href = `/admin/missing-reports/${n.data.report_id}`
+        if (isAdmin.value) {
+          window.location.href = `/admin/missing-reports`
+        }
         break
         
       case 'review_sighting':
-        window.location.href = `/admin/sighting-reports/${n.data.sighting_id}`
+        if (isAdmin.value) {
+          window.location.href = `/admin/sighting-reports`
+        }
         break
         
       case 'review_volunteer':
-        window.location.href = `/admin/volunteers`
+        if (isAdmin.value) {
+          window.location.href = `/admin/volunteers`
+        }
         break
         
       case 'review_project_application':
-        window.location.href = `/admin/community-projects/applications`
+        if (isAdmin.value) {
+          window.location.href = `/admin/community-projects/applications`
+        }
+        break
+        
+      case 'new_contact_message':
+        if (isAdmin.value) {
+          window.location.href = `/admin/contact-messages`
+        }
         break
         
       default:
@@ -146,55 +196,55 @@ async function onVisibility() {
 
 <template>
   <div class="relative">
-    <button class="relative inline-flex items-center justify-center h-7 w-7 align-middle hover:opacity-90 transition" @click="toggle" aria-label="Notifications">
+    <button class="relative inline-flex items-center justify-center h-6 w-6 sm:h-7 sm:w-7 align-middle hover:opacity-90 transition" @click="toggle" aria-label="Notifications">
       <!-- Inline SVG bell icon (no external font needed) -->
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
         <path d="M12 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 006 14h12a1 1 0 00.707-1.707L18 11.586V8a6 6 0 00-6-6z"/>
         <path d="M8 16a4 4 0 008 0H8z"/>
       </svg>
-      <span v-if="unreadCount" class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] rounded-full px-1.5 min-w-[16px] leading-4 text-center">{{ unreadCount }}</span>
+      <span v-if="unreadCount" class="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] sm:text-[10px] rounded-full px-1 sm:px-1.5 min-w-[14px] sm:min-w-[16px] leading-3 sm:leading-4 text-center">{{ unreadCount }}</span>
     </button>
-    <div v-if="open" class="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-xl z-50 ring-1 ring-black/5 overflow-hidden">
-      <div class="p-3 bg-gray-50 border-b border-gray-200">
-        <div class="font-semibold text-gray-900">Notifications</div>
+    <div v-if="open" class="absolute right-0 mt-2 w-[320px] sm:w-96 bg-white rounded-xl shadow-xl z-50 ring-1 ring-black/5 overflow-hidden">
+      <div class="p-2.5 sm:p-3 bg-gray-50 border-b border-gray-200">
+        <div class="font-semibold text-gray-900 text-sm sm:text-base">Notifications</div>
       </div>
-      <div class="max-h-96 overflow-auto divide-y divide-gray-100">
-        <div v-if="!items.length" class="p-5 text-gray-500 text-sm text-center">No notifications</div>
-        <div v-for="n in items" :key="n.id" @click="onItemClick(n)" class="p-4 text-sm cursor-pointer hover:bg-gray-50 transition-colors flex gap-3">
+      <div class="max-h-80 sm:max-h-96 overflow-auto divide-y divide-gray-100">
+        <div v-if="!items.length" class="p-4 sm:p-5 text-gray-500 text-xs sm:text-sm text-center">No notifications</div>
+        <div v-for="n in items" :key="n.id" @click="onItemClick(n)" class="p-3 sm:p-4 text-xs sm:text-sm cursor-pointer hover:bg-gray-50 transition-colors flex gap-2 sm:gap-3">
           <div class="mt-0.5 flex-shrink-0">
             <!-- Different icons based on notification type -->
-            <svg v-if="n.type?.includes('volunteer')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-orange-600" fill="currentColor">
+            <svg v-if="n.type?.includes('volunteer')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" fill="currentColor">
               <path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 000 4h12a2 2 0 000-4h-1V7a5 5 0 00-5-5z"/>
               <path d="M8 17a4 4 0 108 0H8z"/>
             </svg>
-            <svg v-else-if="n.type?.includes('missing')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600" fill="currentColor">
+            <svg v-else-if="n.type?.includes('missing')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="currentColor">
               <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
             </svg>
-            <svg v-else-if="n.type?.includes('sighting')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-green-600" fill="currentColor">
+            <svg v-else-if="n.type?.includes('sighting')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="currentColor">
               <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
-            <svg v-else-if="n.type?.includes('project')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-purple-600" fill="currentColor">
+            <svg v-else-if="n.type?.includes('project')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" fill="currentColor">
               <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            <svg v-else-if="n.type?.includes('points')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-yellow-600" fill="currentColor">
+            <svg v-else-if="n.type?.includes('points')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" fill="currentColor">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>
-            <svg v-else-if="n.type?.includes('welcome')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-green-600" fill="currentColor">
+            <svg v-else-if="n.type?.includes('welcome')" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="currentColor">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5 text-gray-500" fill="currentColor">
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" fill="currentColor">
               <path d="M5 4h14v2H5z"/>
               <path d="M5 8h14v12H5z"/>
             </svg>
           </div>
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-gray-900 mb-1" v-text="n.title"></div>
-            <div class="text-gray-700 text-sm leading-relaxed" v-text="n.message"></div>
-            <div class="text-xs text-gray-500 mt-2">{{ timeAgo(n.created_at) }}</div>
+            <div class="font-medium text-gray-900 mb-1 text-xs sm:text-sm" v-text="n.title"></div>
+            <div class="text-gray-700 text-xs sm:text-sm leading-relaxed" v-text="n.message"></div>
+            <div class="text-[10px] sm:text-xs text-gray-500 mt-1.5 sm:mt-2">{{ timeAgo(n.created_at) }}</div>
           </div>
           <div class="flex-shrink-0">
-            <span v-if="!n.read_at" class="w-2 h-2 bg-blue-500 rounded-full"></span>
+            <span v-if="!n.read_at" class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full"></span>
           </div>
         </div>
       </div>

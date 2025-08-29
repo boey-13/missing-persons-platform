@@ -76,13 +76,13 @@ const roles = [
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-extrabold">Manage Users</h1>
+    <div class="flex justify-between items-center mb-6 sm:mb-8 px-4 sm:px-0">
+      <h1 class="text-2xl sm:text-3xl font-extrabold">Manage Users</h1>
     </div>
 
     <!-- Search and Filter Bar -->
-    <div class="bg-white rounded-xl shadow p-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white rounded-xl shadow p-4 sm:p-6 mb-6 mx-4 sm:mx-0">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <!-- Search -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -129,8 +129,8 @@ const roles = [
       </div>
     </div>
 
-    <!-- Users Table -->
-    <div class="bg-white rounded-xl shadow overflow-hidden">
+    <!-- Desktop Table View -->
+    <div class="hidden lg:block bg-white rounded-xl shadow overflow-hidden mx-4 sm:mx-0">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -173,18 +173,53 @@ const roles = [
           </tbody>
         </table>
       </div>
+    </div>
 
-
-
-      <!-- Empty State -->
-      <div v-if="!props.users.data || props.users.data.length === 0" class="text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900">No users found</h3>
-        <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+    <!-- Mobile Card View -->
+    <div class="lg:hidden space-y-4 mx-4">
+      <div v-for="user in props.users.data" :key="user.id" class="bg-white rounded-xl shadow p-4 border border-gray-200">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-gray-900">{{ user.name }}</h3>
+            <p class="text-sm text-gray-600 break-words">{{ user.email }}</p>
+            <p class="text-xs text-gray-500 mt-1">ID: {{ user.id }}</p>
+          </div>
+        </div>
+        
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-700">Role:</span>
+            <select :value="user.role" @change="e => changeRole(user.id, e.target.value)"
+              class="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="user">User</option>
+              <option value="volunteer">Volunteer</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-700">Created:</span>
+            <span class="text-sm text-gray-600">{{ new Date(user.created_at).toLocaleDateString() }}</span>
+          </div>
+          
+          <div class="flex justify-end pt-2">
+            <button class="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
+              @click="() => deleteUser(user.id)">
+              Delete User
+            </button>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-if="!props.users.data || props.users.data.length === 0" class="text-center py-12 mx-4">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+      <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
     </div>
 
     <!-- Pagination -->

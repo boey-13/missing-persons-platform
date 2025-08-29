@@ -179,8 +179,7 @@ function applyToProject(project) {
 }
 
 function submitApplication() {
-  console.log('Submitting application for project:', selectedProject.value.id)
-  console.log('Form data:', applicationForm.data())
+  
   
   // Frontend validation
   if (applicationForm.experience.length < 10) {
@@ -196,7 +195,7 @@ function submitApplication() {
   isSubmittingApplication.value = true
   applicationForm.post(`/volunteer/projects/${selectedProject.value.id}/apply`, {
     onSuccess: () => {
-      console.log('Application submitted successfully')
+
       showApplicationModal.value = false
       applicationForm.reset()
       // Show success notification
@@ -222,7 +221,7 @@ function submitApplication() {
       error(errorMessage)
     },
     onFinish: () => {
-      console.log('Form submission finished')
+  
       isSubmittingApplication.value = false
     }
   })
@@ -292,43 +291,43 @@ function getCategoryColor(category) {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-    <!-- 👉 原有的 Flash Messages 和 Custom Notification 已移除，统一使用新的顶部居中提示 -->
+    <!-- Original Flash Messages and Custom Notification removed, unified with new top-center notifications -->
 
-    <!-- Header Section -->
-    <div class="bg-white shadow-sm">
-      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div class="text-center">
-          <h1 class="text-4xl font-bold text-gray-900 mb-3">Community Projects</h1>
-          <p class="text-xl text-gray-600 mb-4">Join our community initiatives and make a difference</p>
-          <div class="inline-flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 px-6 py-3 rounded-full text-sm font-medium border border-blue-200 shadow-sm">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">Community Projects</h1>
+          <p class="text-lg sm:text-xl text-gray-600 mb-3 sm:mb-4">Join our community initiatives and make a difference</p>
+          <div class="inline-flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-medium border border-blue-200 shadow-sm">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
             </svg>
             <span class="font-semibold">Total Points Available:</span>
-            <span class="ml-1 font-bold text-lg">{{ filteredProjects.reduce((total, project) => total + project.points_reward, 0) }}</span>
+            <span class="ml-1 font-bold text-base sm:text-lg">{{ filteredProjects.reduce((total, project) => total + project.points_reward, 0) }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Filters Section -->
-    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Location</label>
             <input
               v-model="filters.location"
               type="text"
               placeholder="Search by location..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-2.5 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Category</label>
             <select
               v-model="filters.category"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-2.5 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             >
               <option v-for="category in categories" :key="category.value" :value="category.value">
                 {{ category.label }}
@@ -336,10 +335,10 @@ function getCategoryColor(category) {
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Status</label>
             <select
               v-model="filters.status"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-2.5 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             >
               <option v-for="status in statuses" :key="status.value" :value="status.value">
                 {{ status.label }}
@@ -349,7 +348,7 @@ function getCategoryColor(category) {
           <div class="flex items-end">
             <button
               @click="clearFilters"
-              class="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              class="w-full bg-gray-100 text-gray-700 py-2 px-3 sm:px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors text-sm sm:text-base"
             >
               Clear Filters
             </button>
@@ -359,58 +358,58 @@ function getCategoryColor(category) {
     </div>
 
     <!-- Projects Grid -->
-    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-      <div v-if="filteredProjects.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12">
+      <div v-if="filteredProjects.length > 0" class="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <div
           v-for="project in filteredProjects"
           :key="project.id"
           class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col"
         >
           <!-- Project Image -->
-          <div class="h-48 relative">
+          <div class="h-40 sm:h-48 relative">
             <img 
               :src="project.photo_url || '/signup.png'" 
               :alt="project.title"
               class="w-full h-full object-cover"
             />
             <div class="absolute inset-0 bg-black bg-opacity-20"></div>
-            <div class="absolute top-4 left-4">
-              <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`">
+            <div class="absolute top-3 sm:top-4 left-3 sm:left-4">
+              <span :class="`px-1.5 sm:px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`">
                 {{ project.status }}
               </span>
             </div>
-            <div class="absolute top-4 right-4">
-              <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(project.category)}`">
+            <div class="absolute top-3 sm:top-4 right-3 sm:right-4">
+              <span :class="`px-1.5 sm:px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(project.category)}`">
                 {{ project.category }}
               </span>
             </div>
-            <div class="absolute bottom-4 right-4 bg-white bg-opacity-90 rounded-lg px-3 py-1">
-              <div class="text-lg font-bold text-gray-900">{{ project.points_reward }}</div>
+            <div class="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 bg-white bg-opacity-90 rounded-lg px-2 sm:px-3 py-1">
+              <div class="text-base sm:text-lg font-bold text-gray-900">{{ project.points_reward }}</div>
               <div class="text-xs text-gray-600">Points</div>
             </div>
           </div>
 
           <!-- Project Content -->
-          <div class="p-5 flex flex-col flex-1">
-            <h3 class="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{{ project.title }}</h3>
-            <p class="text-gray-600 mb-3 line-clamp-2 text-sm">{{ project.description }}</p>
+          <div class="p-4 sm:p-5 flex flex-col flex-1">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-1.5 sm:mb-2 line-clamp-2">{{ project.title }}</h3>
+            <p class="text-gray-600 mb-2.5 sm:mb-3 line-clamp-2 text-xs sm:text-sm">{{ project.description }}</p>
             
-            <div class="space-y-2 mb-4">
-              <div class="flex items-center text-sm text-gray-600">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+              <div class="flex items-center text-xs sm:text-sm text-gray-600">
+                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
                 {{ project.location }}
               </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="flex items-center text-xs sm:text-sm text-gray-600">
+                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
                 {{ formatDate(project.date) }} at {{ formatTime(project.time) }}
               </div>
-              <div class="flex items-center text-sm text-gray-600">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="flex items-center text-xs sm:text-sm text-gray-600">
+                <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 {{ project.duration }}
@@ -418,24 +417,24 @@ function getCategoryColor(category) {
             </div>
 
             <!-- Volunteer Progress -->
-            <div class="mb-4">
-              <div class="flex justify-between text-sm text-gray-600 mb-1">
+            <div class="mb-3 sm:mb-4">
+              <div class="flex justify-between text-xs sm:text-sm text-gray-600 mb-1">
                 <span>Volunteers: {{ project.volunteers_joined }}/{{ project.volunteers_needed }}</span>
                 <span>{{ Math.round((project.volunteers_joined / project.volunteers_needed) * 100) }}%</span>
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-1.5">
+              <div class="w-full bg-gray-200 rounded-full h-1 sm:h-1.5">
                 <div
-                  class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  class="bg-blue-600 h-1 sm:h-1.5 rounded-full transition-all duration-300"
                   :style="{ width: `${(project.volunteers_joined / project.volunteers_needed) * 100}%` }"
                 ></div>
               </div>
             </div>
 
             <!-- Action Buttons - Now at the bottom -->
-            <div class="flex space-x-2 mt-auto">
+            <div class="flex space-x-1.5 sm:space-x-2 mt-auto">
               <Link
                 :href="`/community-projects/${project.id}`"
-                class="flex-1 bg-gray-600 text-white py-2.5 px-3 rounded-lg font-medium hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center text-sm"
+                class="flex-1 bg-gray-600 text-white py-2 sm:py-2.5 px-2.5 sm:px-3 rounded-lg font-medium hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors text-center text-xs sm:text-sm"
               >
                 View Details
               </Link>
@@ -443,7 +442,7 @@ function getCategoryColor(category) {
                 @click="applyToProject(project)"
                 :class="getApplicationButtonClass(project)"
                 :disabled="!canApplyToProject(project)"
-                class="flex-1 text-sm py-2.5 px-3"
+                class="flex-1 text-xs sm:text-sm py-2 sm:py-2.5 px-2.5 sm:px-3"
               >
                 {{ getApplicationButtonText(project) }}
               </button>
@@ -453,32 +452,32 @@ function getCategoryColor(category) {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div v-else class="text-center py-8 sm:py-12">
+        <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
         <h3 class="mt-2 text-sm font-medium text-gray-900">No projects found</h3>
-        <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or check back later for new opportunities.</p>
+        <p class="mt-1 text-xs sm:text-sm text-gray-500">Try adjusting your filters or check back later for new opportunities.</p>
       </div>
     </div>
 
     <!-- Pagination -->
-    <div v-if="props.projects?.data && props.projects.data.length > 0" class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <div v-if="props.projects?.data && props.projects.data.length > 0" class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12">
       <div class="flex justify-center">
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5 sm:space-x-2">
           <!-- Previous Page -->
           <Link
             v-if="props.projects.prev_page_url"
             :href="props.projects.prev_page_url"
-            class="text-gray-400 hover:text-gray-600 transition-colors flex items-center"
+            class="text-gray-400 hover:text-gray-600 transition-colors flex items-center text-xs sm:text-sm"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Previous
           </Link>
-          <span v-else class="text-gray-300 flex items-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span v-else class="text-gray-300 flex items-center text-xs sm:text-sm">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Previous
@@ -489,13 +488,13 @@ function getCategoryColor(category) {
             <Link
               v-if="link.url && !link.active && !isNavigationLink(link.label)"
               :href="link.url"
-              class="text-gray-600 hover:text-gray-900 transition-colors px-3 py-1 rounded hover:bg-gray-100"
+              class="text-gray-600 hover:text-gray-900 transition-colors px-2.5 sm:px-3 py-1 rounded hover:bg-gray-100 text-xs sm:text-sm"
             >
               {{ link.label }}
             </Link>
             <span
               v-else-if="link.active"
-              class="text-gray-900 bg-gray-200 px-3 py-1 rounded font-medium"
+              class="text-gray-900 bg-gray-200 px-2.5 sm:px-3 py-1 rounded font-medium text-xs sm:text-sm"
             >
               {{ link.label }}
             </span>
@@ -505,16 +504,16 @@ function getCategoryColor(category) {
           <Link
             v-if="props.projects.next_page_url"
             :href="props.projects.next_page_url"
-            class="text-gray-400 hover:text-gray-600 transition-colors flex items-center"
+            class="text-gray-400 hover:text-gray-600 transition-colors flex items-center text-xs sm:text-sm"
           >
             Next
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </Link>
-          <span v-else class="text-gray-300 flex items-center">
+          <span v-else class="text-gray-300 flex items-center text-xs sm:text-sm">
             Next
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </span>

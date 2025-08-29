@@ -113,7 +113,7 @@ class ProfileController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email,' . $user->id,
                 'phone' => 'nullable|string|max:32',
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120'
             ]);
 
             \Log::info('Validation passed', $validated);

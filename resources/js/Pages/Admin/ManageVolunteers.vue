@@ -197,6 +197,8 @@ function clearFilters() {
     </div>
 
     <div class="bg-white rounded-xl shadow overflow-hidden">
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50">
           <tr>
@@ -280,6 +282,87 @@ function clearFilters() {
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4 p-4">
+        <div v-for="a in applications.data" :key="a.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">{{ a.user?.name }}</h3>
+              <p class="text-sm text-gray-600">{{ a.user?.email }}</p>
+              <p class="text-xs text-gray-500">Application #{{ a.id }}</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusColor(a.status)">
+              {{ a.status }}
+            </span>
+          </div>
+          
+          <div class="space-y-3 mb-4">
+            <div>
+              <span class="text-sm font-medium text-gray-700">Motivation:</span>
+              <p class="text-sm text-gray-600 mt-1 break-words">{{ a.motivation }}</p>
+            </div>
+            
+            <div>
+              <span class="text-sm font-medium text-gray-700">Projects:</span>
+              <div class="mt-1">
+                <div v-if="a.project_applications && a.project_applications.length > 0" class="space-y-2">
+                  <div v-for="project in a.project_applications.slice(0, 2)" :key="project.id" class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div class="flex items-center space-x-2">
+                      <span class="w-2 h-2 rounded-full" :class="getProjectStatusColor(project.project_status)"></span>
+                      <span class="text-sm truncate">{{ project.project_title }}</span>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded" :class="getApplicationStatusColor(project.application_status)">
+                      {{ project.application_status }}
+                    </span>
+                  </div>
+                  <div v-if="a.project_applications.length > 2" class="text-sm text-gray-500">
+                    +{{ a.project_applications.length - 2 }} more projects
+                  </div>
+                </div>
+                <div v-else class="text-sm text-gray-400">No projects</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+            <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(a)">
+              View
+            </button>
+            
+            <!-- Pending Status Actions -->
+            <template v-if="a.status === 'Pending'">
+              <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(a)">
+                Approve
+              </button>
+              <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
+                Reject
+              </button>
+            </template>
+            
+            <!-- Approved Status Actions -->
+            <template v-if="a.status === 'Approved'">
+              <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(a)">
+                Approve
+              </button>
+              <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
+                Reject
+              </button>
+            </template>
+            
+            <!-- Rejected Status Actions -->
+            <template v-if="a.status === 'Rejected'">
+              <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(a)">
+                Approve
+              </button>
+              <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
+                Reject
+              </button>
+            </template>
+          </div>
+        </div>
+      </div>
 
       <!-- Empty State -->
       <div v-if="!props.applications.data || props.applications.data.length === 0" class="text-center py-12">

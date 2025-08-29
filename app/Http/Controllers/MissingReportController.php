@@ -284,5 +284,16 @@ class MissingReportController extends Controller
         ]);
     }
 
+    /**
+     * Check if IC number already exists in missing reports
+     */
+    public function checkICNumber(string $ic_number)
+    {
+        $exists = MissingReport::where('ic_number', $ic_number)
+            ->whereIn('case_status', ['Pending', 'Approved', 'Missing'])
+            ->exists();
+        
+        return response()->json(['exists' => $exists]);
+    }
 
 }

@@ -135,7 +135,7 @@ class SightingReportController extends Controller
                 'reporter_name' => ['required', 'string', 'max:255'],
                 'reporter_phone' => ['required', 'string', 'max:30'],
                 'reporter_email' => ['nullable', 'email', 'max:255'],
-                'photos.*' => ['image', 'max:2048'],
+                'photos.*' => ['image', 'max:5120'],
             ]);
 
             $validated['user_id'] = auth()->id(); // This will be null if user is not logged in

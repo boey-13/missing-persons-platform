@@ -151,7 +151,6 @@ function addProject() {
       newProjectForm.reset()
     },
     onError: (errors) => {
-      console.error('Create failed:', errors)
       error('Failed to create project. Please check the form and try again.')
     }
   })
@@ -164,7 +163,7 @@ function updateProjectStatus(projectId, newStatus) {
     {
       preserveScroll: true,
       onSuccess: () => {
-        // 提示来自后端 flash
+        // Success message from backend flash
       },
     }
   )
@@ -206,23 +205,28 @@ function editProject(project) {
 function updateProject() {
   if (!selectedProject.value) return
 
-  editProjectForm.put(`/admin/community-projects/${selectedProject.value.id}`, {
-    preserveScroll: true,
-    onSuccess: () => {
-      showEditProjectModal.value = false
-      editProjectForm.reset()
-      selectedProject.value = null
-    },
-    onError: (errors) => {
-      console.error('Update failed:', errors)
-      if (errors && typeof errors === 'object') {
-        const errorMessages = Object.values(errors).flat()
-        error(`Validation failed: ${errorMessages.join(', ')}`)
-      } else {
-        error('Failed to update project. Please check the form and try again.')
+  editProjectForm
+    .transform((data) => ({
+      ...data,
+      _method: 'PUT',
+    }))
+    .post(`/admin/community-projects/${selectedProject.value.id}`, {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        showEditProjectModal.value = false
+        editProjectForm.reset()
+        selectedProject.value = null
+      },
+      onError: (errors) => {
+        if (errors && typeof errors === 'object') {
+          const errorMessages = Object.values(errors).flat()
+          error(`Validation failed: ${errorMessages.join(', ')}`)
+        } else {
+          error('Failed to update project. Please check the form and try again.')
+        }
       }
-    }
-  })
+    })
 }
 
 function deleteProject(projectId) {
@@ -230,12 +234,11 @@ function deleteProject(projectId) {
     router.delete(`/admin/community-projects/${projectId}`, {
       preserveScroll: true,
       onSuccess: () => {
-        // 提示来自后端 flash
+        // Success message from backend flash
       },
-      onError: (errors) => {
-        console.error('Delete failed:', errors)
-        error('Failed to delete project. Please try again.')
-      }
+          onError: (errors) => {
+      error('Failed to delete project. Please try again.')
+    }
     })
   }
 }
@@ -249,7 +252,7 @@ function switchToApplications() {
   fetchApplications()
 }
 
-// ===== Applications（JSON 接口）=====
+// ===== Applications (JSON API) =====
 function fetchApplications() {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
   
@@ -278,8 +281,7 @@ function fetchApplications() {
       }
       applications.value = applicationsArray
     })
-    .catch(error => {
-      console.error('Error fetching applications:', error)
+    .catch(() => {
       applications.value = []
     })
 }
@@ -397,8 +399,7 @@ onMounted(() => {
 })
 
 onMounted(() => {
-  console.log('Component mounted!')
-  console.log('Initial activeTab:', activeTab.value)
+  fetchApplications()
 })
 </script>
 
@@ -754,7 +755,8 @@ onMounted(() => {
 
         <!-- Applications Table -->
         <div v-if="filteredApplications.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div class="overflow-x-auto">
+          <!-- Desktop Table View -->
+          <div class="hidden lg:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
@@ -802,6 +804,49 @@ onMounted(() => {
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Mobile Card View -->
+          <div class="lg:hidden space-y-4 p-4">
+            <div v-for="application in filteredApplications" :key="application.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+              <div class="flex items-start justify-between mb-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">{{ application.volunteerName }}</h3>
+                  <p class="text-sm text-gray-600">{{ application.email }}</p>
+                </div>
+                <span :class="`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(application.status)}`">
+                  {{ application.status }}
+                </span>
+              </div>
+              
+              <div class="space-y-2 mb-4">
+                <div class="flex justify-between">
+                  <span class="text-sm font-medium text-gray-700">Project:</span>
+                  <span class="text-sm text-gray-600 break-words text-right">{{ application.projectTitle }}</span>
+                </div>
+                
+                <div class="flex justify-between">
+                  <span class="text-sm font-medium text-gray-700">Applied On:</span>
+                  <span class="text-sm text-gray-600">{{ formatDate(application.created_at) }}</span>
+                </div>
+              </div>
+              
+              <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                <button @click="viewApplication(application)" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs">
+                  View
+                </button>
+                <button v-if="application.status === 'pending'"
+                        @click="approveApplication(application.id)"
+                        class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs">
+                  Approve
+                </button>
+                <button v-if="application.status === 'pending'"
+                        @click="rejectApplication(application.id)"
+                        class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs">
+                  Reject
+                </button>
+              </div>
+            </div>
           </div>
         </div> <!-- /table -->
         
@@ -1275,7 +1320,116 @@ onMounted(() => {
               </svg>
             </button>
           </div>
-          <!-- Application details content here -->
+          
+          <div v-if="selectedApplication" class="space-y-6">
+            <!-- Volunteer Information -->
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Volunteer Information</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Name</label>
+                  <p class="text-sm text-gray-900">{{ selectedApplication.volunteerName }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Email</label>
+                  <p class="text-sm text-gray-900">{{ selectedApplication.email }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Phone</label>
+                  <p class="text-sm text-gray-900">{{ selectedApplication.phone || 'Not provided' }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Status</label>
+                  <span :class="`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedApplication.status)}`">
+                    {{ selectedApplication.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Project Information -->
+            <div class="bg-blue-50 rounded-lg p-4">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Project Information</h3>
+              <div class="space-y-2">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Project Title</label>
+                  <p class="text-sm text-gray-900">{{ selectedApplication.projectTitle }}</p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Project ID</label>
+                  <p class="text-sm text-gray-900">#{{ selectedApplication.projectId }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Application Details -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Application Details</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Applied On</label>
+                  <p class="text-sm text-gray-900">{{ formatDate(selectedApplication.created_at) }}</p>
+                </div>
+                <div v-if="selectedApplication.motivation">
+                  <label class="block text-sm font-medium text-gray-700">Motivation</label>
+                  <p class="text-sm text-gray-900 bg-gray-50 rounded p-3">{{ selectedApplication.motivation }}</p>
+                </div>
+                <div v-if="selectedApplication.experience">
+                  <label class="block text-sm font-medium text-gray-700">Previous Experience</label>
+                  <p class="text-sm text-gray-900 bg-gray-50 rounded p-3">{{ selectedApplication.experience }}</p>
+                </div>
+                <div v-if="selectedApplication.skills">
+                  <label class="block text-sm font-medium text-gray-700">Skills</label>
+                  <p class="text-sm text-gray-900 bg-gray-50 rounded p-3">{{ selectedApplication.skills }}</p>
+                </div>
+                <div v-if="selectedApplication.availability">
+                  <label class="block text-sm font-medium text-gray-700">Availability</label>
+                  <p class="text-sm text-gray-900 bg-gray-50 rounded p-3">{{ selectedApplication.availability }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status History -->
+            <div v-if="selectedApplication.statusHistory && selectedApplication.statusHistory.length > 0">
+              <h3 class="text-lg font-semibold text-gray-900 mb-3">Status History</h3>
+              <div class="space-y-2">
+                <div v-for="(history, index) in selectedApplication.statusHistory" :key="index" 
+                     class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div>
+                    <span :class="`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(history.status)}`">
+                      {{ history.status }}
+                    </span>
+                    <span v-if="history.reason" class="ml-2 text-sm text-gray-600">- {{ history.reason }}</span>
+                  </div>
+                  <span class="text-xs text-gray-500">{{ formatDate(history.created_at) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+              <button
+                v-if="selectedApplication.status === 'pending'"
+                @click="approveApplication(selectedApplication.id)"
+                class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Approve Application
+              </button>
+              <button
+                v-if="selectedApplication.status === 'pending'"
+                @click="rejectApplication(selectedApplication.id)"
+                class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+              >
+                Reject Application
+              </button>
+              <button
+                @click="showApplicationModal = false"
+                class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1285,6 +1439,7 @@ onMounted(() => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -54,7 +54,7 @@ function fetchApplications() {
     })
     .then(data => {
       applications.value = data
-      console.log('Fetched applications:', data)
+      
     })
     .catch(err => {
       error.value = err.message

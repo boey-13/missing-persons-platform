@@ -207,7 +207,7 @@ class User extends Authenticatable
      */
     public function volunteerApplication()
     {
-        return $this->hasOne(VolunteerApplication::class);
+        return $this->hasOne(VolunteerApplication::class)->latest()->limit(1);
     }
 
     /**

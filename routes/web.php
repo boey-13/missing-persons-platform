@@ -43,6 +43,9 @@ Route::get('/missing-persons', function() {
 
 Route::post('/missing-persons', [MissingReportController::class, 'store'])->name('missing-persons.store');
 
+// Check if IC number already exists in missing reports
+Route::get('/api/check-ic/{ic_number}', [MissingReportController::class, 'checkICNumber']);
+
 
 Route::get('/missing-persons/report', function () {
     return Inertia::render('MissingPersons/ReportMissingPerson');
@@ -85,8 +88,22 @@ Route::middleware('auth')->group(function () {
             return response()->json([]);
         }
         
-        $notifications = \App\Models\Notification::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
+        $query = \App\Models\Notification::where('user_id', $user->id);
+        
+        // Filter notifications based on user role
+        if ($user->role !== 'admin') {
+            // Non-admin users should not see admin-specific notifications
+            $adminNotificationTypes = [
+                'new_missing_report',
+                'new_sighting_report', 
+                'new_volunteer_application',
+                'new_project_application',
+                'new_contact_message'
+            ];
+            $query->whereNotIn('type', $adminNotificationTypes);
+        }
+        
+        $notifications = $query->orderBy('created_at', 'desc')
             ->limit(10)
             ->get(['id', 'type', 'title', 'message', 'data', 'read_at', 'created_at']);
             
@@ -245,15 +262,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
         ]);
     })->name('users');
 
-    // Test route for applications
-    Route::get('/test-applications', function () {
-        return Inertia::render('Admin/TestApplications');
-    })->name('test.applications');
 
-    // Debug route for authentication
-    Route::get('/debug-auth', function () {
-        return Inertia::render('Admin/DebugAuth');
-    })->name('debug.auth');
 
     Route::post('/users/{user}/role', function (\Illuminate\Http\Request $request, User $user) {
         $request->validate(['role' => 'required|in:user,volunteer,admin']);

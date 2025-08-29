@@ -29,6 +29,19 @@ class VolunteerMiddleware
 
         // If user has no volunteer application, show access denied page
         if (!$user->hasVolunteerApplication()) {
+            // Log access denied attempt
+            \App\Models\SystemLog::log(
+                'access_denied',
+                'User attempted to access volunteer area without application',
+                [
+                    'user_id' => $user->id,
+                    'user_email' => $user->email,
+                    'user_role' => $user->role,
+                    'requested_url' => $request->url(),
+                    'ip_address' => $request->ip()
+                ]
+            );
+            
             if ($request->expectsJson()) {
                 return response()->json([
                     'error' => 'Volunteer access required',
@@ -47,6 +60,20 @@ class VolunteerMiddleware
         // If user has pending/rejected application, show access denied page with details
         $volunteerStatus = $user->volunteerApplication->status;
         
+        // Log access denied attempt for pending/rejected applications
+        \App\Models\SystemLog::log(
+            'access_denied',
+            'User attempted to access volunteer area with pending/rejected application',
+            [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'user_role' => $user->role,
+                'volunteer_status' => $volunteerStatus,
+                'requested_url' => $request->url(),
+                'ip_address' => $request->ip()
+            ]
+        );
+
         if ($request->expectsJson()) {
             return response()->json([
                 'error' => 'Volunteer access required',

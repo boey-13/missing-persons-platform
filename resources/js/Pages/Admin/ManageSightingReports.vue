@@ -170,6 +170,8 @@ function formatDate(dateString) {
     </div>
 
     <div class="bg-white rounded-xl shadow overflow-hidden">
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block overflow-x-auto">
       <table class="min-w-full text-sm">
         <thead class="bg-gray-50">
           <tr>
@@ -243,6 +245,82 @@ function formatDate(dateString) {
           </tr>
         </tbody>
       </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4 p-4">
+        <div v-for="row in props.items" :key="row.id" class="bg-white rounded-xl shadow border border-gray-200 p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">{{ row.missing_person_name }}</h3>
+              <p class="text-sm text-gray-600">Sighting #{{ row.id }}</p>
+              <p class="text-xs text-gray-500">Missing Person ID: {{ row.missing_report_id }}</p>
+            </div>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusColor(row.status)">
+              {{ row.status }}
+            </span>
+          </div>
+          
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Location:</span>
+              <span class="text-sm text-gray-600 break-words text-right">{{ row.location }}</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Sighted At:</span>
+              <span class="text-sm text-gray-600">{{ formatDate(row.sighted_at) }}</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span class="text-sm font-medium text-gray-700">Reporter:</span>
+              <span class="text-sm text-gray-600">{{ row.reporter }}</span>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+            <button class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs" @click="openDetail(row.id)">
+              View
+            </button>
+             
+             <!-- Pending Status Actions -->
+             <template v-if="row.status === 'Pending'">
+               <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
+                 Approve
+               </button>
+               <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
+                 Reject
+               </button>
+             </template>
+             
+             <!-- Approved Status Actions -->
+             <template v-if="row.status === 'Approved'">
+               <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
+                 Approve
+               </button>
+               <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
+                 Reject
+               </button>
+               <button 
+                 @click="createProjectFromSighting(row.id)"
+                 class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors text-xs"
+               >
+                 Create Project
+               </button>
+             </template>
+             
+             <!-- Rejected Status Actions -->
+             <template v-if="row.status === 'Rejected'">
+               <button class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs" @click="openApproveModal(row.id)">
+                Approve
+              </button>
+               <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
+                Reject
+              </button>
+             </template>
+          </div>
+        </div>
+      </div>
 
       <!-- Empty State -->
       <div v-if="!props.items || props.items.length === 0" class="text-center py-12">
