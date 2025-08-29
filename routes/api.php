@@ -25,8 +25,7 @@ Route::get('/search-missing-persons', function (Request $request) {
         return response()->json(['results' => []]);
     }
     
-    $results = \App\Models\MissingReport::where('case_status', 'Approved')
-        ->where(function($q) use ($query) {
+    $results = \App\Models\MissingReport::where(function($q) use ($query) {
             $q->where('full_name', 'LIKE', "%{$query}%")
               ->orWhere('last_seen_location', 'LIKE', "%{$query}%")
               ->orWhere('age', 'LIKE', "%{$query}%")

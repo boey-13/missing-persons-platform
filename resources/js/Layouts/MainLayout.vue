@@ -18,7 +18,7 @@
           </button>
           <div v-if="dropdownOpen === 'missing'" 
             class="absolute left-0 mt-2 w-48 bg-white text-[#333] rounded shadow z-40">
-            <a href="/missing-persons" class="block px-4 py-2 hover:bg-[#e7d6c3]">View Case</a>
+            <a href="/missing-persons" class="block px-4 py-2 hover:bg-[#e7d6c3]">View Missing Cases</a>
             <!-- Show Report Missing Person only for logged in users -->
             <a v-if="currentUser" href="/missing-persons/report" class="block px-4 py-2 hover:bg-[#e7d6c3]">Report Missing Person</a>
           </div>

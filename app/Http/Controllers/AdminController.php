@@ -337,4 +337,5 @@ class AdminController extends Controller
             return back()->withErrors(['error' => 'Failed to send reply: ' . $e->getMessage()]);
         }
     }
+
 }

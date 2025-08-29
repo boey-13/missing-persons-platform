@@ -83,7 +83,7 @@ function closeLockedModal() {
 
 const page = usePage()
 
-// Watch for flash messages from backend (original logic) 
+// Watch for flash messages from backend 
 watch(() => page.props.flash, (flash) => {
   if (flash?.success) {
     success(flash.success)

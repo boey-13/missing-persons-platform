@@ -1,4 +1,4 @@
-<?php
+php artisan db:seed --class=RewardCategorySeeder<?php
 
 namespace Database\Seeders;
 

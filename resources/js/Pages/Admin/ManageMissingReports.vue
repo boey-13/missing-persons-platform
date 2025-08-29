@@ -26,6 +26,7 @@ const selectedReports = ref([]) // For multi-select
 
 // Forms
 const rejectForm = useForm({
+  status: '',
   rejection_reason: '',
   preset_reason: ''
 })
@@ -222,8 +223,9 @@ function updateStatus() {
 }
 
 function rejectReport() {
-  rejectForm.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
-    status: 'Rejected'
+  router.post(`/admin/missing-reports/${selectedReportId.value}/status`, {
+    status: 'Rejected',
+    rejection_reason: rejectForm.rejection_reason
   }, {
     onSuccess: () => {
       showRejectModal.value = false
@@ -1213,7 +1215,7 @@ function handleImageLoad(event) {
             <div class="flex gap-3 pt-4">
               <button 
                 type="submit"
-                :disabled="rejectForm.processing || (!rejectForm.rejection_reason && rejectForm.preset_reason !== 'other')"
+                :disabled="rejectForm.processing || !rejectForm.rejection_reason"
                 class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
               >
                 {{ rejectForm.processing ? 'Rejecting...' : 'Reject Report' }}

@@ -112,11 +112,11 @@
   // inactivity timers & state
   const autoEndTimeout = ref(null);
   const warningTimeout = ref(null);
-  const hasWarned = ref(false);            // 是否已发过30s警告（持久化）
-  const lastActivityAt = ref(Date.now());  // 上次用户动作时间戳（持久化）
-  const timersArmed = ref(false);          // 是否“上膛”，false 时不计时（持久化）★ 核心新增
+  const hasWarned = ref(false);            
+  const lastActivityAt = ref(Date.now());  
+  const timersArmed = ref(false);          
   
-  // unread tracking（只统计system消息，不含user/typing）
+  // unread tracking
   const lastReadIndex = ref(0);
   function countBotMessages(arr = messages.value) {
     return (arr || []).filter(m => m.role !== 'user' && !m.typing).length;
@@ -143,10 +143,10 @@
       sessionId.value     = data.sessionId;
       lastReadIndex.value = data.lastReadIndex ?? countBotMessages(messages.value);
   
-      // 恢复超时状态
+      // restore unread count only if chat is closed
       hasWarned.value      = !!data.hasWarned;
       lastActivityAt.value = data.lastActivityAt || Date.now();
-      // 旧数据可能没有 timersArmed：默认 true 表示继续计时；End Chat 后会保存为 false
+      // old sessions default to armed
       timersArmed.value    = (typeof data.timersArmed === 'boolean') ? data.timersArmed : true;
   
       if (!isOpen.value) {
@@ -179,15 +179,15 @@
       sessionId.value = null;
       messages.value = [];
       hasWarned.value = false;
-      // End Chat 后：不“上膛”
+
       timersArmed.value = false;
-      // 不必立刻改 lastActivityAt；等用户首次动作时更新
+     
     } catch (e) {
       console.error('Error clearing session:', e);
     }
   }
   
-  // 只负责 push 消息并滚动
+
   function pushWarningOnce() {
     if (hasWarned.value) return;
     hasWarned.value = true;
@@ -216,7 +216,7 @@
     }, 2000);
   }
   
-  // 统一清理定时器
+  // clear timers
   function clearTimers() {
     if (warningTimeout.value) {
       clearTimeout(warningTimeout.value);
@@ -228,10 +228,10 @@
     }
   }
   
-  // 根据 lastActivityAt 安排定时器；未“上膛”时直接退出
+  // schedule timers based on lastActivityAt; exit if not armed
   function scheduleTimersFromNow() {
     clearTimers();
-    if (!timersArmed.value) return; // ★ 未上膛就不计时
+    if (!timersArmed.value) return; // if not armed, don't count
   
     const now = Date.now();
     const elapsed = now - lastActivityAt.value;
@@ -251,11 +251,11 @@
     autoEndTimeout.value = setTimeout(pushAutoEnd, endDelay);
   }
   
-  // 只有“用户动作”才刷新活动时间并“上膛”
+  // only refresh activity time and arm when user action
   function updateActivity() {
     lastActivityAt.value = Date.now();
     hasWarned.value = false;
-    timersArmed.value = true;  // ★ 第一次用户动作后才开始计时
+    timersArmed.value = true;  // start counting after first user action
     saveSession();
     scheduleTimersFromNow();
   }
@@ -264,7 +264,7 @@
     isOpen.value = !isOpen.value;
   
     if (isOpen.value) {
-      // 打开：把当前系统消息计为已读，不刷新 lastActivityAt
+      // open: mark current system message as read, don't refresh lastActivityAt
       lastReadIndex.value = countBotMessages();
       unreadCount.value = 0;
   
@@ -272,16 +272,16 @@
       if (!restored || messages.value.length === 0) {
         sessionId.value = generateSessionId();
         resetChat();
-        // 新会话：保持 timersArmed=false，直到用户先说话
+        // new session: keep timersArmed=false, until user speaks first
         hasWarned.value = false;
         saveSession();
       }
   
-      // 仅当已“上膛”时安排计时（打开窗口不会触发计时）
+      // schedule timers only when armed (opening window doesn't trigger)
       scheduleTimersFromNow();
       saveSession();
     } else {
-      // 关闭：只是隐藏，不清理/不重置计时
+      // close: just hide, don't clear/reset timers
       lastReadIndex.value = countBotMessages();
       unreadCount.value = 0;
       saveSession();
@@ -329,7 +329,7 @@
     }
   }
   
-  // 未读徽标
+  // unread badge
   watch(
     messages,
     (newVal) => {
@@ -363,7 +363,7 @@
   async function handleMenuClick(item) {
     messages.value.push({ role: "user", text: item.label });
   
-    // 用户动作 → 上膛并重置计时
+    // user action → arm and reset timers
     updateActivity();
   
     await simulateTyping(() => {
@@ -446,7 +446,7 @@
         setTimeout(() => {
           isOpen.value = false;
           clearTimers();
-          clearSession();   // ★ timersArmed=false
+          clearSession();   // timersArmed=false
           saveSession();
         }, 2000);
         return;
@@ -464,7 +464,7 @@
     const input = userInput.value.trim().toLowerCase();
     messages.value.push({ role: "user", text: userInput.value.trim() });
   
-    // 用户动作 → 上膛并重置计时
+    // user action → arm and reset timers
     updateActivity();
   
     await simulateTyping(() => {
@@ -634,13 +634,11 @@
     if (!restored && messages.value.length === 0) {
       sessionId.value = generateSessionId();
       resetChat();
-      // 初始会话：不“上膛”，直到用户先说话
       hasWarned.value = false;
       timersArmed.value = false;
       saveSession();
     }
   
-    // 只有已“上膛”才会安排定时器（跨页后也遵循这个规则）
     scheduleTimersFromNow();
   
     const beforeUnloadHandler = () => { saveSession(); };
@@ -651,7 +649,6 @@
     window.addEventListener('beforeunload', beforeUnloadHandler);
     document.addEventListener('visibilitychange', visibilityHandler);
   
-    // 可选：按钮 30s 小红点
     setTimeout(() => {
       if (!isOpen.value && shouldShowChatbot.value) unreadCount.value = 1;
     }, 30000);
@@ -659,13 +656,11 @@
     onUnmounted(() => {
       window.removeEventListener('beforeunload', beforeUnloadHandler);
       document.removeEventListener('visibilitychange', visibilityHandler);
-      // 不清 timer：继续倒计时（如果 timersArmed 为 true）
     });
   });
   </script>
   
   <style scoped>
-  /* —— 样式与你之前的一致（略） —— */
   .chatbot-btn-container{position:fixed;right:16px;bottom:16px;z-index:1000}
   @media (min-width:640px){.chatbot-btn-container{right:24px;bottom:24px}}
   .chatbot-btn{width:48px;height:48px;background:#5C4033;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);transition:transform .2s,box-shadow .2s;position:relative}
