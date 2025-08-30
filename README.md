@@ -361,12 +361,13 @@ MAILGUN_SECRET=your_mailgun_secret
 - Earn points for contributions
 
 **Access Restrictions:**
-- Can only view their own missing person reports
+- Can only view their own missing person reports in user profile
 - Cannot access admin features
 - Cannot approve/reject sighting reports
 
 ### Volunteers
 **Capabilities:**
+- Create missing person reports
 - View all approved missing person reports
 - Submit sighting reports with location data
 - Upload photos and detailed descriptions
@@ -375,7 +376,6 @@ MAILGUN_SECRET=your_mailgun_secret
 - Access volunteer dashboard
 
 **Access Restrictions:**
-- Cannot create missing person reports
 - Cannot access admin features
 - Cannot approve/reject reports
 
@@ -904,10 +904,9 @@ We welcome feature requests! When suggesting new features:
 
 ## 📞 Contact
 
-- **Project Maintainer**: [Your Name]
-- **Email**: [your.email@example.com]
-- **GitHub**: [https://github.com/yourusername]
-- **Website**: [https://yourwebsite.com]
+- **Project Maintainer**: Boey
+- **Email**: baoyee01@gmail.com
+- **GitHub**: https://github.com/boey-13
 
 ---
 
