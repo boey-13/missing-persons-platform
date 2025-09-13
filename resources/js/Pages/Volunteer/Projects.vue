@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { router, useForm, Link, usePage } from '@inertiajs/vue3'
 import { useToast } from '@/Composables/useToast'
+import axios from 'axios'
 
 defineOptions({ layout: MainLayout })
 
@@ -92,32 +93,44 @@ function getUserApplicationStatus(projectId) {
 }
 
 function getApplicationButtonText(project) {
+  // 如果项目已满，显示Full
+  if (project.is_full) {
+    return 'Full'
+  }
+  
   if (!project.user_application_status) {
     return 'Apply Now'
   }
   
   switch (project.user_application_status) {
     case 'pending':
-      return 'Application Pending'
+      return 'Withdraw'
     case 'approved':
-      return 'Approved ✓'
+      return 'Withdraw'
     case 'rejected':
       return 'Re-apply'
+    case 'withdrawn':
+      return 'Apply Now'
     default:
       return 'Apply Now'
   }
 }
 
 function getApplicationButtonClass(project) {
+  // 如果项目已满，显示灰色禁用样式
+  if (project.is_full) {
+    return 'w-full bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed'
+  }
+  
   if (!project.user_application_status) {
     return 'w-full bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors'
   }
   
   switch (project.user_application_status) {
     case 'pending':
-      return 'w-full bg-yellow-500 text-white rounded-lg font-medium cursor-not-allowed opacity-75'
+      return 'w-full bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors'
     case 'approved':
-      return 'w-full bg-green-600 text-white rounded-lg font-medium cursor-not-allowed opacity-75'
+      return 'w-full bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors'
     case 'rejected':
       return 'w-full bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors'
     default:
@@ -126,7 +139,26 @@ function getApplicationButtonClass(project) {
 }
 
 function canApplyToProject(project) {
-  return !project.user_application_status || project.user_application_status === 'rejected'
+  // 如果项目已满，不能申请
+  if (project.is_full) {
+    return false
+  }
+  
+  // 可以申请的情况：未申请、已被拒绝、或已withdraw
+  return !project.user_application_status || 
+         project.user_application_status === 'rejected' ||
+         project.user_application_status === 'withdrawn'
+}
+
+function canWithdrawFromProject(project) {
+  // 可以withdraw的情况：pending或approved
+  return project.user_application_status === 'pending' || 
+         project.user_application_status === 'approved'
+}
+
+function canInteractWithProject(project) {
+  // 可以交互的情况：可以申请或可以withdraw
+  return canApplyToProject(project) || canWithdrawFromProject(project)
 }
 
 const categories = [
@@ -155,13 +187,19 @@ function applyToProject(project) {
   if (!canApplyToProject(project)) {
     // Show appropriate message for non-applicable states
     let message = ''
-    if (project.user_application_status === 'pending') {
+    if (project.is_full) {
+      message = 'This project is full. No more applications are being accepted.'
+    } else if (project.user_application_status === 'pending') {
       message = 'Your application is currently pending review.'
     } else if (project.user_application_status === 'approved') {
       message = 'You have already been approved for this project!'
     }
     
-    success(message)
+    if (project.is_full) {
+      error(message)
+    } else {
+      success(message)
+    }
     return
   }
   
@@ -178,6 +216,29 @@ function applyToProject(project) {
   showApplicationModal.value = true
 }
 
+function withdrawFromProject(project) {
+  if (confirm('Are you sure you want to withdraw your application from this project?')) {
+    isSubmittingApplication.value = true
+    
+    // Use Inertia form to make POST request
+    const form = useForm({})
+    form.post(`/volunteer/projects/${project.id}/withdraw`, {
+      onSuccess: () => {
+        success('Application withdrawn successfully!')
+        // Refresh the page to update the UI
+        window.location.reload()
+      },
+      onError: (errors) => {
+        console.error('Withdraw errors:', errors)
+        error('Failed to withdraw application. Please try again.')
+      },
+      onFinish: () => {
+        isSubmittingApplication.value = false
+      }
+    })
+  }
+}
+
 function submitApplication() {
   
   
@@ -187,23 +248,68 @@ function submitApplication() {
     return
   }
   
+  if (applicationForm.experience.length > 1000) {
+    error('Experience must not exceed 1000 characters.')
+    return
+  }
+  
   if (applicationForm.motivation.length < 10) {
     error('Motivation must be at least 10 characters long.')
+    return
+  }
+  
+  if (applicationForm.motivation.length > 500) {
+    error('Motivation must not exceed 500 characters.')
     return
   }
   
   isSubmittingApplication.value = true
   applicationForm.post(`/volunteer/projects/${selectedProject.value.id}/apply`, {
     onSuccess: () => {
-
       showApplicationModal.value = false
       applicationForm.reset()
       // Show success notification
       success('Application submitted successfully!')
+      // Refresh the page to update button states
+      window.location.reload()
     },
     onError: (errors) => {
       console.error('Form errors:', errors)
       console.error('Form error keys:', Object.keys(errors))
+      console.error('Has warning?', !!errors.warning)
+      console.error('Warning content:', errors.warning)
+      
+      // Check for schedule conflict warning
+      if (errors.warning) {
+        if (confirm(errors.warning)) {
+          // User confirmed, submit with ignore_conflicts flag
+          const formData = {
+            experience: applicationForm.experience,
+            motivation: applicationForm.motivation,
+            ignore_conflicts: true
+          }
+          
+          // Use axios to submit the form with ignore_conflicts flag
+          axios.post(`/volunteer/projects/${selectedProject.value.id}/apply`, formData)
+            .then(response => {
+              showApplicationModal.value = false
+              applicationForm.reset()
+              success('Application submitted successfully!')
+              window.location.reload()
+            })
+            .catch(error => {
+              console.error('Retry errors:', error.response?.data)
+              error('Failed to submit application. Please try again.')
+            })
+            .finally(() => {
+              isSubmittingApplication.value = false
+            })
+        } else {
+          // User cancelled
+          isSubmittingApplication.value = false
+        }
+        return
+      }
       
       // Show error notification with more details
       let errorMessage = 'Failed to submit application. Please try again.'
@@ -420,11 +526,17 @@ function getCategoryColor(category) {
             <div class="mb-3 sm:mb-4">
               <div class="flex justify-between text-xs sm:text-sm text-gray-600 mb-1">
                 <span>Volunteers: {{ project.volunteers_joined }}/{{ project.volunteers_needed }}</span>
-                <span>{{ Math.round((project.volunteers_joined / project.volunteers_needed) * 100) }}%</span>
+                <div class="flex items-center space-x-2">
+                  <span>{{ Math.round((project.volunteers_joined / project.volunteers_needed) * 100) }}%</span>
+                  <span v-if="project.is_full" class="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                    Full
+                  </span>
+                </div>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-1 sm:h-1.5">
                 <div
-                  class="bg-blue-600 h-1 sm:h-1.5 rounded-full transition-all duration-300"
+                  :class="project.is_full ? 'bg-red-500' : 'bg-blue-600'"
+                  class="h-1 sm:h-1.5 rounded-full transition-all duration-300"
                   :style="{ width: `${(project.volunteers_joined / project.volunteers_needed) * 100}%` }"
                 ></div>
               </div>
@@ -439,9 +551,9 @@ function getCategoryColor(category) {
                 View Details
               </Link>
               <button
-                @click="applyToProject(project)"
+                @click="canWithdrawFromProject(project) ? withdrawFromProject(project) : applyToProject(project)"
                 :class="getApplicationButtonClass(project)"
-                :disabled="!canApplyToProject(project)"
+                :disabled="!canInteractWithProject(project)"
                 class="flex-1 text-xs sm:text-sm py-2 sm:py-2.5 px-2.5 sm:px-3"
               >
                 {{ getApplicationButtonText(project) }}
@@ -667,10 +779,16 @@ function getCategoryColor(category) {
                   rows="4"
                   required
                   minlength="10"
+                  maxlength="1000"
                   placeholder="Describe your relevant experience, skills, or background that would be valuable for this project..."
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 ></textarea>
-                <p class="text-xs text-gray-500 mt-1">Minimum 10 characters required</p>
+                <div class="flex justify-between items-center mt-1">
+                  <p class="text-xs text-gray-500">10-1000 characters required</p>
+                  <p class="text-xs" :class="applicationForm.experience.length > 1000 ? 'text-red-500' : 'text-gray-500'">
+                    {{ applicationForm.experience.length }}/1000
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -680,10 +798,16 @@ function getCategoryColor(category) {
                   rows="4"
                   required
                   minlength="10"
+                  maxlength="500"
                   placeholder="Explain why you want to join this project and what you hope to contribute..."
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 ></textarea>
-                <p class="text-xs text-gray-500 mt-1">Minimum 10 characters required</p>
+                <div class="flex justify-between items-center mt-1">
+                  <p class="text-xs text-gray-500">10-500 characters required</p>
+                  <p class="text-xs" :class="applicationForm.motivation.length > 500 ? 'text-red-500' : 'text-gray-500'">
+                    {{ applicationForm.motivation.length }}/500
+                  </p>
+                </div>
               </div>
 
               <div class="flex gap-3 pt-4 border-t border-gray-200">

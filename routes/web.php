@@ -77,6 +77,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/volunteer/projects/{project}/apply', [\App\Http\Controllers\VolunteerProjectController::class, 'apply'])
         ->middleware(['auth'])
         ->name('volunteer.projects.apply');
+    Route::post('/volunteer/projects/{project}/withdraw', [\App\Http\Controllers\VolunteerProjectController::class, 'withdraw'])
+        ->middleware(['auth'])
+        ->name('volunteer.projects.withdraw');
     Route::get('/volunteer/my-applications', [\App\Http\Controllers\VolunteerProjectController::class, 'myApplications'])
         ->middleware(['auth'])
         ->name('volunteer.my-applications');

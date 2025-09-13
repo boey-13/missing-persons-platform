@@ -9,17 +9,19 @@ defineOptions({ layout: AdminLayout })
 // Props from backend
 const props = defineProps({
   projects: Object,
-  filters: Object
+  filters: Object,
+  applications: Array,
+  activeTab: String
 })
 
 // UI State
-const activeTab = ref('projects')
+const activeTab = ref(props.activeTab || 'projects')
 const showAddProjectModal = ref(false)
 const showEditProjectModal = ref(false)
 const showApplicationModal = ref(false)
 const selectedApplication = ref(null)
 const selectedProject = ref(null)
-const applications = ref([])
+const applications = ref(props.applications || [])
 const applicationStatusFilter = ref('all')
 
 // Search and Filter State
@@ -395,11 +397,10 @@ function getCategoryColor(category) {
 }
 
 onMounted(() => {
-  fetchApplications()
-})
-
-onMounted(() => {
-  fetchApplications()
+  // Only fetch applications if not already provided via props
+  if (!props.applications || props.applications.length === 0) {
+    fetchApplications()
+  }
 })
 </script>
 

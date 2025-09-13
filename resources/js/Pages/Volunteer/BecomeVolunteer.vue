@@ -94,6 +94,20 @@ function goToStep(idx) {
   }
 }
 
+// Emergency contact name validation
+const isEmergencyNameValid = computed(() => {
+  if (!form.emergency_contact_name) return false
+  const name = form.emergency_contact_name.trim()
+  return name.length >= 2 && /^[a-zA-Z\s]+$/.test(name)
+})
+
+// Emergency contact phone validation - must be 10-11 digits starting with 01
+const isEmergencyPhoneValid = computed(() => {
+  if (!form.emergency_contact_phone) return false
+  const phone = form.emergency_contact_phone.replace(/\s/g, '')
+  return /^01\d{8,9}$/.test(phone)
+})
+
 // validation
 const currentStepStatus = computed(() => getStepValidationStatus())
 function validateCurrentStep() {
@@ -104,8 +118,8 @@ function validateCurrentStep() {
       break
     case 2:
       if (!form.motivation || form.motivation.length < 10) { error('Motivation must be at least 10 characters long.'); isValid = false }
-      if (!form.emergency_contact_name || form.emergency_contact_name.trim() === '') { error('Emergency contact name is required.'); isValid = false }
-      if (!form.emergency_contact_phone || form.emergency_contact_phone.trim() === '') { error('Emergency contact phone is required.'); isValid = false }
+      if (!isEmergencyNameValid.value) { error('Emergency contact name must be at least 2 characters and contain only letters and spaces.'); isValid = false }
+      if (!isEmergencyPhoneValid.value) { error('Emergency contact phone must be 10-11 digits starting with 01 (e.g., 0123456789).'); isValid = false }
       if (form.skills.length === 0) { error('Please select at least one skill.'); isValid = false }
       if (form.languages.length === 0) { error('Please select at least one language.'); isValid = false }
       if (form.availability.length === 0) { error('Please select at least one available day.'); isValid = false }
@@ -125,8 +139,8 @@ function getStepValidationStatus() {
     case 2:
       const step2Errors = []
       if (!form.motivation || form.motivation.length < 10) step2Errors.push('Motivation (min 10 chars)')
-      if (!form.emergency_contact_name) step2Errors.push('Emergency contact name')
-      if (!form.emergency_contact_phone) step2Errors.push('Emergency contact phone')
+      if (!isEmergencyNameValid.value) step2Errors.push('Emergency contact name (invalid format)')
+      if (!isEmergencyPhoneValid.value) step2Errors.push('Emergency contact phone (invalid format)')
       if (form.skills.length === 0) step2Errors.push('Skills')
       if (form.languages.length === 0) step2Errors.push('Languages')
       if (form.availability.length === 0) step2Errors.push('Availability')
@@ -143,7 +157,39 @@ function getStepValidationStatus() {
 }
 
 function onFilesChange(e) { 
-  form.supporting_documents = Array.from(e.target.files) 
+  const files = Array.from(e.target.files)
+  
+  // Validate file types and sizes
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword', 
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/jpg', 
+    'image/png'
+  ]
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  
+  const validFiles = []
+  const errors = []
+  
+  files.forEach((file, index) => {
+    if (!allowedTypes.includes(file.type)) {
+      errors.push(`File ${index + 1}: Invalid file type. Only PDF, DOC, DOCX, JPG, JPEG, PNG are allowed.`)
+    } else if (file.size > maxSize) {
+      errors.push(`File ${index + 1}: File too large. Maximum size is 5MB.`)
+    } else {
+      validFiles.push(file)
+    }
+  })
+  
+  if (errors.length > 0) {
+    error(errors.join(' '))
+    e.target.value = '' // Clear the input
+    form.supporting_documents = []
+  } else {
+    form.supporting_documents = validFiles
+  }
 }
 
 
@@ -343,11 +389,33 @@ function toggle(array, value) { const idx = array.indexOf(value); if (idx >= 0) 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label class="block text-xs sm:text-sm text-gray-600 mb-1">Emergency Contact Name <span class="text-red-500">*</span></label>
-            <input v-model="form.emergency_contact_name" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
+            <input 
+              v-model="form.emergency_contact_name" 
+              type="text"
+              placeholder="e.g., John Doe"
+              :class="`w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base focus:outline-none transition-colors ${
+                form.emergency_contact_name ? (isEmergencyNameValid ? 'border-green-500' : 'border-red-500') : 'border-gray-300'
+              }`" 
+              required 
+            />
+            <div v-if="form.emergency_contact_name && !isEmergencyNameValid" class="text-red-500 text-xs mt-1">
+              Name must be at least 2 characters and contain only letters and spaces
+            </div>
           </div>
           <div>
             <label class="block text-xs sm:text-sm text-gray-600 mb-1">Emergency Contact Phone <span class="text-red-500">*</span></label>
-            <input v-model="form.emergency_contact_phone" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
+            <input 
+              v-model="form.emergency_contact_phone" 
+              type="text"
+              placeholder="e.g., 0123456789"
+              :class="`w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base focus:outline-none transition-colors ${
+                form.emergency_contact_phone ? (isEmergencyPhoneValid ? 'border-green-500' : 'border-red-500') : 'border-gray-300'
+              }`" 
+              required 
+            />
+            <div v-if="form.emergency_contact_phone && !isEmergencyPhoneValid" class="text-red-500 text-xs mt-1">
+              Phone must be 10-11 digits starting with 01 (e.g., 0123456789)
+            </div>
           </div>
         </div>
 
@@ -358,7 +426,21 @@ function toggle(array, value) { const idx = array.indexOf(value); if (idx >= 0) 
 
         <div>
           <label class="block text-xs sm:text-sm text-gray-600 mb-1">Supporting Documents (optional)</label>
-          <input type="file" multiple @change="onFilesChange" class="text-xs sm:text-sm" />
+          <input 
+            type="file" 
+            multiple 
+            @change="onFilesChange" 
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm" 
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 5MB per file)
+          </p>
+          <div v-if="form.supporting_documents && form.supporting_documents.length > 0" class="mt-2">
+            <p class="text-xs text-green-600">
+              {{ form.supporting_documents.length }} file(s) selected
+            </p>
+          </div>
         </div>
       </div>
 

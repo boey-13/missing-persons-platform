@@ -41,7 +41,9 @@ class ProfileController extends Controller
         // Get user's community projects (for admin and volunteer only)
         $communityProjects = collect();
         if ($user->role !== 'user') {
+            // Only get active applications (pending and approved)
             $projectApplications = ProjectApplication::where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'approved'])
                 ->with('project')
                 ->get();
             
@@ -65,6 +67,13 @@ class ProfileController extends Controller
                         'photo_url' => $project->photo_url,
                         'created_at' => $project->created_at,
                         'updated_at' => $project->updated_at,
+                        // 添加申请信息
+                        'application_id' => $application->id,
+                        'application_status' => $application->status,
+                        'application_created_at' => $application->created_at,
+                        'application_updated_at' => $application->updated_at,
+                        'experience' => $application->experience,
+                        'motivation' => $application->motivation,
                     ];
                 }
                 return null;
@@ -100,6 +109,7 @@ class ProfileController extends Controller
             'name' => $request->input('name'),
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
+            'region' => $request->input('region'),
             'method' => $request->method(),
             'url' => $request->url(),
             'user_id' => $user->id,
@@ -113,6 +123,7 @@ class ProfileController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email,' . $user->id,
                 'phone' => 'nullable|string|max:32',
+                'region' => 'nullable|string|max:255',
                 'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120'
             ]);
 
@@ -140,7 +151,8 @@ class ProfileController extends Controller
             $user->fill([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? $user->phone
+                'phone' => $validated['phone'] ?? $user->phone,
+                'region' => $validated['region'] ?? $user->region
             ]);
 
             // Handle email change
@@ -150,7 +162,36 @@ class ProfileController extends Controller
 
             $user->save();
 
-            \Log::info('Profile updated successfully for user: ' . $user->id);
+            // 记录SystemLog
+            $changedFields = [];
+            if ($user->wasChanged('name')) $changedFields[] = 'name';
+            if ($user->wasChanged('email')) $changedFields[] = 'email';
+            if ($user->wasChanged('phone')) $changedFields[] = 'phone';
+            if ($user->wasChanged('region')) $changedFields[] = 'region';
+            if ($user->wasChanged('avatar_url')) $changedFields[] = 'avatar';
+
+            if (!empty($changedFields)) {
+                SystemLog::log(
+                    'profile_updated',
+                    "User {$user->name} updated profile: " . implode(', ', $changedFields),
+                    [
+                        'user_id' => $user->id,
+                        'user_role' => $user->role,
+                        'changed_fields' => $changedFields,
+                        'old_email' => $user->getOriginal('email'),
+                        'new_email' => $user->email
+                    ]
+                );
+            }
+
+            \Log::info('Profile updated successfully for user: ' . $user->id, [
+                'updated_fields' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'region' => $user->region
+                ]
+            ]);
 
             return redirect()->back()->with('success', 'Profile updated successfully.');
             

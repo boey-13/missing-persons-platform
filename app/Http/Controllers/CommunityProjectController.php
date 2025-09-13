@@ -357,9 +357,10 @@ class CommunityProjectController extends Controller
         if ($user->role === 'admin') {
             $canView = true;
         } else {
-            // Check if user has applied to this project
+            // Check if user has approved application to this project
             $userApplication = ProjectApplication::where('user_id', $user->id)
                 ->where('community_project_id', $project->id)
+                ->where('status', 'approved')
                 ->first();
             
             if ($userApplication) {
@@ -368,6 +369,17 @@ class CommunityProjectController extends Controller
         }
 
         if (!$canView) {
+            // Check if user has pending application for this project
+            $pendingApplication = ProjectApplication::where('user_id', $user->id)
+                ->where('community_project_id', $project->id)
+                ->where('status', 'pending')
+                ->first();
+            
+            // Check if user has approved volunteer application
+            $hasApprovedVolunteerApplication = \App\Models\VolunteerApplication::where('user_id', $user->id)
+                ->where('status', 'Approved')
+                ->exists();
+            
             // Instead of abort(403), show a friendly error page
             return Inertia::render('CommunityProject/AccessDenied', [
                 'project' => [
@@ -377,9 +389,9 @@ class CommunityProjectController extends Controller
                     'status' => $project->status,
                 ],
                 'userRole' => $user->role,
-                'hasVolunteerApplication' => \App\Models\VolunteerApplication::where('user_id', $user->id)
-                    ->where('status', 'Approved')
-                    ->exists()
+                'hasVolunteerApplication' => $hasApprovedVolunteerApplication,
+                'hasPendingProjectApplication' => $pendingApplication ? true : false,
+                'applicationStatus' => $pendingApplication ? $pendingApplication->status : null
             ]);
         }
 
@@ -481,7 +493,10 @@ class CommunityProjectController extends Controller
                 ];
             });
 
-        return response()->json($applications);
+        return Inertia::render('Admin/ManageCommunityProjects', [
+            'applications' => $applications,
+            'activeTab' => 'applications'
+        ]);
     }
 
     public function approveApplication(ProjectApplication $application)
@@ -494,6 +509,9 @@ class CommunityProjectController extends Controller
         // Update project volunteer count
         $project = $application->project;
         $project->increment('volunteers_joined');
+
+        // Send notification to user
+        NotificationService::projectApplicationApproved($application);
 
         SystemLog::log(
             'application_approved',
@@ -511,6 +529,9 @@ class CommunityProjectController extends Controller
             'rejected_at' => now(),
             'rejection_reason' => $request->rejection_reason
         ]);
+
+        // Send notification to user
+        NotificationService::projectApplicationRejected($application, $request->rejection_reason);
 
         SystemLog::log(
             'application_rejected',

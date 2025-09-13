@@ -169,20 +169,24 @@ class AdminController extends Controller
         ]);
 
         // Log the status change
+        $finalStatus = $request->status === 'Approved' ? 'Missing' : $request->status;
         SystemLog::create([
             'user_id' => auth()->id(),
             'action' => 'missing_report_status_updated',
-            'description' => "Updated missing report #{$report->id} status from {$oldStatus} to {$request->status}",
+            'description' => "Updated missing report #{$report->id} status from {$oldStatus} to {$finalStatus}",
             'data' => [
                 'report_id' => $report->id,
                 'old_status' => $oldStatus,
-                'new_status' => $request->status,
+                'new_status' => $finalStatus,
                 'rejection_reason' => $request->rejection_reason ?? null
             ]
         ]);
 
         // Send notifications based on status
         if ($request->status === 'Approved') {
+            // When admin approves, automatically set status to Missing
+            $report->case_status = 'Missing';
+            $report->save();
             NotificationService::missingReportApproved($report);
         } elseif ($request->status === 'Rejected') {
             NotificationService::missingReportRejected($report, $request->rejection_reason);

@@ -64,10 +64,20 @@ class VolunteerApplicationController extends Controller
             'preferred_roles' => ['nullable', 'array'],
             'areas' => ['nullable', 'string'],
             'transport_mode' => ['nullable', 'string'],
-            'emergency_contact_name' => ['required', 'string'],
-            'emergency_contact_phone' => ['required', 'string'],
+            'emergency_contact_name' => ['required', 'string', 'min:2', 'regex:/^[a-zA-Z\s]+$/'],
+            'emergency_contact_phone' => ['required', 'string', 'regex:/^01\d{8,9}$/'],
             'prior_experience' => ['nullable', 'string'],
             'supporting_documents' => ['nullable', 'array'],
+            'supporting_documents.*' => ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+        ], [
+            'emergency_contact_name.required' => 'Emergency contact name is required.',
+            'emergency_contact_name.min' => 'Emergency contact name must be at least 2 characters.',
+            'emergency_contact_name.regex' => 'Emergency contact name must contain only letters and spaces.',
+            'emergency_contact_phone.required' => 'Emergency contact phone is required.',
+            'emergency_contact_phone.regex' => 'Emergency contact phone must be 10-11 digits starting with 01.',
+            'supporting_documents.*.file' => 'Supporting documents must be valid files.',
+            'supporting_documents.*.mimes' => 'Supporting documents must be PDF, DOC, DOCX, JPG, JPEG, or PNG files.',
+            'supporting_documents.*.max' => 'Each supporting document must be smaller than 5MB.',
         ]);
 
         $user = auth()->user();

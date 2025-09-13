@@ -157,15 +157,51 @@ function onItemClick(n) {
         }
         break
         
+      case 'review_application':
+        if (isAdmin.value) {
+          window.location.href = `/admin/community-projects`
+        }
+        break
+        
       case 'review_project_application':
         if (isAdmin.value) {
-          window.location.href = `/admin/community-projects/applications`
+          window.location.href = `/admin/community-projects`
         }
         break
         
       case 'new_contact_message':
         if (isAdmin.value) {
           window.location.href = `/admin/contact-messages`
+        }
+        break
+        
+      case 'project_application_received':
+        if (isAdmin.value) {
+          window.location.href = `/admin/community-projects`
+        }
+        break
+        
+      case 'project_application_withdrawn':
+        if (isAdmin.value) {
+          window.location.href = `/admin/community-projects`
+        }
+        break
+        
+      case 'new_sighting_report':
+        if (isAdmin.value) {
+          window.location.href = `/admin/sighting-reports`
+        }
+        break
+        
+      case 'new_volunteer_application':
+        if (isAdmin.value) {
+          window.location.href = `/admin/volunteers`
+        }
+        break
+        
+      case 'new_project_application':
+        if (isAdmin.value) {
+          window.location.href = `/admin/community-projects`
         }
         break
         

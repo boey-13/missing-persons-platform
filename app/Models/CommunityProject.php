@@ -76,4 +76,93 @@ class CommunityProject extends Model
         }
         return 0;
     }
+
+    public function isFull()
+    {
+        return $this->volunteers_joined >= $this->volunteers_needed;
+    }
+
+    public function getAvailableSpotsAttribute()
+    {
+        return max(0, $this->volunteers_needed - $this->volunteers_joined);
+    }
+
+    /**
+     * Check if this project has a schedule conflict with another project
+     */
+    public function hasScheduleConflictWith($otherProject)
+    {
+        // Different dates = no conflict
+        // Extract date from datetime if needed
+        $thisDate = $this->date;
+        if (strpos($thisDate, ' ') !== false) {
+            $thisDate = date('Y-m-d', strtotime($thisDate));
+        }
+        
+        $otherDate = $otherProject->date;
+        if (strpos($otherDate, ' ') !== false) {
+            $otherDate = date('Y-m-d', strtotime($otherDate));
+        }
+        
+        if ($thisDate != $otherDate) {
+            return false;
+        }
+
+        // Parse durations
+        $thisDuration = $this->parseDuration($this->duration);
+        $otherDuration = $this->parseDuration($otherProject->duration);
+
+        // Calculate time ranges
+        // Extract time from datetime if needed
+        $thisTime = $this->time;
+        if (strpos($thisTime, ' ') !== false) {
+            $thisTime = date('H:i:s', strtotime($thisTime));
+        }
+        
+        $otherTime = $otherProject->time;
+        if (strpos($otherTime, ' ') !== false) {
+            $otherTime = date('H:i:s', strtotime($otherTime));
+        }
+        
+        $thisStart = strtotime($thisTime);
+        $thisEnd = $thisStart + $thisDuration;
+
+        $otherStart = strtotime($otherTime);
+        $otherEnd = $otherStart + $otherDuration;
+
+
+        // Check for overlap: projects overlap if one starts before the other ends
+        return !($thisEnd <= $otherStart || $otherEnd <= $thisStart);
+    }
+
+    /**
+     * Parse duration string to seconds
+     */
+    private function parseDuration($duration)
+    {
+        $duration = strtolower(trim($duration));
+        
+        // Handle hours
+        if (preg_match('/(\d+)\s*h(?:our)?s?/', $duration, $matches)) {
+            return (int)$matches[1] * 3600;
+        }
+        
+        // Handle days
+        if (preg_match('/(\d+)\s*d(?:ay)?s?/', $duration, $matches)) {
+            return (int)$matches[1] * 86400;
+        }
+        
+        // Handle minutes
+        if (preg_match('/(\d+)\s*m(?:inute)?s?/', $duration, $matches)) {
+            return (int)$matches[1] * 60;
+        }
+        
+        // Default: assume hours if just a number
+        if (is_numeric($duration)) {
+            return (int)$duration * 3600;
+        }
+        
+        // Default fallback: 2 hours
+        return 7200;
+    }
 }

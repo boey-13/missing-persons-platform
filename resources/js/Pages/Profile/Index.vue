@@ -32,10 +32,75 @@ const editForm = useForm({
   name: '',
   email: '',
   phone: '',
+  region: '',
   avatar: null
 })
 
 const { success, error, info } = useToast()
+
+// Withdraw functionality
+const isWithdrawing = ref(false)
+
+function withdrawFromProject(project) {
+  if (confirm(`Are you sure you want to withdraw your application from "${project.title}"?`)) {
+    isWithdrawing.value = true
+    
+    const form = useForm({})
+    form.post(`/volunteer/projects/${project.id}/withdraw`, {
+      onSuccess: () => {
+        success('Application withdrawn successfully!')
+        // Refresh the page to update the UI
+        window.location.reload()
+      },
+      onError: (errors) => {
+        console.error('Withdraw errors:', errors)
+        error('Failed to withdraw application. Please try again.')
+      },
+      onFinish: () => {
+        isWithdrawing.value = false
+      }
+    })
+  }
+}
+
+function getApplicationStatusColor(status) {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'approved':
+      return 'bg-green-100 text-green-800'
+    case 'rejected':
+      return 'bg-red-100 text-red-800'
+    case 'withdrawn':
+      return 'bg-gray-100 text-gray-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
+function canWithdraw(project) {
+  return project.application_status === 'pending' || project.application_status === 'approved'
+}
+
+// Region options
+const regionOptions = [
+  'Kuala Lumpur',
+  'Selangor',
+  'Penang',
+  'Johor',
+  'Perak',
+  'Sabah',
+  'Sarawak',
+  'Kedah',
+  'Kelantan',
+  'Terengganu',
+  'Pahang',
+  'Negeri Sembilan',
+  'Melaka',
+  'Perlis',
+  'Putrajaya',
+  'Labuan'
+]
 
 // Watch for props.user changes and update form data
 watch(() => props.user, (newUser) => {
@@ -43,6 +108,7 @@ watch(() => props.user, (newUser) => {
     editForm.name = newUser.name || ''
     editForm.email = newUser.email || ''
     editForm.phone = newUser.phone || ''
+    editForm.region = newUser.region || ''
     editForm.avatar = null
   }
 }, { immediate: true })
@@ -131,6 +197,7 @@ function editProfile() {
   editForm.name = props.user?.name || ''
   editForm.email = props.user?.email || ''
   editForm.phone = props.user?.phone || ''
+  editForm.region = props.user?.region || ''
   editForm.avatar = null
   showEditModal.value = true
 }
@@ -256,6 +323,8 @@ function shareToSocial(reportId) {
             <div>
               <h1 class="text-2xl font-bold leading-tight">{{ props.user?.name || 'User Name' }}</h1>
               <p class="text-gray-600">{{ props.user?.email }}</p>
+              <p v-if="props.user?.phone" class="text-sm text-gray-500">{{ props.user.phone }}</p>
+              <p v-if="props.user?.region" class="text-sm text-gray-500">{{ props.user.region }}</p>
               <div class="mt-2 flex items-center gap-2">
                 <span :class="['inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold', roleColor]">
                   {{ userRole }}
@@ -450,7 +519,12 @@ function shareToSocial(reportId) {
                 </div>
 
                 <div class="p-4">
-                  <h4 class="font-semibold mb-1 line-clamp-1">{{ project.title }}</h4>
+                  <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-semibold line-clamp-1 flex-1">{{ project.title }}</h4>
+                    <span :class="['px-2 py-1 rounded-full text-xs font-medium', getApplicationStatusColor(project.application_status)]">
+                      {{ project.application_status }}
+                    </span>
+                  </div>
                   <p class="text-sm text-gray-600 mb-3 line-clamp-1">{{ project.location }}</p>
 
                   <div class="space-y-1.5 mb-3 text-sm">
@@ -462,6 +536,10 @@ function shareToSocial(reportId) {
                       <span class="text-gray-600">Volunteers</span>
                       <span class="font-medium">{{ project.volunteers_joined }}/{{ project.volunteers_needed }}</span>
                     </div>
+                    <div class="flex justify-between">
+                      <span class="text-gray-600">Applied</span>
+                      <span class="font-medium">{{ formatDate(project.application_created_at) }}</span>
+                    </div>
                   </div>
 
                   <div class="w-full bg-gray-200 rounded h-1.5 mb-3 overflow-hidden">
@@ -469,9 +547,18 @@ function shareToSocial(reportId) {
                       :style="{ width: `${(project.volunteers_joined / project.volunteers_needed) * 100}%` }"></div>
                   </div>
 
-                  <button @click="router.visit(`/community-projects/${project.id}`)" class="btn-emerald w-full">
-                    View Details
-                  </button>
+                  <div class="flex gap-2">
+                    <button @click="router.visit(`/community-projects/${project.id}`)" 
+                      class="flex-1 bg-gray-600 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-700 transition-colors text-sm">
+                      View Details
+                    </button>
+                    <button v-if="canWithdraw(project)" 
+                      @click="withdrawFromProject(project)"
+                      :disabled="isWithdrawing"
+                      class="flex-1 bg-orange-500 text-white py-2 px-3 rounded-lg font-medium hover:bg-orange-600 transition-colors text-sm disabled:opacity-50">
+                      {{ isWithdrawing ? 'Withdrawing...' : 'Withdraw' }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -553,6 +640,15 @@ function shareToSocial(reportId) {
             <div>
               <label class="label">Phone Number</label>
               <input v-model="editForm.phone" type="tel" class="input" />
+            </div>
+            <div>
+              <label class="label">Region</label>
+              <select v-model="editForm.region" class="input">
+                <option value="">Select your region</option>
+                <option v-for="region in regionOptions" :key="region" :value="region">
+                  {{ region }}
+                </option>
+              </select>
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">

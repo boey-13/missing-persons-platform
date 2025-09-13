@@ -7,7 +7,9 @@ defineOptions({ layout: MainLayout })
 const props = defineProps({
   project: Object,
   userRole: String,
-  hasVolunteerApplication: Boolean
+  hasVolunteerApplication: Boolean,
+  hasPendingProjectApplication: Boolean,
+  applicationStatus: String
 })
 
 const categoryColors = {
@@ -53,7 +55,29 @@ const categoryColors = {
 
       <!-- Role-based Guidance -->
       <div class="bg-white border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-        <div v-if="userRole === 'user' && !hasVolunteerApplication" class="text-center">
+        <div v-if="hasPendingProjectApplication" class="text-center">
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2.5 sm:mb-3">Application Under Review</h3>
+          <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
+            Your application for this project is currently being reviewed by our team. 
+            You'll be notified once a decision has been made.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <Link 
+              href="/volunteer/projects"
+              class="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors text-sm sm:text-base"
+            >
+              View Other Projects
+            </Link>
+            <Link 
+              href="/"
+              class="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-600 text-white font-medium hover:bg-gray-700 transition-colors text-sm sm:text-base"
+            >
+              Go to Homepage
+            </Link>
+          </div>
+        </div>
+
+        <div v-else-if="userRole === 'user' && !hasVolunteerApplication" class="text-center">
           <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2.5 sm:mb-3">Become a Volunteer First</h3>
           <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
             To view community project details and participate in volunteer activities, 

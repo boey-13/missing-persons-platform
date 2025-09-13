@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'region',
         'avatar_url',
         'is_locked',
         'locked_until',
