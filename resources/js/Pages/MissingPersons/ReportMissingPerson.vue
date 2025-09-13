@@ -1,7 +1,7 @@
 <script setup>
 // --- Import Inertia.js form helpers and Vue hooks ---
 import { usePage, router, useForm } from '@inertiajs/vue3'
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { useToast } from '@/Composables/useToast'
 defineOptions({ layout: MainLayout })
@@ -110,42 +110,65 @@ function onPoliceReportChange(e) {
 
 // --- Google Maps integration for last seen location ---
 const mapDiv = ref(null)
+const autocompleteInput = ref(null) // use ref instead of getElementById
+
 const marker = ref(null)
 const map = ref(null)
 const mapLat = ref(3.139)
 const mapLng = ref(101.6869)
 const mapZoom = ref(12)
 let geocoder = null
-onMounted(() => {
-  const interval = setInterval(() => {
-    if (window.google && window.google.maps && window.google.maps.places) {
-      clearInterval(interval)
-      geocoder = new window.google.maps.Geocoder()
-      const input = document.getElementById('autocomplete')
-      if (!input) return
-      const autocomplete = new window.google.maps.places.Autocomplete(input)
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace()
-        if (place.geometry) {
-          const lat = place.geometry.location.lat()
-          const lng = place.geometry.location.lng()
-          form.last_seen_location = place.formatted_address || place.name
-          mapLat.value = lat
-          mapLng.value = lng
-          showMap()
-        } else if (place.formatted_address) {
-          form.last_seen_location = place.formatted_address
-        } else if (place.name) {
-          form.last_seen_location = place.name
-        }
-      })
-    }
-  }, 300)
-  setTimeout(() => {
-    showMap()
-    isInitializing.value = false
-  }, 1200)
+
+onMounted(async () => {
+  // 先结束 loading，让 DOM 渲染出来（mapDiv/输入框必须先存在）
+  isInitializing.value = false
+  await nextTick()
+
+  // 等待：Google Maps + Places & DOM 都就绪（最长 10s）
+  const ok = await waitFor(
+    () => window.google?.maps?.places && mapDiv.value && autocompleteInput.value,
+    10000
+  )
+  if (!ok) {
+    console.warn('Google Maps not ready within timeout.')
+    return
+  }
+
+  geocoder = new window.google.maps.Geocoder()
+  initMap()
+  initAutocomplete()
 })
+
+function waitFor(cond, timeout = 10000) {
+  return new Promise(resolve => {
+    const start = Date.now()
+    const t = setInterval(() => {
+      if (cond()) { clearInterval(t); resolve(true) }
+      else if (Date.now() - start > timeout) { clearInterval(t); resolve(false) }
+    }, 100)
+  })
+}
+
+function initAutocomplete() {
+  const ac = new window.google.maps.places.Autocomplete(autocompleteInput.value)
+  ac.addListener('place_changed', () => {
+    const place = ac.getPlace()
+    if (place?.geometry) {
+      const lat = place.geometry.location.lat()
+      const lng = place.geometry.location.lng()
+      form.last_seen_location = place.formatted_address || place.name
+      mapLat.value = lat
+      mapLng.value = lng
+      showMap()
+    } else if (place?.formatted_address) {
+      form.last_seen_location = place.formatted_address
+    } else if (place?.name) {
+      form.last_seen_location = place.name
+    }
+  })
+}
+
+function initMap() { showMap() }
 
 // --- Display map with marker ---
 function showMap() {
@@ -586,7 +609,7 @@ function validateCurrentStep() {
           </div>
           <div>
             <label class="block text-xs sm:text-sm text-gray-600 mb-1">Last Seen Location</label>
-            <input id="autocomplete" v-model="form.last_seen_location" type="text"
+            <input ref="autocompleteInput" v-model="form.last_seen_location" type="text"
                    class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base"
                    placeholder="Enter location and select suggestion" autocomplete="off" required />
             <span v-if="errors.last_seen_location" class="text-red-500 text-xs sm:text-sm">{{ errors.last_seen_location }}</span>
