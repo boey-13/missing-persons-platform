@@ -64,8 +64,8 @@ class AdminRewardController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'category_id' => 'required|exists:reward_categories,id',
+        // Determine validation rules based on category mode
+        $rules = [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'points_required' => 'required|integer|min:1',
@@ -74,9 +74,30 @@ class AdminRewardController extends Controller
             'voucher_code_prefix' => 'nullable|string|max:10',
             'validity_days' => 'required|integer|min:1|max:365',
             'status' => 'required|in:active,inactive',
-        ]);
+        ];
 
-        $data = $request->except('image');
+        // Add category validation based on mode
+        if ($request->has('category_id') && $request->category_id) {
+            $rules['category_id'] = 'required|exists:reward_categories,id';
+        } elseif ($request->has('new_category_name') && $request->new_category_name) {
+            $rules['new_category_name'] = 'required|string|max:255|unique:reward_categories,name';
+        } else {
+            $rules['category_id'] = 'required';
+        }
+
+        $request->validate($rules);
+
+        $data = $request->except(['image', 'new_category_name']);
+
+        // Handle new category creation
+        if ($request->has('new_category_name') && $request->new_category_name) {
+            $category = $this->rewardService->createCategory([
+                'name' => $request->new_category_name,
+                'description' => 'Auto-created category',
+                'icon' => '🎁'
+            ]);
+            $data['category_id'] = $category->id;
+        }
 
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -120,8 +141,8 @@ class AdminRewardController extends Controller
         
         $reward = $this->rewardService->getReward($id);
 
-        $request->validate([
-            'category_id' => 'required|exists:reward_categories,id',
+        // Determine validation rules based on category mode
+        $rules = [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'points_required' => 'required|integer|min:1',
@@ -130,12 +151,33 @@ class AdminRewardController extends Controller
             'voucher_code_prefix' => 'nullable|string|max:10',
             'validity_days' => 'required|integer|min:1|max:365',
             'status' => 'required|in:active,inactive',
-        ]);
+        ];
+
+        // Add category validation based on mode
+        if ($request->has('category_id') && $request->category_id) {
+            $rules['category_id'] = 'required|exists:reward_categories,id';
+        } elseif ($request->has('new_category_name') && $request->new_category_name) {
+            $rules['new_category_name'] = 'required|string|max:255|unique:reward_categories,name';
+        } else {
+            $rules['category_id'] = 'required';
+        }
+
+        $request->validate($rules);
 
         // Handle empty stock_quantity
-        $data = $request->except('image');
+        $data = $request->except(['image', 'new_category_name']);
         if (empty($data['stock_quantity'])) {
             $data['stock_quantity'] = null;
+        }
+
+        // Handle new category creation
+        if ($request->has('new_category_name') && $request->new_category_name) {
+            $category = $this->rewardService->createCategory([
+                'name' => $request->new_category_name,
+                'description' => 'Auto-created category',
+                'icon' => '🎁'
+            ]);
+            $data['category_id'] = $category->id;
         }
 
         // Handle image upload

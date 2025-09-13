@@ -34,10 +34,11 @@ const isPasswordConfirmed = computed(() => {
   return form.password && form.password === form.password_confirmation
 })
 
-// Phone validation
+// Phone validation - must be 10-11 digits starting with 01
 const isPhoneValid = computed(() => {
+  if (!form.phone) return false // Phone is required
   const phone = form.phone.replace(/\s/g, '') // Remove spaces
-  return phone.length <= 12 && /^[\d\s+\-()]+$/.test(phone)
+  return /^01\d{8,9}$/.test(phone)
 })
 
 // Email validation
@@ -67,7 +68,13 @@ function submit() {
     return
   }
 
-  form.post(route('register'), {
+  // Format phone number - remove spaces before submission
+  const formattedData = {
+    ...form.data(),
+    phone: form.phone.replace(/\s/g, '')
+  }
+
+  form.transform(() => formattedData).post(route('register'), {
     onSuccess: () => { 
       // Toast will show briefly before redirect
       success('Registration successful! Please log in with your new account.')
@@ -77,6 +84,8 @@ function submit() {
         error('Email already exists. Please use a different email.')
       } else if (errors.name) {
         error('Username already exists. Please choose a different name.')
+      } else if (errors.phone) {
+        error('Phone number must be 10-11 digits starting with 01.')
       } else {
         error('Registration failed. Please check all fields.')
       }
@@ -215,7 +224,7 @@ function submit() {
                     form.phone ? (isPhoneValid ? 'border-green-500' : 'border-red-500') : 'border-gray-300'
                   }`" />
                 <div v-if="form.phone && !isPhoneValid" class="text-red-500 text-xs mt-1">
-                  Phone number must be maximum 12 digits and contain only numbers, spaces, +, -, and ()
+                  Phone number must be 10-11 digits starting with 01 (e.g., 0123456789)
                 </div>
               </div>
 

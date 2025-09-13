@@ -33,7 +33,23 @@ const errors = ref({})
 const photoPreviews = ref([])
 const isCheckingIC = ref(false)
 
-const { success, warning } = useToast()
+const { success, warning, error } = useToast()
+
+// Check if date is not in the future
+function isFutureDate(dateString) {
+  if (!dateString) return false
+  const selectedDate = new Date(dateString)
+  const today = new Date()
+  today.setHours(23, 59, 59, 999) // End of today
+  return selectedDate > today
+}
+
+// Phone validation for reporter phone - must be 10-11 digits starting with 01
+const isReporterPhoneValid = computed(() => {
+  if (!form.reporter_phone) return false // Phone is required
+  const phone = form.reporter_phone.replace(/\s/g, '') // Remove spaces
+  return /^01\d{8,9}$/.test(phone)
+})
 
 // Check if IC number already exists
 async function checkICNumber(icNumber) {
@@ -55,6 +71,17 @@ async function checkICNumber(icNumber) {
 // --- Handle photo upload & preview---
 function onPhotosChange(e) {
   const files = Array.from(e.target.files)
+  
+  // Check file sizes (2MB = 2 * 1024 * 1024 bytes)
+  const maxSize = 2 * 1024 * 1024
+  const oversizedFiles = files.filter(file => file.size > maxSize)
+  
+  if (oversizedFiles.length > 0) {
+    error(`Some files are too large. Maximum size is 2MB per file.`)
+    e.target.value = '' // Clear the input
+    return
+  }
+  
   form.photos = files
   photoPreviews.value = []
   uploadProgress.value = 0
@@ -89,6 +116,17 @@ const policeReportType = ref(null)
 const policeReportName = ref('')
 function onPoliceReportChange(e) {
   const file = e.target.files[0]
+  
+  if (file) {
+    // Check file size (2MB = 2 * 1024 * 1024 bytes)
+    const maxSize = 2 * 1024 * 1024
+    if (file.size > maxSize) {
+      error('Police report file is too large. Maximum size is 2MB.')
+      e.target.value = '' // Clear the input
+      return
+    }
+  }
+  
   form.police_report = file
   policeReportName.value = file ? file.name : ''
   if (!file) {
@@ -228,6 +266,9 @@ function validateForm() {
   if (form.age && !/^\d+$/.test(form.age)) {
     errors.value.age = "Age must be a valid number."
   }
+  if (form.age && (parseInt(form.age) < 0 || parseInt(form.age) > 150)) {
+    errors.value.age = "Age must be between 0 and 150 years."
+  }
   if (form.height_cm && !/^\d+$/.test(form.height_cm)) {
     errors.value.height_cm = "Height must be a number."
   }
@@ -240,15 +281,19 @@ function validateForm() {
   if (!/^\d{12}$/.test(form.reporter_ic_number)) {
     errors.value.reporter_ic_number = "Reporter IC number must be exactly 12 digits."
   }
-  if (!/^\d{10,11}$/.test(form.reporter_phone)) {
-    errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
+  if (!isReporterPhoneValid.value) {
+    errors.value.reporter_phone = "Phone number must be 10-11 digits starting with 01."
   }
   if (form.reporter_email && !/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/.test(form.reporter_email)) {
     errors.value.reporter_email = "Invalid email address."
   }
   if (!form.gender) errors.value.gender = "Please select gender."
   if (!form.reporter_relationship) errors.value.reporter_relationship = "Please select relationship."
-  if (!form.last_seen_date) errors.value.last_seen_date = "Please select last seen date."
+  if (!form.last_seen_date) {
+    errors.value.last_seen_date = "Please select last seen date."
+  } else if (isFutureDate(form.last_seen_date)) {
+    errors.value.last_seen_date = "Last seen date cannot be in the future."
+  }
   if (!form.last_seen_location) errors.value.last_seen_location = "Please select last seen location."
   if (!form.photos || form.photos.length === 0) errors.value.photos = "Please upload at least one photo."
   // ...more validation as needed...
@@ -270,12 +315,43 @@ function submit() {
   // 最终验证所有字段
   if (!validateForm()) return
   
+  // Format phone number - remove spaces before submission
+  const formattedData = {
+    ...form.data(),
+    reporter_phone: form.reporter_phone.replace(/\s/g, '')
+  }
+
   uploading.value = true
-  form.post(route('missing-persons.store'), {
+  form.transform(() => formattedData).post(route('missing-persons.store'), {
     forceFormData: true,
     onFinish: () => uploading.value = false,
     onError: (e) => {
       errors.value = e
+      
+      // Show specific error messages for file uploads
+      if (e.photos) {
+        if (Array.isArray(e.photos)) {
+          e.photos.forEach((error, index) => {
+            if (error.includes('smaller than 2MB')) {
+              error(`Photo ${index + 1} is too large. Maximum size is 2MB.`)
+            } else if (error.includes('image files')) {
+              error(`Photo ${index + 1} must be an image file (JPG, PNG, GIF).`)
+            }
+          })
+        } else {
+          error(e.photos)
+        }
+      }
+      
+      if (e.police_report) {
+        if (e.police_report.includes('smaller than 2MB')) {
+          error('Police report file is too large. Maximum size is 2MB.')
+        } else if (e.police_report.includes('PDF or image file')) {
+          error('Police report must be a PDF or image file.')
+        } else {
+          error(e.police_report)
+        }
+      }
     },
     onSuccess: () => {
       form.reset()
@@ -394,6 +470,10 @@ function validateCurrentStep() {
         errors.value.age = "Age must be a valid number."
         isValid = false
       }
+      if (form.age && (parseInt(form.age) < 0 || parseInt(form.age) > 150)) {
+        errors.value.age = "Age must be between 0 and 150 years."
+        isValid = false
+      }
       if (form.height_cm && !/^\d+$/.test(form.height_cm)) {
         errors.value.height_cm = "Height must be a number."
         isValid = false
@@ -411,6 +491,9 @@ function validateCurrentStep() {
     case 2: // Last Seen Information
       if (!form.last_seen_date) {
         errors.value.last_seen_date = "Please select last seen date."
+        isValid = false
+      } else if (isFutureDate(form.last_seen_date)) {
+        errors.value.last_seen_date = "Last seen date cannot be in the future."
         isValid = false
       }
       if (!form.last_seen_location) {
@@ -435,8 +518,8 @@ function validateCurrentStep() {
          errors.value.reporter_ic_number = "Reporter IC number must be exactly 12 digits."
          isValid = false
        }
-       if (!/^\d{10,11}$/.test(form.reporter_phone)) {
-         errors.value.reporter_phone = "Phone number must be 10 or 11 digits."
+       if (!isReporterPhoneValid.value) {
+         errors.value.reporter_phone = "Phone number must be 10-11 digits starting with 01."
          isValid = false
        }
       if (form.reporter_email && !/^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$/.test(form.reporter_email)) {
@@ -533,12 +616,26 @@ function validateCurrentStep() {
 
       <!-- Form (same logic; only UI paginated) -->
       <form @submit.prevent="submit" enctype="multipart/form-data">
+        <!-- Global Error Messages -->
+        <div v-if="Object.keys(errors).length > 0" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <h3 class="text-red-800 font-semibold text-sm mb-2">Please fix the following errors:</h3>
+          <ul class="text-red-700 text-xs space-y-1">
+            <li v-for="(error, field) in errors" :key="field">
+              <span v-if="Array.isArray(error)">
+                {{ field }}: {{ error.join(', ') }}
+              </span>
+              <span v-else>
+                {{ field }}: {{ error }}
+              </span>
+            </li>
+          </ul>
+        </div>
 
         <!-- STEP 1: Basic Information -->
         <div v-if="currentStep === 0" class="bg-white rounded-xl shadow p-4 sm:p-6 space-y-3 sm:space-y-4">
           <h2 class="font-bold text-base sm:text-lg text-[#b12a1a]">Basic Information</h2>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Full Name</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Full Name <span class="text-red-500">*</span></label>
             <input v-model="form.full_name" type="text" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
             <span v-if="errors.full_name" class="text-red-500 text-xs sm:text-sm">{{ errors.full_name }}</span>
           </div>
@@ -548,7 +645,7 @@ function validateCurrentStep() {
             <span v-if="errors.nickname" class="text-red-500 text-xs sm:text-sm">{{ errors.nickname }}</span>
           </div>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">IC Number</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">IC Number <span class="text-red-500">*</span></label>
             <div class="relative">
               <input v-model="form.ic_number" type="text" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base pr-10" required maxlength="12" />
               <div v-if="isCheckingIC" class="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -566,12 +663,12 @@ function validateCurrentStep() {
         <div v-if="currentStep === 1" class="bg-white rounded-xl shadow p-4 sm:p-6 space-y-4 sm:space-y-6">
           <h2 class="font-bold text-base sm:text-lg text-[#b12a1a]">Personal Details</h2>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Age</label>
-            <input v-model="form.age" type="number" min="0" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" />
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Age <span class="text-red-500">*</span></label>
+            <input v-model="form.age" type="number" min="0" max="150" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" />
             <span v-if="errors.age" class="text-red-500 text-xs sm:text-sm">{{ errors.age }}</span>
           </div>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Gender</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Gender <span class="text-red-500">*</span></label>
             <select v-model="form.gender" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base">
               <option value="">Select...</option>
               <option>Male</option>
@@ -603,12 +700,12 @@ function validateCurrentStep() {
         <section v-show="currentStep === 2" class="bg-white rounded-xl shadow p-4 sm:p-6 space-y-4 sm:space-y-6">
           <h2 class="font-bold text-base sm:text-lg text-[#b12a1a]">Last Seen Information</h2>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Last Seen Date</label>
-            <input v-model="form.last_seen_date" type="date" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Last Seen Date <span class="text-red-500">*</span></label>
+            <input v-model="form.last_seen_date" type="date" :max="new Date().toISOString().split('T')[0]" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
             <span v-if="errors.last_seen_date" class="text-red-500 text-xs sm:text-sm">{{ errors.last_seen_date }}</span>
           </div>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Last Seen Location</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Last Seen Location <span class="text-red-500">*</span></label>
             <input ref="autocompleteInput" v-model="form.last_seen_location" type="text"
                    class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base"
                    placeholder="Enter location and select suggestion" autocomplete="off" required />
@@ -634,7 +731,7 @@ function validateCurrentStep() {
             <div class="mt-2 text-xs sm:text-sm text-gray-600">
               <p class="mb-1">📸 <strong>Important:</strong> Please upload at least one photo.</p>
               <p class="mb-1">🖼️ <strong>First photo:</strong> Please use a clear front-facing photo of the missing person.</p>
-              <p class="text-xs text-gray-500">Supported formats: JPG, PNG, GIF (Max: 5MB per image)</p>
+              <p class="text-xs text-gray-500">Supported formats: JPG, PNG, GIF (Max: 2MB per image)</p>
             </div>
             <!-- Upload Progress Indicator -->
             <div v-if="uploadProgress > 0 && uploadProgress < 100" class="mt-3">
@@ -662,12 +759,17 @@ function validateCurrentStep() {
               </div>
             </div>
             <span v-if="errors.photos" class="text-red-500 text-xs sm:text-sm">{{ errors.photos }}</span>
+            <span v-if="errors['photos.0']" class="text-red-500 text-xs sm:text-sm">{{ errors['photos.0'] }}</span>
+            <span v-if="errors['photos.1']" class="text-red-500 text-xs sm:text-sm">{{ errors['photos.1'] }}</span>
+            <span v-if="errors['photos.2']" class="text-red-500 text-xs sm:text-sm">{{ errors['photos.2'] }}</span>
+            <span v-if="errors['photos.3']" class="text-red-500 text-xs sm:text-sm">{{ errors['photos.3'] }}</span>
+            <span v-if="errors['photos.4']" class="text-red-500 text-xs sm:text-sm">{{ errors['photos.4'] }}</span>
           </div>
           <!-- Police report -->
           <div>
             <label class="block text-xs sm:text-sm text-gray-600 mb-1">Upload Police Report</label>
             <input type="file" @change="onPoliceReportChange" class="w-full text-xs sm:text-sm" accept=".pdf,image/*" />
-            <small class="block mt-1 text-xs sm:text-sm text-gray-500">Supported formats: .pdf, .jpg, .png (Max: 5MB)</small>
+            <small class="block mt-1 text-xs sm:text-sm text-gray-500">Supported formats: .pdf, .jpg, .png (Max: 2MB)</small>
             <div v-if="policeReportPreview" class="mt-2">
               <img v-if="policeReportType && policeReportType.startsWith('image/')"
                    :src="policeReportPreview" alt="Police Report Preview" class="w-32 sm:w-40 rounded shadow" />
@@ -678,6 +780,7 @@ function validateCurrentStep() {
             <div v-else-if="policeReportName" class="mt-2 text-gray-600 text-xs sm:text-sm">
               {{ policeReportName }}
             </div>
+            <span v-if="errors.police_report" class="text-red-500 text-xs sm:text-sm">{{ errors.police_report }}</span>
           </div>
         </div>
 
@@ -685,37 +788,41 @@ function validateCurrentStep() {
         <div v-if="currentStep === 4" class="bg-white rounded-xl shadow p-4 sm:p-6 space-y-4 sm:space-y-6">
           <h2 class="font-bold text-base sm:text-lg text-[#b12a1a]">Contact Information</h2>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Your Name</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Your Name <span class="text-red-500">*</span></label>
             <input v-model="form.reporter_name" type="text" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
             <span v-if="errors.reporter_name" class="text-red-500 text-xs sm:text-sm">{{ errors.reporter_name }}</span>
           </div>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Your IC Number</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Your IC Number <span class="text-red-500">*</span></label>
             <input v-model="form.reporter_ic_number" type="text" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required maxlength="12" />
             <span v-if="errors.reporter_ic_number" class="text-red-500 text-xs sm:text-sm">{{ errors.reporter_ic_number }}</span>
           </div>
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Relationship to Missing Person</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Relationship to Missing Person <span class="text-red-500">*</span></label>
             <select v-model="form.reporter_relationship" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required>
               <option value="">Select...</option>
               <option>Parent</option>
               <option>Sibling</option>
               <option>Spouse</option>
               <option>Friend</option>
-              <option>Relative</option>
-              <option>Other</option>
             </select>
             <span v-if="errors.reporter_relationship" class="text-red-500 text-xs sm:text-sm">{{ errors.reporter_relationship }}</span>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label class="block text-xs sm:text-sm text-gray-600 mb-1">Phone Number</label>
-              <input v-model="form.reporter_phone" type="text" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
-              <span v-if="errors.reporter_phone" class="text-red-500 text-xs sm:text-sm">{{ errors.reporter_phone }}</span>
+              <label class="block text-xs sm:text-sm text-gray-600 mb-1">Phone Number <span class="text-red-500">*</span></label>
+              <input v-model="form.reporter_phone" type="text" placeholder="e.g., 0123456789"
+                     :class="`w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base ${
+                       form.reporter_phone ? (isReporterPhoneValid ? 'border-green-500' : 'border-red-500') : 'border-gray-300'
+                     }`" required />
+              <div v-if="form.reporter_phone && !isReporterPhoneValid" class="text-red-500 text-xs mt-1">
+                Phone number must be 10-11 digits starting with 01 (e.g., 0123456789)
+              </div>
+              <span v-else-if="errors.reporter_phone" class="text-red-500 text-xs sm:text-sm">{{ errors.reporter_phone }}</span>
             </div>
             <div>
-              <label class="block text-xs sm:text-sm text-gray-600 mb-1">Email Address (Optional)</label>
-              <input v-model="form.reporter_email" type="email" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" />
+              <label class="block text-xs sm:text-sm text-gray-600 mb-1">Email Address <span class="text-red-500">*</span></label>
+              <input v-model="form.reporter_email" type="email" class="w-full border rounded px-2.5 sm:px-3 py-2 text-sm sm:text-base" required />
               <span v-if="errors.reporter_email" class="text-red-500 text-xs sm:text-sm">{{ errors.reporter_email }}</span>
             </div>
           </div>

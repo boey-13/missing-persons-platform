@@ -113,8 +113,14 @@ class SightingReportController extends Controller
     public function create($id)
     {
         $report = MissingReport::findOrFail($id);
+        
+        // Check if the report status allows sighting submissions
+        if (!in_array($report->case_status, ['Approved', 'Missing'])) {
+            return redirect()->back()->with('error', 'Sighting submissions are not available for this case status.');
+        }
+        
         return Inertia::render('SightingReports/ReportSighting', [
-            'report' => $report->only(['id','full_name','last_seen_location']),
+            'report' => $report->only(['id','full_name','last_seen_location','last_seen_date']),
         ]);
     }
 
@@ -128,14 +134,34 @@ class SightingReportController extends Controller
             ]);
 
             $report = MissingReport::findOrFail($id);
+            
+            // Check if the report status allows sighting submissions
+            if (!in_array($report->case_status, ['Approved', 'Missing'])) {
+                return redirect()->back()->with('error', 'Sighting submissions are not available for this case status.');
+            }
             $validated = $request->validate([
                 'location' => ['required', 'string', 'max:255'],
-                'description' => ['nullable', 'string', 'max:2000'],
-                'sighted_at' => ['nullable', 'date'],
+                'description' => ['required', 'string', 'max:2000'],
+                'sighted_at' => ['required', 'date', 'after:' . $report->last_seen_date],
                 'reporter_name' => ['required', 'string', 'max:255'],
-                'reporter_phone' => ['required', 'string', 'max:30'],
-                'reporter_email' => ['nullable', 'email', 'max:255'],
+                'reporter_phone' => ['required', 'string', 'regex:/^01\d{8,9}$/'],
+                'reporter_email' => ['required', 'email', 'max:255'],
+                'photos' => ['required', 'array', 'min:1'],
                 'photos.*' => ['image', 'max:5120'],
+            ], [
+                'location.required' => 'Location is required.',
+                'description.required' => 'Description is required.',
+                'sighted_at.required' => 'Sighted at date/time is required.',
+                'sighted_at.after' => 'Sighting date must be after the last seen date.',
+                'reporter_name.required' => 'Reporter name is required.',
+                'reporter_phone.required' => 'Reporter phone is required.',
+                'reporter_phone.regex' => 'Phone number must be 10-11 digits starting with 01.',
+                'reporter_email.required' => 'Reporter email is required.',
+                'reporter_email.email' => 'Please enter a valid email address.',
+                'photos.required' => 'At least one photo is required.',
+                'photos.min' => 'At least one photo is required.',
+                'photos.*.image' => 'Photos must be image files.',
+                'photos.*.max' => 'Each photo must be smaller than 5MB.',
             ]);
 
             $validated['user_id'] = auth()->id(); // This will be null if user is not logged in
@@ -171,6 +197,9 @@ class SightingReportController extends Controller
 
             // Redirect to the missing person details page with success message
             return redirect()->to("/missing-persons/{$report->id}")->with('success', 'Sighting report submitted successfully!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Re-throw validation exceptions so they can be handled properly by Inertia
+            throw $e;
         } catch (\Exception $e) {
             \Log::error('Sighting report submission failed', [
                 'missing_report_id' => $id,

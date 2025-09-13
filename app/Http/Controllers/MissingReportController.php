@@ -20,6 +20,18 @@ class MissingReportController extends Controller
 
     public function store(Request $request)
     {
+        // Validate file uploads separately
+        $request->validate([
+            'photos.*' => ['image', 'max:2048'], // 2MB per image
+            'police_report' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'], // 2MB
+        ], [
+            'photos.*.image' => 'Photos must be image files (JPG, PNG, GIF).',
+            'photos.*.max' => 'Each photo must be smaller than 2MB.',
+            'police_report.file' => 'Police report must be a valid file.',
+            'police_report.mimes' => 'Police report must be a PDF or image file.',
+            'police_report.max' => 'Police report must be smaller than 2MB.'
+        ]);
+
         $validated = $request->validate(
             [
                 'full_name' => ['required', 'regex:/^[A-Za-z\s]+$/', 'max:255'],
@@ -33,13 +45,11 @@ class MissingReportController extends Controller
                 'last_seen_date' => ['required', 'date'],
                 'last_seen_location' => ['required', 'string', 'max:255'],
                 'last_seen_clothing' => ['nullable', 'string', 'max:255'],
-                'photo_paths' => ['nullable'],
-                'police_report_path' => ['nullable'],
                 'reporter_relationship' => ['required', 'in:Parent,Child,Spouse,Sibling,Friend,Other'],
                 'reporter_name' => ['required', 'regex:/^[A-Za-z\s]+$/', 'max:255'],
                 'reporter_ic_number' => ['required', 'digits:12'],
-                'reporter_phone' => ['required', 'digits_between:10,11'],
-                'reporter_email' => ['nullable', 'email', 'max:255'],
+                'reporter_phone' => ['required', 'string', 'regex:/^01\d{8,9}$/'],
+                'reporter_email' => ['required', 'email', 'max:255'],
                 'additional_notes' => ['nullable', 'string', 'max:2000'],
             ],
             [
@@ -48,7 +58,7 @@ class MissingReportController extends Controller
                 'ic_number.digits' => 'IC Number must be exactly 12 digits.',
                 'reporter_ic_number.digits' => 'Reporter IC Number must be exactly 12 digits.',
                 'reporter_name.regex' => 'Reporter name must only contain alphabets and spaces.',
-                'reporter_phone.digits_between' => 'Phone number must be 10 or 11 digits.',
+                'reporter_phone.regex' => 'Phone number must be 10-11 digits starting with 01.',
                 'reporter_relationship.in' => 'Please select a valid relationship.'
             ]
         );

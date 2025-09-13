@@ -12,6 +12,7 @@ const props = defineProps({
 
 const form = useForm({
   category_id: '',
+  new_category_name: '',
   name: '',
   description: '',
   points_required: '',
@@ -21,6 +22,9 @@ const form = useForm({
   validity_days: 30,
   status: 'active',
 })
+
+// Category selection mode
+const categoryMode = ref('existing') // 'existing' or 'new'
 
 const { success, error } = useToast()
 
@@ -72,22 +76,64 @@ function handleImageUpload(event) {
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Category *
           </label>
-          <select
-            v-model="form.category_id"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Select a category</option>
-            <option
-              v-for="category in categories"
-              :key="category.id"
-              :value="category.id"
+          
+          <!-- Category Mode Selection -->
+          <div class="mb-3">
+            <div class="flex space-x-4">
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  v-model="categoryMode"
+                  value="existing"
+                  class="mr-2"
+                />
+                <span class="text-sm text-gray-700">Select existing category</span>
+              </label>
+              <label class="flex items-center">
+                <input
+                  type="radio"
+                  v-model="categoryMode"
+                  value="new"
+                  class="mr-2"
+                />
+                <span class="text-sm text-gray-700">Create new category</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Existing Category Selection -->
+          <div v-if="categoryMode === 'existing'">
+            <select
+              v-model="form.category_id"
+              :required="categoryMode === 'existing'"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {{ category.name }}
-            </option>
-          </select>
-          <div v-if="form.errors.category_id" class="text-red-600 text-sm mt-1">
-            {{ form.errors.category_id }}
+              <option value="">Select a category</option>
+              <option
+                v-for="category in categories"
+                :key="category.id"
+                :value="category.id"
+              >
+                {{ category.name }}
+              </option>
+            </select>
+            <div v-if="form.errors.category_id" class="text-red-600 text-sm mt-1">
+              {{ form.errors.category_id }}
+            </div>
+          </div>
+
+          <!-- New Category Input -->
+          <div v-else>
+            <input
+              v-model="form.new_category_name"
+              type="text"
+              :required="categoryMode === 'new'"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter new category name"
+            />
+            <div v-if="form.errors.new_category_name" class="text-red-600 text-sm mt-1">
+              {{ form.errors.new_category_name }}
+            </div>
           </div>
         </div>
 

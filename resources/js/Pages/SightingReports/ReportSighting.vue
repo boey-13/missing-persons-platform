@@ -23,6 +23,28 @@ const form = useForm({
 const isInitializing = ref(true)
 const uploadProgress = ref(0)
 
+// Get minimum datetime for sighted_at (must be after last_seen_date)
+function getMinDateTime() {
+  if (!props.report.last_seen_date) return ''
+  
+  // Add 1 day to last_seen_date to ensure sighting is after the last seen date
+  const lastSeenDate = new Date(props.report.last_seen_date)
+  lastSeenDate.setDate(lastSeenDate.getDate() + 1)
+  
+  // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+  return lastSeenDate.toISOString().slice(0, 16)
+}
+
+// Format date for display
+function formatDate(dateString) {
+  if (!dateString) return 'N/A'
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
 /** -------- Google Maps -------- */
 const mapDiv = ref(null)
 const autocompleteInput = ref(null) // use ref instead of getElementById
@@ -148,12 +170,46 @@ function onPhotosChange(e) {
 /** -------- submit -------- */
 function submit() {
   if (!form.location.trim())  return error('Please enter a location.')
+  if (!form.sighted_at.trim())  return error('Please enter when you sighted the person.')
+  if (!form.description.trim())  return error('Please enter a description.')
   if (!form.reporter_name.trim())  return error('Please enter your name.')
   if (!form.reporter_phone.trim()) return error('Please enter your phone number.')
+  if (!form.reporter_email.trim()) return error('Please enter your email address.')
+  if (!form.photos || form.photos.length === 0) return error('Please upload at least one photo.')
+  
+  // Validate that sighted_at is after last_seen_date
+  if (props.report.last_seen_date) {
+    const sightedDate = new Date(form.sighted_at)
+    const lastSeenDate = new Date(props.report.last_seen_date)
+    if (sightedDate <= lastSeenDate) {
+      return error('Sighting date must be after the last seen date.')
+    }
+  }
 
   form.post(`/missing-persons/${props.report.id}/sightings`, {
     forceFormData: true,
-    onError: () => error('There was an error submitting your report. Please try again.')
+    onError: (errors) => {
+      console.log('Validation errors:', errors) // Debug log
+      
+      // Handle specific field errors - show toast for first error found
+      if (errors.reporter_phone) {
+        error(errors.reporter_phone)
+      } else if (errors.reporter_email) {
+        error(errors.reporter_email)
+      } else if (errors.sighted_at) {
+        error(errors.sighted_at)
+      } else if (errors.location) {
+        error(errors.location)
+      } else if (errors.description) {
+        error(errors.description)
+      } else if (errors.reporter_name) {
+        error(errors.reporter_name)
+      } else if (errors.photos) {
+        error(errors.photos)
+      } else {
+        error('There was an error submitting your report. Please try again.')
+      }
+    }
   })
 }
 
@@ -205,12 +261,16 @@ function submit() {
             </div>
 
             <div>
-              <label class="block text-xs sm:text-sm text-gray-700 mb-1">Sighted at</label>
+              <label class="block text-xs sm:text-sm text-gray-700 mb-1">Sighted at <span class="text-red-500">*</span></label>
               <input
                 v-model="form.sighted_at"
                 type="datetime-local"
+                required
+                :min="getMinDateTime()"
                 class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base"
               />
+              <div v-if="form.errors.sighted_at" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.sighted_at }}</div>
+              <p class="text-xs text-gray-500 mt-1">Must be after the last seen date: {{ formatDate(props.report.last_seen_date) }}</p>
             </div>
           </div>
 
@@ -221,13 +281,15 @@ function submit() {
           </div>
 
           <div class="mt-4 sm:mt-5">
-            <label class="block text-xs sm:text-sm text-gray-700 mb-1">Description</label>
+            <label class="block text-xs sm:text-sm text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
             <textarea
               v-model="form.description"
               rows="4"
+              required
               placeholder="Clothing, behavior, direction…"
               class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base"
             />
+            <div v-if="form.errors.description" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.description }}</div>
           </div>
 
           <div class="border-t border-gray-200 mt-6 sm:mt-8" />
@@ -252,8 +314,9 @@ function submit() {
           </div>
 
           <div class="mt-3 sm:mt-4">
-            <label class="block text-xs sm:text-sm text-gray-700 mb-1">Email (optional)</label>
-            <input v-model="form.reporter_email" type="email" class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base" />
+            <label class="block text-xs sm:text-sm text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+            <input v-model="form.reporter_email" type="email" required class="w-full border border-gray-300 px-2.5 sm:px-3 py-2 rounded-md focus:ring-2 focus:ring-black focus:border-black outline-none text-sm sm:text-base" />
+            <div v-if="form.errors.reporter_email" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.reporter_email }}</div>
             <p class="text-xs text-gray-500 mt-1.5 sm:mt-2">We'll only use your contact to follow up on this sighting if needed.</p>
           </div>
 
@@ -262,8 +325,9 @@ function submit() {
 
         <!-- Photos -->
         <section>
-          <h2 class="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Photos (optional)</h2>
-          <input type="file" multiple accept="image/*" @change="onPhotosChange" class="block w-full text-xs sm:text-sm text-gray-700 file:mr-3 file:px-2.5 sm:file:px-3 file:py-1 sm:file:py-1.5 file:rounded-md file:border-0 file:bg-gray-900 file:text-white hover:file:bg-black" />
+          <h2 class="text-xs sm:text-sm font-semibold text-gray-900 mb-3 sm:mb-4">Photos <span class="text-red-500">*</span></h2>
+          <input type="file" multiple accept="image/*" @change="onPhotosChange" required class="block w-full text-xs sm:text-sm text-gray-700 file:mr-3 file:px-2.5 sm:file:px-3 file:py-1 sm:file:py-1.5 file:rounded-md file:border-0 file:bg-gray-900 file:text-white hover:file:bg-black" />
+          <div v-if="form.errors.photos" class="text-red-600 text-xs sm:text-sm mt-1">{{ form.errors.photos }}</div>
           <p class="text-xs text-gray-500 mt-1.5 sm:mt-2">JPEG/PNG, up to a few photos.</p>
 
           <div v-if="uploadProgress > 0 && uploadProgress < 100" class="mt-3">

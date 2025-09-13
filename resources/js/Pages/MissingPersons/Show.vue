@@ -379,7 +379,9 @@ function getStatusColor(status) {
               <i class="fas fa-file-download"></i>
               Download Poster
             </Link>
-            <Link :href="`/missing-persons/${report.id}/report-sighting`"
+            <!-- Only show Submit Sighting button for Approved and Missing status -->
+            <Link v-if="report.case_status === 'Approved' || report.case_status === 'Missing'"
+                  :href="`/missing-persons/${report.id}/report-sighting`"
                   class="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 font-medium shadow text-sm sm:text-base">
               <i class="fas fa-binoculars"></i>
               Submit Sighting

@@ -74,7 +74,12 @@ function submit() {
       if (errors.token) {
         error('Invalid or expired reset link. Please request a new one.')
       } else if (errors.email) {
-        error('Invalid email address.')
+        // 检查是否是token错误（Laravel把token错误放在email字段中）
+        if (errors.email.includes('token is invalid') || errors.email.includes('invalid')) {
+          error('Invalid or expired reset link. Please request a new one.')
+        } else {
+          error('Invalid email address.')
+        }
       } else if (errors.password) {
         error('Please check your password requirements.')
       } else {
