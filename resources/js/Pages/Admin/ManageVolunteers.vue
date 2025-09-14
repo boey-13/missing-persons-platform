@@ -79,6 +79,20 @@ function closeModal() {
   detail.value = null
 }
 
+function deleteVolunteerApplication(applicationId) {
+  if (confirm('Are you sure you want to delete this volunteer application? This action cannot be undone.')) {
+    router.delete(`/admin/volunteers/${applicationId}`, {
+      onSuccess: () => {
+        success('Volunteer application deleted successfully!')
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors)
+        error('Failed to delete volunteer application. Please try again.')
+      }
+    })
+  }
+}
+
 function getStatusColor(status) {
   const colors = {
     'Pending': 'bg-yellow-100 text-yellow-800',
@@ -256,6 +270,12 @@ function clearFilters() {
                   <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
                     Reject
                   </button>
+                  <button 
+                    @click="deleteVolunteerApplication(a.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
                 </template>
                 
                 <!-- Approved Status Actions -->
@@ -266,6 +286,12 @@ function clearFilters() {
                   <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
                     Reject
                   </button>
+                  <button 
+                    @click="deleteVolunteerApplication(a.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
                 </template>
                 
                 <!-- Rejected Status Actions -->
@@ -275,6 +301,12 @@ function clearFilters() {
                   </button>
                   <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(a)">
                     Reject
+                  </button>
+                  <button 
+                    @click="deleteVolunteerApplication(a.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
                   </button>
                 </template>
               </div>

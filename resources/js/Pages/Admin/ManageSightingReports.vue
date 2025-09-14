@@ -8,7 +8,8 @@ defineOptions({ layout: AdminLayout })
 const props = defineProps({ 
   items: Array, 
   pagination: Object,
-  filters: Object
+  filters: Object,
+  missingReports: Array
 })
 
 const showModal = ref(false)
@@ -78,6 +79,20 @@ function createProjectFromSighting(sightingId) {
   router.get(`/admin/sighting-reports/${sightingId}/create-project`)
 }
 
+function deleteSighting(sightingId) {
+  if (confirm('Are you sure you want to delete this sighting report? This action cannot be undone.')) {
+    router.delete(`/admin/sighting-reports/${sightingId}`, {
+      onSuccess: () => {
+        success('Sighting report deleted successfully!')
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors)
+        error('Failed to delete sighting report. Please try again.')
+      }
+    })
+  }
+}
+
 function applyFilters() {
   const params = {}
   if (statusFilter.value) params.status = statusFilter.value
@@ -129,6 +144,15 @@ function formatDate(dateString) {
             <option value="Pending">Pending</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Missing Person</label>
+          <select v-model="missingReportFilter" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="">All Missing Persons</option>
+            <option v-for="report in missingReports" :key="report.id" :value="report.id">
+              {{ report.full_name }} (ID: {{ report.id }})
+            </option>
           </select>
         </div>
         <div>
@@ -213,6 +237,12 @@ function formatDate(dateString) {
                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
                      Reject
                    </button>
+                   <button 
+                     @click="deleteSighting(row.id)"
+                     class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                   >
+                     Delete
+                   </button>
                  </template>
                  
                  <!-- Approved Status Actions -->
@@ -229,6 +259,12 @@ function formatDate(dateString) {
                    >
                      Create Project
                    </button>
+                   <button 
+                     @click="deleteSighting(row.id)"
+                     class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                   >
+                     Delete
+                   </button>
                  </template>
                  
                  <!-- Rejected Status Actions -->
@@ -239,6 +275,12 @@ function formatDate(dateString) {
                    <button class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs" @click="openRejectModal(row.id)">
                   Reject
                 </button>
+                   <button 
+                     @click="deleteSighting(row.id)"
+                     class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                   >
+                     Delete
+                   </button>
                  </template>
               </div>
             </td>

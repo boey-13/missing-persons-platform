@@ -22,9 +22,47 @@ class AdminController extends Controller
             'pendingMissingCases' => MissingReport::where('case_status', 'Pending')->count(),
             'pendingSightings' => \App\Models\SightingReport::where('status', 'Pending')->count(),
             'totalUsers' => \App\Models\User::count(),
+            'activeRewards' => \App\Models\Reward::where('status', 'active')->count(),
+            'totalProjects' => \App\Models\CommunityProject::where('status', 'active')->count(),
+            'pendingVolunteers' => \App\Models\VolunteerApplication::where('status', 'Pending')->count(),
+            'totalRedemptions' => \App\Models\UserReward::count(),
         ];
         
-        return Inertia::render('Admin/Dashboard', ['stats' => $stats]);
+        // Recent missing reports
+        $recentMissingReports = MissingReport::with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($report) {
+                return [
+                    'id' => $report->id,
+                    'missing_person_name' => $report->full_name,
+                    'location' => $report->last_seen_location,
+                    'status' => strtolower($report->case_status),
+                    'created_at' => $report->created_at,
+                ];
+            });
+        
+        // Recent sightings
+        $recentSightings = \App\Models\SightingReport::with('missingReport')
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get()
+            ->map(function ($sighting) {
+                return [
+                    'id' => $sighting->id,
+                    'missing_person_name' => $sighting->missingReport ? $sighting->missingReport->full_name : 'Unknown',
+                    'location' => $sighting->location,
+                    'created_at' => $sighting->created_at,
+                ];
+            });
+        
+        return Inertia::render('Admin/Dashboard', [
+            'stats' => $stats,
+            'recentMissingReports' => $recentMissingReports,
+            'recentSightings' => $recentSightings,
+            'recentActivities' => [], // Can be implemented later
+        ]);
     }
 
     /**
@@ -340,6 +378,56 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Failed to send reply: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Delete a missing person report
+     */
+    public function deleteMissingReport($id)
+    {
+        $report = MissingReport::findOrFail($id);
+        $reportTitle = $report->full_name;
+        
+        // Log the deletion
+        SystemLog::log(
+            'missing_report_deleted',
+            "Deleted missing person report: {$reportTitle}",
+            [
+                'report_id' => $report->id,
+                'person_name' => $reportTitle,
+                'reporter_id' => $report->user_id,
+                'deleted_by' => auth()->id()
+            ]
+        );
+        
+        $report->delete();
+        
+        return redirect()->back()->with('success', 'Missing person report deleted successfully');
+    }
+
+    /**
+     * Delete a contact message
+     */
+    public function deleteContactMessage($id)
+    {
+        $message = ContactMessage::findOrFail($id);
+        $senderName = $message->name;
+        
+        // Log the deletion
+        SystemLog::log(
+            'contact_message_deleted',
+            "Deleted contact message from: {$senderName}",
+            [
+                'message_id' => $message->id,
+                'sender_name' => $senderName,
+                'sender_email' => $message->email,
+                'deleted_by' => auth()->id()
+            ]
+        );
+        
+        $message->delete();
+        
+        return redirect()->back()->with('success', 'Contact message deleted successfully');
     }
 
 }

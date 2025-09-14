@@ -493,10 +493,7 @@ class CommunityProjectController extends Controller
                 ];
             });
 
-        return Inertia::render('Admin/ManageCommunityProjects', [
-            'applications' => $applications,
-            'activeTab' => 'applications'
-        ]);
+        return response()->json($applications);
     }
 
     public function approveApplication(ProjectApplication $application)

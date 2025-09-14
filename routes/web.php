@@ -152,6 +152,9 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     
     Route::put('/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'updateMissingReport'])
         ->name('missing-reports.update');
+    
+    Route::delete('/missing-reports/{id}', [App\Http\Controllers\AdminController::class, 'deleteMissingReport'])
+        ->name('missing-reports.delete');
 
     // Placeholders for other admin pages
     Route::get('/sighting-reports', [App\Http\Controllers\SightingReportController::class, 'adminIndex'])
@@ -162,6 +165,9 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
         ->name('sighting-reports.show');
     Route::get('/sighting-reports/{id}/create-project', [App\Http\Controllers\CommunityProjectController::class, 'createFromSightingReport'])
         ->name('sighting-reports.create-project');
+    
+    Route::delete('/sighting-reports/{id}', [App\Http\Controllers\SightingReportController::class, 'adminDelete'])
+        ->name('sighting-reports.delete');
         
     // Admin: Community Projects Management
     Route::get('/community-projects', [\App\Http\Controllers\CommunityProjectController::class, 'index'])
@@ -232,12 +238,18 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
         ->name('contact-messages.status');
     Route::post('/contact-messages/{id}/reply', [AdminController::class, 'replyToContactMessage'])
         ->name('contact-messages.reply');
+    
+    Route::delete('/contact-messages/{id}', [AdminController::class, 'deleteContactMessage'])
+        ->name('contact-messages.delete');
 
     // Admin: manage volunteer applications
     Route::get('/volunteers', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminIndex'])
         ->name('volunteers');
     Route::post('/volunteers/{application}/status', [\App\Http\Controllers\VolunteerApplicationController::class, 'updateStatus'])
         ->name('volunteers.status');
+    
+    Route::delete('/volunteers/{id}', [\App\Http\Controllers\VolunteerApplicationController::class, 'adminDelete'])
+        ->name('volunteers.delete');
 
     Route::get('/users', function (\Illuminate\Http\Request $request) {
         $query = User::query();

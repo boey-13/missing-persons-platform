@@ -272,4 +272,29 @@ class VolunteerApplicationController extends Controller
 
         return back()->with('success', "Volunteer application {$data['status']} successfully!");
     }
+
+    /**
+     * Delete a volunteer application (Admin only)
+     */
+    public function adminDelete($id)
+    {
+        $application = VolunteerApplication::findOrFail($id);
+        $userName = $application->user ? $application->user->name : 'Unknown';
+        
+        // Log the deletion
+        \App\Models\SystemLog::log(
+            'volunteer_application_deleted',
+            "Deleted volunteer application from: {$userName}",
+            [
+                'application_id' => $application->id,
+                'applicant_name' => $userName,
+                'applicant_id' => $application->user_id,
+                'deleted_by' => auth()->id()
+            ]
+        );
+        
+        $application->delete();
+        
+        return redirect()->back()->with('success', 'Volunteer application deleted successfully');
+    }
 }

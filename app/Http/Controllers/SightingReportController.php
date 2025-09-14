@@ -50,6 +50,12 @@ class SightingReportController extends Controller
             ];
         });
 
+        // Get all missing reports for the filter dropdown
+        $missingReports = MissingReport::select('id', 'full_name', 'case_status')
+            ->whereIn('case_status', ['Approved', 'Missing', 'Found'])
+            ->orderBy('full_name')
+            ->get();
+
         return Inertia::render('Admin/ManageSightingReports', [
             'items' => $data,
             'pagination' => [
@@ -62,6 +68,7 @@ class SightingReportController extends Controller
                 'status' => $request->status,
                 'search' => $request->search,
             ],
+            'missingReports' => $missingReports,
         ]);
     }
 
@@ -209,6 +216,31 @@ class SightingReportController extends Controller
 
             return redirect()->back()->withErrors(['error' => 'Failed to submit sighting report. Please try again.']);
         }
+    }
+
+    /**
+     * Delete a sighting report (Admin only)
+     */
+    public function adminDelete($id)
+    {
+        $sighting = SightingReport::findOrFail($id);
+        $missingPersonName = $sighting->missingReport ? $sighting->missingReport->full_name : 'Unknown';
+        
+        // Log the deletion
+        \App\Models\SystemLog::log(
+            'sighting_report_deleted',
+            "Deleted sighting report for: {$missingPersonName}",
+            [
+                'sighting_id' => $sighting->id,
+                'missing_person_name' => $missingPersonName,
+                'reporter_id' => $sighting->user_id,
+                'deleted_by' => auth()->id()
+            ]
+        );
+        
+        $sighting->delete();
+        
+        return redirect()->back()->with('success', 'Sighting report deleted successfully');
     }
 }
 

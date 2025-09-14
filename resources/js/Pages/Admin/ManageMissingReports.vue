@@ -255,6 +255,20 @@ function updateReport() {
   })
 }
 
+function deleteReport(reportId) {
+  if (confirm('Are you sure you want to delete this missing person report? This action cannot be undone.')) {
+    router.delete(`/admin/missing-reports/${reportId}`, {
+      onSuccess: () => {
+        success('Missing person report deleted successfully!')
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors)
+        error('Failed to delete report. Please try again.')
+      }
+    })
+  }
+}
+
 function applyFilters() {
   router.get('/admin/missing-reports', {
     status: statusFilter.value,
@@ -453,6 +467,12 @@ function handleImageLoad(event) {
                   >
                     Reject
                   </button>
+                  <button 
+                    @click="deleteReport(row.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
                 </template>
                 
                 <!-- Approved Status Actions -->
@@ -481,6 +501,12 @@ function handleImageLoad(event) {
                   >
                     Create Project
                   </button>
+                  <button 
+                    @click="deleteReport(row.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
                 </template>
                 
                 <!-- Rejected Status Actions -->
@@ -490,6 +516,12 @@ function handleImageLoad(event) {
                     class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs"
                   >
                     Update Status
+                  </button>
+                  <button 
+                    @click="deleteReport(row.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
                   </button>
                 </template>
                 
@@ -519,6 +551,12 @@ function handleImageLoad(event) {
                   >
                     Create Project
                   </button>
+                  <button 
+                    @click="deleteReport(row.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
                 </template>
                 
                 <!-- Found Status Actions -->
@@ -535,6 +573,12 @@ function handleImageLoad(event) {
                   >
                     Update Status
                   </button>
+                  <button 
+                    @click="deleteReport(row.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
+                  </button>
                 </template>
                 
                 <!-- Closed Status Actions -->
@@ -544,6 +588,12 @@ function handleImageLoad(event) {
                     class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors text-xs"
                   >
                     Edit
+                  </button>
+                  <button 
+                    @click="deleteReport(row.id)"
+                    class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-xs"
+                  >
+                    Delete
                   </button>
                 </template>
               </div>

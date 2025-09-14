@@ -19,8 +19,11 @@ const activeTab = ref(props.activeTab || 'projects')
 const showAddProjectModal = ref(false)
 const showEditProjectModal = ref(false)
 const showApplicationModal = ref(false)
+const showApproveConfirmModal = ref(false)
+const showRejectConfirmModal = ref(false)
 const selectedApplication = ref(null)
 const selectedProject = ref(null)
+const rejectionReason = ref('')
 const applications = ref(props.applications || [])
 const applicationStatusFilter = ref('all')
 
@@ -293,7 +296,15 @@ function viewApplication(application) {
   showApplicationModal.value = true
 }
 
-function approveApplication(applicationId) {
+function showApproveConfirm(application) {
+  selectedApplication.value = application
+  showApproveConfirmModal.value = true
+}
+
+function approveApplication() {
+  if (!selectedApplication.value) return
+  
+  const applicationId = selectedApplication.value.id
   fetch(`/admin/community-projects/applications/${applicationId}/approve`, {
     method: 'POST',
     headers: {
@@ -304,7 +315,9 @@ function approveApplication(applicationId) {
     .then(response => response.json())
     .then(data => {
       if (data?.success) {
+        showApproveConfirmModal.value = false
         showApplicationModal.value = false
+        selectedApplication.value = null
         fetchApplications()
         success(data?.message || 'Application approved successfully')
       } else {
@@ -314,22 +327,33 @@ function approveApplication(applicationId) {
     .catch(() => error('Approve failed'))
 }
 
-function rejectApplication(applicationId) {
-  const reason = prompt('Please provide a reason for rejection (optional):')
+function showRejectConfirm(application) {
+  selectedApplication.value = application
+  rejectionReason.value = ''
+  showRejectConfirmModal.value = true
+}
+
+function rejectApplication() {
+  if (!selectedApplication.value) return
+  
+  const applicationId = selectedApplication.value.id
   fetch(`/admin/community-projects/applications/${applicationId}/reject`, {
     method: 'POST',
     headers: {
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ rejection_reason: reason || '' })
+    body: JSON.stringify({ rejection_reason: rejectionReason.value || '' })
   })
     .then(response => response.json())
     .then(data => {
       if (data?.success) {
+        showRejectConfirmModal.value = false
         showApplicationModal.value = false
+        selectedApplication.value = null
+        rejectionReason.value = ''
         fetchApplications()
-        success(data?.message || 'Application rejected')
+        success(data?.message || 'Application rejected successfully')
       } else {
         error(data?.message || 'Reject failed')
       }
@@ -792,12 +816,12 @@ onMounted(() => {
                       View
                     </button>
                     <button v-if="application.status === 'pending'"
-                            @click="approveApplication(application.id)"
+                            @click="showApproveConfirm(application)"
                             class="text-green-600 hover:text-green-900 mr-3">
                       Approve
                     </button>
                     <button v-if="application.status === 'pending'"
-                            @click="rejectApplication(application.id)"
+                            @click="showRejectConfirm(application)"
                             class="text-red-600 hover:text-red-900">
                       Reject
                     </button>
@@ -837,12 +861,12 @@ onMounted(() => {
                   View
                 </button>
                 <button v-if="application.status === 'pending'"
-                        @click="approveApplication(application.id)"
+                        @click="showApproveConfirm(application)"
                         class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors text-xs">
                   Approve
                 </button>
                 <button v-if="application.status === 'pending'"
-                        @click="rejectApplication(application.id)"
+                        @click="showRejectConfirm(application)"
                         class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors text-xs">
                   Reject
                 </button>
@@ -1411,14 +1435,14 @@ onMounted(() => {
             <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
               <button
                 v-if="selectedApplication.status === 'pending'"
-                @click="approveApplication(selectedApplication.id)"
+                @click="showApproveConfirm(selectedApplication)"
                 class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors"
               >
                 Approve Application
               </button>
               <button
                 v-if="selectedApplication.status === 'pending'"
-                @click="rejectApplication(selectedApplication.id)"
+                @click="showRejectConfirm(selectedApplication)"
                 class="flex-1 bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition-colors"
               >
                 Reject Application
@@ -1428,6 +1452,89 @@ onMounted(() => {
                 class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approve Confirmation Modal -->
+    <div v-if="showApproveConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="p-6">
+          <div class="flex items-center mb-4">
+            <div class="flex-shrink-0 w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Approve Application</h3>
+            <p class="text-sm text-gray-500 mb-4">
+              Are you sure you want to approve this application from 
+              <strong>{{ selectedApplication?.volunteerName }}</strong> for 
+              <strong>{{ selectedApplication?.projectTitle }}</strong>?
+            </p>
+            <div class="flex gap-3">
+              <button
+                @click="approveApplication"
+                class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                Yes, Approve
+              </button>
+              <button
+                @click="showApproveConfirmModal = false; selectedApplication = null"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Confirmation Modal -->
+    <div v-if="showRejectConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+        <div class="p-6">
+          <div class="flex items-center mb-4">
+            <div class="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Reject Application</h3>
+            <p class="text-sm text-gray-500 mb-4">
+              Are you sure you want to reject this application from 
+              <strong>{{ selectedApplication?.volunteerName }}</strong> for 
+              <strong>{{ selectedApplication?.projectTitle }}</strong>?
+            </p>
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason (Optional)</label>
+              <textarea
+                v-model="rejectionReason"
+                rows="3"
+                placeholder="Please provide a reason for rejection..."
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              ></textarea>
+            </div>
+            <div class="flex gap-3">
+              <button
+                @click="rejectApplication"
+                class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
+              >
+                Yes, Reject
+              </button>
+              <button
+                @click="showRejectConfirmModal = false; selectedApplication = null; rejectionReason = ''"
+                class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>

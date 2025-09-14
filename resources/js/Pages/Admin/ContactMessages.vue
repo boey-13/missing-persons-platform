@@ -118,6 +118,20 @@ function updateStatus(messageId, newStatus) {
   })
 }
 
+function deleteMessage(messageId) {
+  if (confirm('Are you sure you want to delete this contact message? This action cannot be undone.')) {
+    router.delete(`/admin/contact-messages/${messageId}`, {
+      onSuccess: () => {
+        success('Contact message deleted successfully!')
+      },
+      onError: (errors) => {
+        console.error('Delete failed:', errors)
+        error('Failed to delete contact message. Please try again.')
+      }
+    })
+  }
+}
+
 function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -287,6 +301,12 @@ function goToPage(page) {
                       class="text-green-600 hover:text-green-900"
                     >
                       Reply
+                    </button>
+                    <button
+                      @click="deleteMessage(message.id)"
+                      class="text-red-600 hover:text-red-900"
+                    >
+                      Delete
                     </button>
                     <button
                       @click="updateStatus(message.id, 'closed')"
