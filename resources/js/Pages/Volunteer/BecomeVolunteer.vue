@@ -210,7 +210,7 @@ function submit() {
 }
 
 const skillsOptions = ['Communication', 'Poster Distribution', 'Social Media Promotion', 'Search Operations']
-const languagesOptions = ['English', 'Chinese', 'Bahasa', 'Tamil']
+const languagesOptions = ['English', 'Chinese', 'Malay', 'Tamil']
 const daysOptions = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 const rolesOptions = ['Poster Distribution','Community Events','Search Team','Online Support']
 const transportOptions = ['Car','Motorcycle','Public Transport','Walking']

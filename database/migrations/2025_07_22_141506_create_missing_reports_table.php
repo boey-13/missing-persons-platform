@@ -31,7 +31,7 @@ return new class extends Migration {
             $table->string('reporter_phone');
             $table->string('reporter_email')->nullable();
             $table->text('additional_notes')->nullable();
-            $table->enum('case_status', ['Missing', 'Found', 'Closed'])->default('Missing'); // new
+            $table->enum('case_status', ['Pending', 'Approved', 'Rejected', 'Missing', 'Found', 'Closed'])->default('Pending'); // new
             $table->timestamps();
         });
     }

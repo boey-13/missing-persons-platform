@@ -251,7 +251,6 @@ MAILGUN_SECRET=your_mailgun_secret
 - role (ENUM) - User role (family, volunteer, admin)
 - phone (VARCHAR) - Phone number
 - ic_number (VARCHAR) - IC/ID number
-- email_verified_at (TIMESTAMP) - Email verification
 - created_at, updated_at (TIMESTAMP)
 ```
 

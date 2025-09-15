@@ -155,10 +155,6 @@ class ProfileController extends Controller
                 'region' => $validated['region'] ?? $user->region
             ]);
 
-            // Handle email change
-            if ($user->isDirty('email')) {
-                $user->email_verified_at = null;
-            }
 
             $user->save();
 

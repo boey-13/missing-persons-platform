@@ -13,7 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         // Update case_status enum to include Approved and Rejected
-        DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Pending', 'Approved', 'Rejected', 'Missing', 'Found', 'Closed') DEFAULT 'Pending'");
+        // Handle different database drivers
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Pending', 'Approved', 'Rejected', 'Missing', 'Found', 'Closed') DEFAULT 'Pending'");
+        } else {
+            // For SQLite and other databases, we'll use a different approach
+            // SQLite doesn't support MODIFY COLUMN, so we'll skip this migration in testing
+            // The enum values will be handled at the application level
+        }
     }
 
     /**
@@ -22,6 +29,9 @@ return new class extends Migration
     public function down(): void
     {
         // Revert case_status enum to previous state
-        DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Pending', 'Missing', 'Found', 'Closed') DEFAULT 'Pending'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Pending', 'Missing', 'Found', 'Closed') DEFAULT 'Pending'");
+        }
+        // For SQLite, no action needed as we didn't modify the column
     }
 };

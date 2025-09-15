@@ -89,6 +89,11 @@ class VolunteerProjectController extends Controller
             return back()->with('error', 'Please sign in to apply.');
         }
 
+        // Check if user is an approved volunteer
+        if (!$user->isApprovedVolunteer()) {
+            return back()->with('error', 'You must be an approved volunteer to apply for projects.');
+        }
+
         // 验证表单数据
         $request->validate([
             'experience' => 'required|string|min:10|max:1000',

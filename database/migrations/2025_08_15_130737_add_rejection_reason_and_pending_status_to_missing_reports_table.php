@@ -18,10 +18,13 @@ return new class extends Migration
         });
 
         // Update case_status enum to include Pending
-        DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Pending', 'Missing', 'Found', 'Closed') DEFAULT 'Pending'");
-        
-        // Update existing records to have Pending status if they don't have a status
-        DB::statement("UPDATE missing_reports SET case_status = 'Pending' WHERE case_status = 'Missing'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Pending', 'Missing', 'Found', 'Closed') DEFAULT 'Pending'");
+            
+            // Update existing records to have Pending status if they don't have a status
+            DB::statement("UPDATE missing_reports SET case_status = 'Pending' WHERE case_status = 'Missing'");
+        }
+        // For SQLite, enum values are handled at application level
     }
 
     /**
@@ -34,6 +37,9 @@ return new class extends Migration
         });
 
         // Revert case_status enum
-        DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Missing', 'Found', 'Closed') DEFAULT 'Missing'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE missing_reports MODIFY COLUMN case_status ENUM('Missing', 'Found', 'Closed') DEFAULT 'Missing'");
+        }
+        // For SQLite, no action needed
     }
 };
