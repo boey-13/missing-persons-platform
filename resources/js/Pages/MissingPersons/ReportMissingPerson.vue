@@ -296,6 +296,7 @@ function validateForm() {
   }
   if (!form.last_seen_location) errors.value.last_seen_location = "Please select last seen location."
   if (!form.photos || form.photos.length === 0) errors.value.photos = "Please upload at least one photo."
+  if (!form.police_report) errors.value.police_report = "Police report is required."
   // ...more validation as needed...
 
   return Object.keys(errors.value).length === 0
@@ -505,6 +506,10 @@ function validateCurrentStep() {
     case 3: // Uploads
       if (!form.photos || form.photos.length === 0) {
         errors.value.photos = "Please upload at least one photo."
+        isValid = false
+      }
+      if (!form.police_report) {
+        errors.value.police_report = "Police report is required."
         isValid = false
       }
       break
@@ -767,7 +772,7 @@ function validateCurrentStep() {
           </div>
           <!-- Police report -->
           <div>
-            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Upload Police Report</label>
+            <label class="block text-xs sm:text-sm text-gray-600 mb-1">Upload Police Report <span class="text-red-500">*</span></label>
             <input type="file" @change="onPoliceReportChange" class="w-full text-xs sm:text-sm" accept=".pdf,image/*" />
             <small class="block mt-1 text-xs sm:text-sm text-gray-500">Supported formats: .pdf, .jpg, .png (Max: 2MB)</small>
             <div v-if="policeReportPreview" class="mt-2">

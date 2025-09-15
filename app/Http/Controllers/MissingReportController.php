@@ -23,10 +23,11 @@ class MissingReportController extends Controller
         // Validate file uploads separately
         $request->validate([
             'photos.*' => ['image', 'max:2048'], // 2MB per image
-            'police_report' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'], // 2MB
+            'police_report' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'], // 2MB
         ], [
             'photos.*.image' => 'Photos must be image files (JPG, PNG, GIF).',
             'photos.*.max' => 'Each photo must be smaller than 2MB.',
+            'police_report.required' => 'Police report is required.',
             'police_report.file' => 'Police report must be a valid file.',
             'police_report.mimes' => 'Police report must be a PDF or image file.',
             'police_report.max' => 'Police report must be smaller than 2MB.'
