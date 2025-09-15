@@ -20,6 +20,7 @@ The Missing Persons Platform is a full-featured web application designed to stre
 - **📋 System Logging** - Complete audit trail and activity tracking
 - **🔍 Advanced Search & Filtering** - Powerful search capabilities across all data
 - **📄 PDF Generation** - Export reports and documents in PDF format
+- **⚡ Real-time Notifications** - Instant updates for important events
 
 ## 🛠️ Technology Stack
 
@@ -28,12 +29,14 @@ The Missing Persons Platform is a full-featured web application designed to stre
 - **MySQL/PostgreSQL** - Reliable database management
 - **Laravel Sanctum** - API authentication
 - **Laravel DomPDF** - PDF generation capabilities
+- **Laravel Inertia.js** - Modern monolith approach
 
 ### Frontend
-- **Vue.js 3** - Progressive JavaScript framework
-- **Inertia.js** - Modern monolith approach
+- **Vue.js 3** - Progressive JavaScript framework with Composition API
+- **Inertia.js** - Seamless SPA experience without API complexity
 - **Tailwind CSS** - Utility-first CSS framework
 - **Vite** - Fast build tool and development server
+- **Axios** - HTTP client for API requests
 
 ### External Services
 - **Google Maps API** - Location services and mapping
@@ -248,9 +251,15 @@ MAILGUN_SECRET=your_mailgun_secret
 - name (VARCHAR) - User's full name
 - email (VARCHAR, Unique) - Email address
 - password (VARCHAR) - Hashed password
-- role (ENUM) - User role (family, volunteer, admin)
+- role (ENUM) - User role (user, admin)
 - phone (VARCHAR) - Phone number
 - ic_number (VARCHAR) - IC/ID number
+- region (VARCHAR) - User's region
+- avatar_url (VARCHAR) - Profile picture URL
+- is_locked (BOOLEAN) - Account lock status
+- locked_until (TIMESTAMP) - Account lock expiry
+- failed_login_attempts (INTEGER) - Failed login count
+- last_failed_login (TIMESTAMP) - Last failed login time
 - created_at, updated_at (TIMESTAMP)
 ```
 
@@ -318,9 +327,20 @@ MAILGUN_SECRET=your_mailgun_secret
 ```sql
 - id (Primary Key)
 - user_id (Foreign Key) - User ID
-- points (INTEGER) - Points earned
+- current_points (INTEGER) - Current point balance
+- total_earned_points (INTEGER) - Total points earned
+- total_spent_points (INTEGER) - Total points spent
+- created_at, updated_at (TIMESTAMP)
+```
+
+#### Point Transactions Table
+```sql
+- id (Primary Key)
+- user_id (Foreign Key) - User ID
+- points (INTEGER) - Points amount
+- type (ENUM) - Transaction type (earned, spent)
 - source (VARCHAR) - Source of points
-- description (TEXT) - Description of points
+- description (TEXT) - Transaction description
 - created_at, updated_at (TIMESTAMP)
 ```
 
@@ -331,7 +351,7 @@ MAILGUN_SECRET=your_mailgun_secret
 - description (TEXT) - Reward description
 - points_required (INTEGER) - Points needed
 - category_id (Foreign Key) - Reward category
-- is_active (BOOLEAN) - Active status
+- status (ENUM) - Status (active, inactive)
 - created_at, updated_at (TIMESTAMP)
 ```
 
@@ -341,15 +361,62 @@ MAILGUN_SECRET=your_mailgun_secret
 - title (VARCHAR) - Project title
 - description (TEXT) - Project description
 - missing_report_id (Foreign Key) - Related missing report
-- status (ENUM) - Project status
+- status (ENUM) - Project status (active, upcoming, completed, cancelled)
 - start_date (DATE) - Project start date
 - end_date (DATE) - Project end date
+- date (DATE) - Project date
+- time (TIME) - Project time
+- duration (VARCHAR) - Project duration
+- location (VARCHAR) - Project location
+- category (VARCHAR) - Project category
+- volunteers_needed (INTEGER) - Required volunteers
+- volunteers_joined (INTEGER) - Current volunteers
+- points_reward (INTEGER) - Points reward
+- created_at, updated_at (TIMESTAMP)
+```
+
+#### Project Applications Table
+```sql
+- id (Primary Key)
+- user_id (Foreign Key) - Applicant user ID
+- project_id (Foreign Key) - Project ID
+- status (ENUM) - Application status (pending, approved, rejected, withdrawn)
+- experience (TEXT) - Applicant experience
+- motivation (TEXT) - Application motivation
+- rejection_reason (TEXT) - Rejection reason
+- approved_at (TIMESTAMP) - Approval timestamp
+- rejected_at (TIMESTAMP) - Rejection timestamp
+- created_at, updated_at (TIMESTAMP)
+```
+
+#### Volunteer Applications Table
+```sql
+- id (Primary Key)
+- user_id (Foreign Key) - Applicant user ID
+- status (ENUM) - Application status (Pending, Approved, Rejected)
+- emergency_contact_name (VARCHAR) - Emergency contact name
+- emergency_contact_phone (VARCHAR) - Emergency contact phone
+- supporting_documents (JSON) - Supporting document paths
+- rejection_reason (TEXT) - Rejection reason
+- approved_at (TIMESTAMP) - Approval timestamp
+- rejected_at (TIMESTAMP) - Rejection timestamp
+- created_at, updated_at (TIMESTAMP)
+```
+
+#### Contact Messages Table
+```sql
+- id (Primary Key)
+- name (VARCHAR) - Sender name
+- email (VARCHAR) - Sender email
+- subject (VARCHAR) - Message subject
+- message (TEXT) - Message content
+- status (ENUM) - Status (unread, read, replied)
 - created_at, updated_at (TIMESTAMP)
 ```
 
 ## 👥 User Roles & Permissions
 
-### Family Members
+### Family Members (Regular Users)
 **Capabilities:**
 - Create and manage missing person reports
 - Upload photos and documents
@@ -358,6 +425,7 @@ MAILGUN_SECRET=your_mailgun_secret
 - View sighting reports for their cases
 - Participate in community projects
 - Earn points for contributions
+- Apply for volunteer positions
 
 **Access Restrictions:**
 - Can only view their own missing person reports in user profile
@@ -366,34 +434,40 @@ MAILGUN_SECRET=your_mailgun_secret
 
 ### Volunteers
 **Capabilities:**
-- Create missing person reports
+- All family member capabilities
 - View all approved missing person reports
 - Submit sighting reports with location data
 - Upload photos and detailed descriptions
 - Earn points for contributions
 - Participate in community projects
 - Access volunteer dashboard
+- Apply for community projects
 
 **Access Restrictions:**
 - Cannot access admin features
 - Cannot approve/reject reports
+- Must be approved by admin to access volunteer features
 
 ### Administrators
 **Capabilities:**
 - Full access to all platform features
-- Manage missing person reports (approve/reject/edit)
+- Manage missing person reports (approve/reject/edit/delete)
 - Review and approve/reject sighting reports
 - Manage user accounts and roles
 - View system logs and analytics
 - Manage community projects
 - Configure system settings
 - Generate reports and exports
+- Manage volunteer applications
+- Manage contact messages
+- Manage rewards and points system
 
 **Special Features:**
 - Admin dashboard with comprehensive analytics
 - Bulk operations for report management
 - System monitoring and maintenance
 - User management and role assignment
+- Complete audit trail
 
 ## 🎯 Key Features Explained
 
@@ -406,6 +480,7 @@ The platform provides a comprehensive system for creating and managing missing p
 - **Document Upload**: Police reports and other supporting documents
 - **Status Tracking**: Real-time status updates (Pending, Approved, Rejected, Missing, Found, Closed)
 - **Reporter Information**: Complete contact information for follow-up
+- **IC Number Validation**: Automatic duplicate detection and validation
 
 ### Sighting Reports
 
@@ -416,6 +491,7 @@ Volunteers can submit detailed sighting reports:
 - **Detailed Descriptions**: Comprehensive description of the sighting
 - **Contact Information**: Reporter's contact details for verification
 - **Status Management**: Admin review and approval process
+- **Missing Person Filtering**: Filter by specific missing person cases
 
 ### Admin Dashboard
 
@@ -427,6 +503,8 @@ Comprehensive management interface for administrators:
 - **User Management**: Manage user accounts and roles
 - **System Monitoring**: View logs and system health
 - **Community Projects**: Manage collaborative search initiatives
+- **Volunteer Management**: Approve/reject volunteer applications
+- **Contact Messages**: Manage incoming contact messages
 
 ### Points & Rewards System
 
@@ -435,7 +513,8 @@ Gamification features to encourage community participation:
 - **Point Earning**: Users earn points for various activities
 - **Reward Categories**: Different types of rewards available
 - **Redemption System**: Users can redeem points for rewards
-- **Leaderboards**: Community engagement tracking
+- **Transaction History**: Complete point transaction tracking
+- **Admin Management**: Admins can manage rewards and categories
 
 ### Community Projects
 
@@ -444,7 +523,19 @@ Collaborative search initiatives:
 - **Project Creation**: Admins can create search projects
 - **Volunteer Coordination**: Organize search efforts
 - **Progress Tracking**: Monitor project status and outcomes
-- **Communication Tools**: Keep participants informed
+- **Application System**: Volunteers can apply for projects
+- **Schedule Management**: Handle time conflicts and availability
+- **Points Integration**: Reward volunteers for participation
+
+### Volunteer Application System
+
+Comprehensive volunteer management:
+
+- **Application Process**: Multi-step application with validation
+- **Document Upload**: Supporting documents with file type validation
+- **Emergency Contacts**: Required emergency contact information
+- **Admin Review**: Complete admin approval workflow
+- **Status Tracking**: Real-time application status updates
 
 ## 🔍 Search & Filtering
 
@@ -455,6 +546,7 @@ Collaborative search initiatives:
 - **Date Range Filtering**: Filter by date ranges
 - **Status Filtering**: Filter by report status
 - **Category Filtering**: Filter by various categories
+- **Missing Person Filtering**: Filter sighting reports by missing person
 
 ### Search Features
 
@@ -462,6 +554,7 @@ Collaborative search initiatives:
 - **Saved Searches**: Save frequently used search criteria
 - **Export Results**: Export search results in various formats
 - **Search History**: Track previous searches
+- **Advanced Filters**: Multiple filter combinations
 
 ## 📧 Email Notifications
 
@@ -473,6 +566,8 @@ The platform includes a comprehensive email notification system:
 - **Sighting Alerts**: Alert families of new sighting reports
 - **Project Updates**: Keep project participants informed
 - **System Notifications**: Important system announcements
+- **Volunteer Applications**: Notify admins of new applications
+- **Application Status**: Update volunteers on application status
 
 ### Email Templates
 
@@ -481,6 +576,7 @@ The platform includes a comprehensive email notification system:
 - **Sighting Alerts**: New sighting reports
 - **Project Updates**: Community project notifications
 - **Password Reset**: Account recovery
+- **Volunteer Notifications**: Application status updates
 
 ## 📱 Responsive Design
 
@@ -499,30 +595,32 @@ The platform is designed with a mobile-first approach:
 - **Accessibility**: WCAG compliant design
 - **Cross-Browser Compatibility**: Works on all modern browsers
 - **Performance Optimized**: Fast loading and smooth interactions
+- **Dark Mode Support**: Optional dark theme
 
 ## 🔒 Security Features
 
 ### Authentication & Authorization
 
-- **Multi-Factor Authentication**: Enhanced security for admin accounts
-- **Role-Based Access Control**: Granular permissions system
+- **Multi-Role Authentication**: Secure role-based access control
+- **Account Lockout**: Automatic account locking after failed attempts
 - **Session Management**: Secure session handling
 - **Password Policies**: Strong password requirements
+- **IC Number Validation**: Duplicate detection and validation
 
 ### Data Protection
 
 - **Data Encryption**: Sensitive data encryption
-- **File Upload Security**: Secure file handling
+- **File Upload Security**: Secure file handling with type validation
 - **SQL Injection Prevention**: Parameterized queries
 - **XSS Protection**: Cross-site scripting prevention
 - **CSRF Protection**: Cross-site request forgery protection
 
 ### Privacy Compliance
 
-- **GDPR Compliance**: European privacy regulation compliance
 - **Data Retention Policies**: Automatic data cleanup
 - **User Consent Management**: Explicit consent tracking
 - **Data Export/Deletion**: User data control
+- **Audit Trail**: Complete system logging
 
 ## 🚀 Development
 
@@ -629,6 +727,7 @@ php artisan make:seeder NewSeeder
 - **Props & Events**: Clean component communication
 - **Composition API**: Modern Vue 3 patterns
 - **Reactive Data**: Responsive data management
+- **Form Validation**: Real-time validation feedback
 
 #### Styling
 - **Tailwind CSS**: Utility-first styling
