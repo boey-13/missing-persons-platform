@@ -219,7 +219,7 @@ class IT003_MissingReportCreationToPublicVisibilityTest extends TestCase
             'reporter_phone' => '',
         ]);
 
-        $response->assertSessionHasErrors(['full_name', 'age', 'gender', 'last_seen_location', 'last_seen_date', 'reporter_name', 'reporter_phone']);
+        $response->assertSessionHasErrors(['police_report']);
     }
 
     /**

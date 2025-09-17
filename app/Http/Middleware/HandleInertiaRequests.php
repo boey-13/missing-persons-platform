@@ -14,18 +14,15 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
 
-            // 你已有的
             'auth' => [
                 'user' => $request->user() ? $request->user()->fresh()->load('volunteerApplication') : null,
             ],
 
-            // ✅ 新增：把 Laravel 的 session flash 共享给前端
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
             ],
 
-            // ✅ 新增：CSRF token
             'csrf_token' => fn () => csrf_token(),
         ];
     }

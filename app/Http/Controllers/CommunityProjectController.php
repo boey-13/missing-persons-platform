@@ -219,7 +219,8 @@ class CommunityProjectController extends Controller
                 \App\Models\Notification::create([
                     'user_id' => $user->id,
                     'title' => 'Project Completed - Points Awarded!',
-                    'message' => "Congratulations! You have earned {$project->points_reward} points for completing the project: {$project->title}",
+                    'message' => "Congratulations! You have earned 
+                    {$project->points_reward} points for completing the project: {$project->title}",
                     'type' => 'project_completed',
                     'read' => false
                 ]);

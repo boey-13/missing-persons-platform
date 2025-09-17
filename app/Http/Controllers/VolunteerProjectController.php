@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class VolunteerProjectController extends Controller
 {
-    // 项目列表（Inertia 渲染）
+    // project list (Inertia render)
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -21,7 +21,7 @@ class VolunteerProjectController extends Controller
         $query = CommunityProject::query()
             ->where('status', '!=', 'cancelled');
         
-        // 应用过滤器
+    
         if ($request->filled('category') && $request->category !== 'all') {
             $query->where('category', $request->category);
         }
@@ -36,7 +36,7 @@ class VolunteerProjectController extends Controller
         
         $projects = $query->orderBy('date', 'asc')->paginate(8)
             ->through(function ($project) use ($user) {
-                // 为每个项目添加用户的申请状态
+                // add user's application status for each project
                 if ($user) {
                     $application = ProjectApplication::where('user_id', $user->id)
                         ->where('community_project_id', $project->id)
@@ -49,17 +49,17 @@ class VolunteerProjectController extends Controller
                     $project->user_application = null;
                 }
                 
-                // 确保 photo_url 访问器被调用
+                // ensure photo_url is set correctly
                 $project->photo_url = $project->photo_url;
                 
-                // Debug: 直接设置 photo_url 确保前端能接收到
+                // static set photo_url to ensure frontend receives it
                 if ($project->photo_paths && count($project->photo_paths) > 0) {
                     $project->photo_url = asset('storage/' . $project->photo_paths[0]);
                 } else {
                     $project->photo_url = null;
                 }
                 
-                // 添加容量信息
+                // add is_full, available_spots, progress_percentage
                 $project->is_full = $project->isFull();
                 $project->available_spots = $project->available_spots;
                 $project->progress_percentage = $project->progress_percentage;
@@ -67,13 +67,13 @@ class VolunteerProjectController extends Controller
                 return $project;
             });
 
-        // 返回 Inertia 页面（你的 Projects.vue）
+        // return Inertia response
         return inertia('Volunteer/Projects', [
             'projects' => $projects,
         ]);
     }
 
-    // 项目详情（可选）
+
     public function show(CommunityProject $project)
     {
         return inertia('ProjectShow', [
@@ -81,7 +81,7 @@ class VolunteerProjectController extends Controller
         ]);
     }
 
-    // 申请参与（Inertia 表单）
+
     public function apply(Request $request, CommunityProject $project)
     {
         $user = $request->user();
@@ -94,7 +94,7 @@ class VolunteerProjectController extends Controller
             return back()->with('error', 'You must be an approved volunteer to apply for projects.');
         }
 
-        // 验证表单数据
+
         $request->validate([
             'experience' => 'required|string|min:10|max:1000',
             'motivation' => 'required|string|min:10|max:500',
@@ -106,12 +106,12 @@ class VolunteerProjectController extends Controller
         ]);
 
         try {
-            // 检查项目是否已满
+
             if ($project->isFull()) {
                 return back()->with('error', 'This project is full. No more applications are being accepted.');
             }
 
-            // 检查时间冲突（除非用户明确选择忽略）
+ 
             if (!$request->has('ignore_conflicts')) {
                 $conflictingProjects = $this->checkScheduleConflicts($user, $project);
                 if ($conflictingProjects->isNotEmpty()) {
@@ -125,7 +125,7 @@ class VolunteerProjectController extends Controller
                 }
             }
 
-            // 检查是否已有有效的申请（pending或approved）
+            // check if user has already applied (pending or approved)
             $existingApplication = ProjectApplication::where('user_id', $user->id)
                 ->where('community_project_id', $project->id)
                 ->whereIn('status', ['pending','approved'])
@@ -135,7 +135,7 @@ class VolunteerProjectController extends Controller
                 return back()->with('error', 'You have already applied to this project.');
             }
 
-            // 如果之前有rejected或withdrawn的申请，更新它而不是创建新的
+            // if user had a rejected or withdrawn application before, update it instead of creating new
             $oldApplication = ProjectApplication::where('user_id', $user->id)
                 ->where('community_project_id', $project->id)
                 ->whereIn('status', ['rejected','withdrawn'])
@@ -143,7 +143,7 @@ class VolunteerProjectController extends Controller
 
             $application = null;
             if ($oldApplication) {
-                // 更新现有申请
+
                 $oldApplication->update([
                     'experience' => $request->experience,
                     'motivation' => $request->motivation,
@@ -153,7 +153,7 @@ class VolunteerProjectController extends Controller
                 ]);
                 $application = $oldApplication;
             } else {
-                // 创建新申请
+
                 $application = ProjectApplication::create([
                     'user_id' => $user->id,
                     'community_project_id' => $project->id,
@@ -163,10 +163,10 @@ class VolunteerProjectController extends Controller
                 ]);
             }
 
-            // 发送通知给用户
+            // send notification to user
             NotificationService::projectApplicationSubmitted($application);
             
-            // 发送通知给管理员
+            //  send notification to admins
             $adminUsers = User::where('role', 'admin')->get();
             foreach ($adminUsers as $admin) {
                 NotificationService::send(
@@ -185,7 +185,7 @@ class VolunteerProjectController extends Controller
                 );
             }
 
-            // 记录SystemLog
+            // record in SystemLog
             SystemLog::log(
                 'project_application_submitted',
                 "Volunteer {$user->name} applied for project: {$project->title}",
@@ -204,7 +204,7 @@ class VolunteerProjectController extends Controller
         }
     }
 
-    // 撤回申请（Inertia 表单）
+    // cancel application
     public function withdraw(Request $request, CommunityProject $project)
     {
         $user = $request->user();
@@ -222,16 +222,16 @@ class VolunteerProjectController extends Controller
                 return back()->with('error', 'No active application found.');
             }
 
-            // 如果之前是approved状态，需要减少项目的volunteer人数
+            // if approved, decrement volunteers_joined
             if ($app->status === 'approved') {
                 $project->decrement('volunteers_joined');
             }
 
-            // 标记为 withdrawn
+            // mark application as withdrawn
             $app->status = 'withdrawn';
             $app->save();
 
-            // 发送通知给用户
+            // send notification to user
             NotificationService::send(
                 $user->id,
                 'project_application_withdrawn',
@@ -244,7 +244,7 @@ class VolunteerProjectController extends Controller
                 ]
             );
 
-            // 发送通知给管理员
+            // send notification to admins
             $adminUsers = User::where('role', 'admin')->get();
             foreach ($adminUsers as $admin) {
                 NotificationService::send(
@@ -263,7 +263,7 @@ class VolunteerProjectController extends Controller
                 );
             }
 
-            // 记录SystemLog
+            // record in SystemLog
             SystemLog::log(
                 'project_application_withdrawn',
                 "Volunteer {$user->name} withdrew application for project: {$project->title}",
@@ -283,7 +283,7 @@ class VolunteerProjectController extends Controller
         }
     }
 
-    // 获取用户的申请列表
+    // get user's applications
     public function myApplications()
     {
         $user = auth()->user();
@@ -326,7 +326,7 @@ class VolunteerProjectController extends Controller
         return $conflictingProjects;
     }
 
-    // —— 如果你有 JSON 接口（例如收藏/检查名额），统一返回 {success,message}
+
     public function toggleBookmark(Request $request, CommunityProject $project)
     {
         try {
@@ -335,8 +335,8 @@ class VolunteerProjectController extends Controller
                 return response()->json(['success' => false, 'message' => 'Please sign in.'], 401);
             }
 
-            // 伪代码：按你的收藏逻辑实现
-            $bookmarked = false; // TODO: 切换收藏状态，并得到结果
+
+            $bookmarked = false; 
             $msg = $bookmarked ? 'Added to bookmarks.' : 'Removed from bookmarks.';
 
             return response()->json(['success' => true, 'message' => $msg]);

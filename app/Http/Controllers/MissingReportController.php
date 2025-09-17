@@ -185,14 +185,14 @@ class MissingReportController extends Controller
                 }
             });
         }
-        // Weight filter (字段应该是 weight_kg)
+        // Weight filter
         if ($request->filled('weightMin')) {
             $query->where('weight_kg', '>=', $request->weightMin);
         }
         if ($request->filled('weightMax')) {
             $query->where('weight_kg', '<=', $request->weightMax);
         }
-        // Height filter (字段应该是 height_cm)
+        // Height filter 
         if ($request->filled('heightMin')) {
             $query->where('height_cm', '>=', $request->heightMin);
         }

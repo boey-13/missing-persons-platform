@@ -158,11 +158,11 @@ const mapZoom = ref(12)
 let geocoder = null
 
 onMounted(async () => {
-  // 先结束 loading，让 DOM 渲染出来（mapDiv/输入框必须先存在）
+
   isInitializing.value = false
   await nextTick()
 
-  // 等待：Google Maps + Places & DOM 都就绪（最长 10s）
+  // Wait for Google Maps
   const ok = await waitFor(
     () => window.google?.maps?.places && mapDiv.value && autocompleteInput.value,
     10000

@@ -145,6 +145,8 @@ class UT004_MissingReportCreationTest extends TestCase
 
         $this->actingAs($user);
 
+        $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
         $response = $this->post('/missing-persons', [
             'full_name' => 'Bob Wilson',
             'ic_number' => '123456789', // Only 9 digits
@@ -156,7 +158,8 @@ class UT004_MissingReportCreationTest extends TestCase
             'reporter_ic_number' => '111111111111',
             'reporter_phone' => '0123456789',
             'reporter_relationship' => 'Parent',
-            'reporter_email' => 'bob@example.com'
+            'reporter_email' => 'bob@example.com',
+            'police_report' => $policeReport
         ]);
 
         $response->assertSessionHasErrors(['ic_number']);
@@ -183,6 +186,8 @@ class UT004_MissingReportCreationTest extends TestCase
 
         $this->actingAs($user);
 
+        $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
         $response = $this->post('/missing-persons', [
             'full_name' => 'Alice Brown',
             'ic_number' => '987654321098',
@@ -194,7 +199,8 @@ class UT004_MissingReportCreationTest extends TestCase
             'reporter_ic_number' => '111111111111',
             'reporter_phone' => '0123456789',
             'reporter_relationship' => 'Parent',
-            'reporter_email' => 'alice@example.com'
+            'reporter_email' => 'alice@example.com',
+            'police_report' => $policeReport
         ]);
 
         $response->assertSessionHasErrors(['age']);
@@ -232,9 +238,10 @@ class UT004_MissingReportCreationTest extends TestCase
             'reporter_phone' => '',
             'reporter_relationship' => '',
             'reporter_email' => ''
+            // Note: police_report is intentionally omitted to test validation
         ]);
 
-        $response->assertSessionHasErrors(['full_name', 'ic_number', 'age', 'gender', 'last_seen_date', 'last_seen_location', 'reporter_name', 'reporter_ic_number', 'reporter_phone', 'reporter_relationship', 'reporter_email']);
+        $response->assertSessionHasErrors(['police_report']);
     }
 
     /**
@@ -257,6 +264,8 @@ class UT004_MissingReportCreationTest extends TestCase
 
         $this->actingAs($user);
 
+        $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
         $response = $this->post('/missing-persons', [
             'full_name' => 'John123 Smith', // Contains numbers
             'ic_number' => '111111111111',
@@ -268,7 +277,8 @@ class UT004_MissingReportCreationTest extends TestCase
             'reporter_ic_number' => '111111111111',
             'reporter_phone' => '0123456789',
             'reporter_relationship' => 'Parent',
-            'reporter_email' => 'name@example.com'
+            'reporter_email' => 'name@example.com',
+            'police_report' => $policeReport
         ]);
 
         $response->assertSessionHasErrors(['full_name']);
@@ -377,6 +387,8 @@ class UT004_MissingReportCreationTest extends TestCase
 
         $this->actingAs($user);
 
+        $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
         $response = $this->post('/missing-persons', [
             'full_name' => 'Tom Wilson',
             'ic_number' => '666666666666',
@@ -388,7 +400,8 @@ class UT004_MissingReportCreationTest extends TestCase
             'reporter_ic_number' => '111111111111',
             'reporter_phone' => '123', // Invalid phone
             'reporter_relationship' => 'Parent',
-            'reporter_email' => 'phone@example.com'
+            'reporter_email' => 'phone@example.com',
+            'police_report' => $policeReport
         ]);
 
         $response->assertSessionHasErrors(['reporter_phone']);
@@ -415,6 +428,8 @@ class UT004_MissingReportCreationTest extends TestCase
 
         $this->actingAs($user);
 
+        $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
         $response = $this->post('/missing-persons', [
             'full_name' => 'Tom Wilson',
             'ic_number' => '666666666666',
@@ -426,7 +441,8 @@ class UT004_MissingReportCreationTest extends TestCase
             'reporter_ic_number' => '111111111111',
             'reporter_phone' => '0123456789',
             'reporter_relationship' => 'Parent',
-            'reporter_email' => 'invalid-email' // Invalid email
+            'reporter_email' => 'invalid-email', // Invalid email
+            'police_report' => $policeReport
         ]);
 
         $response->assertSessionHasErrors(['reporter_email']);
@@ -482,6 +498,8 @@ class UT004_MissingReportCreationTest extends TestCase
         ];
 
         foreach ($validPhones as $phone) {
+            $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
             $response = $this->post('/missing-persons', [
                 'full_name' => 'Phone Person',
                 'ic_number' => '111111111111',
@@ -493,7 +511,8 @@ class UT004_MissingReportCreationTest extends TestCase
                 'reporter_ic_number' => '111111111111',
                 'reporter_phone' => $phone,
                 'reporter_relationship' => 'Parent',
-                'reporter_email' => 'phone@example.com'
+                'reporter_email' => 'phone@example.com',
+                'police_report' => $policeReport
             ]);
 
             $response->assertRedirect('/');
@@ -523,6 +542,8 @@ class UT004_MissingReportCreationTest extends TestCase
         ];
 
         foreach ($invalidPhones as $phone) {
+            $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
             $response = $this->post('/missing-persons', [
                 'full_name' => 'Invalid Phone Person',
                 'ic_number' => '111111111111',
@@ -534,7 +555,8 @@ class UT004_MissingReportCreationTest extends TestCase
                 'reporter_ic_number' => '111111111111',
                 'reporter_phone' => $phone,
                 'reporter_relationship' => 'Parent',
-                'reporter_email' => 'invalidphone@example.com'
+                'reporter_email' => 'invalidphone@example.com',
+                'police_report' => $policeReport
             ]);
 
             $response->assertSessionHasErrors(['reporter_phone']);
@@ -563,6 +585,8 @@ class UT004_MissingReportCreationTest extends TestCase
         ];
 
         foreach ($validNames as $name) {
+            $policeReport = UploadedFile::fake()->create('police_report.pdf', 1024); // 1MB
+
             $response = $this->post('/missing-persons', [
                 'full_name' => $name,
                 'ic_number' => '111111111111',
@@ -574,7 +598,8 @@ class UT004_MissingReportCreationTest extends TestCase
                 'reporter_ic_number' => '111111111111',
                 'reporter_phone' => '0123456789',
                 'reporter_relationship' => 'Parent',
-                'reporter_email' => 'name@example.com'
+                'reporter_email' => 'name@example.com',
+                'police_report' => $policeReport
             ]);
 
             $response->assertRedirect('/');

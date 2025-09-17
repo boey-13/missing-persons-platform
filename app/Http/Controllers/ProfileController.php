@@ -67,7 +67,7 @@ class ProfileController extends Controller
                         'photo_url' => $project->photo_url,
                         'created_at' => $project->created_at,
                         'updated_at' => $project->updated_at,
-                        // 添加申请信息
+
                         'application_id' => $application->id,
                         'application_status' => $application->status,
                         'application_created_at' => $application->created_at,
@@ -158,7 +158,7 @@ class ProfileController extends Controller
 
             $user->save();
 
-            // 记录SystemLog
+            // record changes in SystemLog
             $changedFields = [];
             if ($user->wasChanged('name')) $changedFields[] = 'name';
             if ($user->wasChanged('email')) $changedFields[] = 'email';
